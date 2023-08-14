@@ -1,0 +1,179 @@
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl create -f 01-persistent-volume-claim.yaml
+persistentvolumeclaim/mysql-pv-claim created
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get pv
+No resources found
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get pvc
+NAME             STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Pending                                      standard-rwo   10s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$
+
+--
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl create -f 02-UserManagement-ConfigMap.yaml
+configmap/usermanagement-dbcreation-script created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get cm
+NAME                               DATA   AGE
+kube-root-ca.crt                   1      5d2h
+usermanagement-dbcreation-script   1      8s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl describe cm usermanagement-dbcreation-script
+Name:         usermanagement-dbcreation-script
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+mysql_usermgmt.sql:
+----
+DROP DATABASE IF EXISTS webappdb;
+CREATE DATABASE webappdb;
+
+BinaryData
+====
+
+Events:  <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$
+--
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl create -f 03-mysql-deployment.yaml
+deployment.apps/mysql created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get deployment -o wide
+NAME    READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES      SELECTOR
+mysql   0/1     1            0           12s   mysql        mysql:8.0   app=mysql
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$
+--
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl create -f 04-mysql-clusterip-service.yaml
+service/mysql created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get svc -o wide
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)    AGE    SELECTOR
+kubernetes   ClusterIP   10.60.0.1    <none>        443/TCP    5d2h   <none>
+mysql        ClusterIP   None         <none>        3306/TCP   13s    app=mysql
+--
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl create -f 05-UserMgmtWebApp-Deployment.yaml
+deployment.apps/usermgmt-webapp created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get deployment -o wide
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE    CONTAINERS        IMAGES                                             SELECTOR
+mysql             1/1     1            1           3m6s   mysql             mysql:8.0                                          app=mysql
+usermgmt-webapp   1/1     1            1           12s    usermgmt-webapp   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$
+--
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl create -f 06-UserMgmtWebApp-LoadBalancer-Service.yaml
+service/usermgmt-webapp-lb-service created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get svc -o wide
+NAME                         TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE     SELECTOR
+kubernetes                   ClusterIP      10.60.0.1    <none>        443/TCP        5d2h    <none>
+mysql                        ClusterIP      None         <none>        3306/TCP       3m10s   app=mysql
+usermgmt-webapp-lb-service   LoadBalancer   10.60.9.30   <pending>     80:32421/TCP   6s      app=usermgmt-webapp
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get svc -o wide
+NAME                         TYPE           CLUSTER-IP   EXTERNAL-IP     PORT(S)        AGE    SELECTOR
+kubernetes                   ClusterIP      10.60.0.1    <none>          443/TCP        5d2h   <none>
+mysql                        ClusterIP      None         <none>          3306/TCP       4m3s   app=mysql
+usermgmt-webapp-lb-service   LoadBalancer   10.60.9.30   35.238.189.68   80:32421/TCP   59s    app=usermgmt-webapp
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$
+
+--
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get all
+NAME                                   READY   STATUS    RESTARTS   AGE
+pod/mysql-d95875db9-7s64h              1/1     Running   0          6m8s
+pod/usermgmt-webapp-7d7879857b-6dxb4   1/1     Running   0          3m14s
+
+NAME                                 TYPE           CLUSTER-IP   EXTERNAL-IP     PORT(S)        AGE
+service/kubernetes                   ClusterIP      10.60.0.1    <none>          443/TCP        5d2h
+service/mysql                        ClusterIP      None         <none>          3306/TCP       5m17s
+service/usermgmt-webapp-lb-service   LoadBalancer   10.60.9.30   35.238.189.68   80:32421/TCP   2m13s
+
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/mysql             1/1     1            1           6m9s
+deployment.apps/usermgmt-webapp   1/1     1            1           3m15s
+
+NAME                                         DESIRED   CURRENT   READY   AGE
+replicaset.apps/mysql-d95875db9              1         1         1       6m9s
+replicaset.apps/usermgmt-webapp-7d7879857b   1         1         1       3m15s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get sc
+NAME                     PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+premium-rwo              pd.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d2h
+standard                 kubernetes.io/gce-pd    Delete          Immediate              true                   5d2h
+standard-rwo (default)   pd.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d2h
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-028affdd-636c-4e6f-8e62-7f0b04616dcf   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            6m31s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-028affdd-636c-4e6f-8e62-7f0b04616dcf   4Gi        RWO            standard-rwo   8m43s
+--
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl describe pv pvc-028affdd-636c-4e6f-8e62-7f0b04616dcf
+Name:              pvc-028affdd-636c-4e6f-8e62-7f0b04616dcf
+Labels:            <none>
+Annotations:       pv.kubernetes.io/provisioned-by: pd.csi.storage.gke.io
+                   volume.kubernetes.io/provisioner-deletion-secret-name:
+                   volume.kubernetes.io/provisioner-deletion-secret-namespace:
+Finalizers:        [kubernetes.io/pv-protection external-attacher/pd-csi-storage-gke-io]
+StorageClass:      standard-rwo
+Status:            Bound
+Claim:             default/mysql-pv-claim
+Reclaim Policy:    Delete
+Access Modes:      RWO
+VolumeMode:        Filesystem
+Capacity:          4Gi
+Node Affinity:
+  Required Terms:
+    Term 0:        topology.gke.io/zone in [us-central1-b]
+Message:
+Source:
+    Type:              CSI (a Container Storage Interface (CSI) volume source)
+    Driver:            pd.csi.storage.gke.io
+    FSType:            ext4
+    VolumeHandle:      projects/expanded-origin-395402/zones/us-central1-b/disks/pvc-028affdd-636c-4e6f-8e62-7f0b04616dcf
+    ReadOnly:          false
+    VolumeAttributes:      storage.kubernetes.io/csiProvisionerIdentity=1691999368463-6796-pd.csi.storage.gke.io
+Events:                <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get pv pvc-028affdd-636c-4e6f-8e62-7f0b04616dcf -o yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  annotations:
+    pv.kubernetes.io/provisioned-by: pd.csi.storage.gke.io
+    volume.kubernetes.io/provisioner-deletion-secret-name: ""
+    volume.kubernetes.io/provisioner-deletion-secret-namespace: ""
+  creationTimestamp: "2023-08-14T14:06:26Z"
+  finalizers:
+  - kubernetes.io/pv-protection
+  - external-attacher/pd-csi-storage-gke-io
+  name: pvc-028affdd-636c-4e6f-8e62-7f0b04616dcf
+  resourceVersion: "4235601"
+  uid: a75e70d3-28d5-4f30-af92-bf997ef2501e
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 4Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: mysql-pv-claim
+    namespace: default
+    resourceVersion: "4235550"
+    uid: 028affdd-636c-4e6f-8e62-7f0b04616dcf
+  csi:
+    driver: pd.csi.storage.gke.io
+    fsType: ext4
+    volumeAttributes:
+      storage.kubernetes.io/csiProvisionerIdentity: 1691999368463-6796-pd.csi.storage.gke.io
+    volumeHandle: projects/expanded-origin-395402/zones/us-central1-b/disks/pvc-028affdd-636c-4e6f-8e62-7f0b04616dcf
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: topology.gke.io/zone
+          operator: In
+          values:
+          - us-central1-b
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: standard-rwo
+  volumeMode: Filesystem
+status:
+  phase: Bound
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$
