@@ -1,0 +1,5 @@
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/21-GKE-PD-existing-SC-standard-rwo/kube-manifests$ kubectl get sc
+NAME                     PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+premium-rwo              pd.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d2h
+standard                 kubernetes.io/gce-pd    Delete          Immediate              true                   5d2h
+standard-rwo (default)   pd.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d2h
