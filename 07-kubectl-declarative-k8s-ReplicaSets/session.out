@@ -647,7 +647,7 @@ NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 service/kubernetes   ClusterIP   10.60.0.1    <none>        443/TCP   8d
 rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
 
-#####
+########
 
 (base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run my-helloworld --image stacksimplify/kubenginx:1.0.0
 pod/my-helloworld created
