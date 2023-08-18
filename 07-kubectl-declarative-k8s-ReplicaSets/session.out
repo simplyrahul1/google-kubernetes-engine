@@ -1,0 +1,649 @@
+---
+title: Kubernetes ReplicaSets
+description: Learn about Kubernetes ReplicaSets
+---
+
+## Step-01: Introduction to ReplicaSets
+- What are ReplicaSets?
+- What is the advantage of using ReplicaSets?
+
+## Step-02: Create ReplicaSet
+
+### Step-02-01: Create ReplicaSet
+- Create ReplicaSet
+```t
+# Kubernetes ReplicaSet
+kubectl create -f replicaset-demo.yml
+```
+- **replicaset-demo.yml**
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: my-helloworld-rs
+  labels:
+    app: my-helloworld
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-helloworld
+  template:
+    metadata:
+      labels:
+        app: my-helloworld
+    spec:
+      containers:
+      - name: my-helloworld-app
+        image: stacksimplify/kube-helloworld:1.0.0
+```
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl create -f replicaset-demo.yml
+replicaset.apps/my-helloworld-rs created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
+
+
+### Step-02-02: List ReplicaSets
+- Get list of ReplicaSets
+```t
+# List ReplicaSets
+kubectl get replicaset
+kubectl get rs
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs
+NAME               DESIRED   CURRENT   READY   AGE
+my-helloworld-rs   3         3         1       6s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs
+NAME               DESIRED   CURRENT   READY   AGE
+my-helloworld-rs   3         3         3       19s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
+
+
+```
+
+### Step-02-03: Describe ReplicaSet
+- Describe the newly created ReplicaSet
+```t
+# Describe ReplicaSet
+kubectl describe rs/<replicaset-name>
+
+kubectl describe rs/my-helloworld-rs
+[or]
+kubectl describe rs my-helloworld-rs
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl describe replicaset my-helloworld-rs
+Name:         my-helloworld-rs
+Namespace:    default
+Selector:     app=my-helloworld
+Labels:       app=my-helloworld
+Annotations:  <none>
+Replicas:     3 current / 3 desired
+Pods Status:  3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=my-helloworld
+  Containers:
+   my-helloworld-app:
+    Image:        stacksimplify/kube-helloworld:1.0.0
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Events:
+  Type    Reason            Age   From                   Message
+  ----    ------            ----  ----                   -------
+  Normal  SuccessfulCreate  61s   replicaset-controller  Created pod: my-helloworld-rs-78qck
+  Normal  SuccessfulCreate  61s   replicaset-controller  Created pod: my-helloworld-rs-85lgn
+  Normal  SuccessfulCreate  61s   replicaset-controller  Created pod: my-helloworld-rs-8ch2t
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
+
+```
+
+### Step-02-04: List of Pods
+- Get list of Pods
+```t
+# Get list of Pods
+kubectl get pods
+kubectl describe pod <pod-name>
+
+# Get list of Pods with Pod IP and Node in which it is running
+kubectl get pods -o wide
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+my-helloworld-rs-78qck   1/1     Running   0          3m4s
+my-helloworld-rs-85lgn   1/1     Running   0          3m4s
+my-helloworld-rs-8ch2t   1/1     Running   0          3m4s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get pods -o wide
+NAME                     READY   STATUS    RESTARTS   AGE    IP           NODE                                                  NOMINATED NODE   READINESS GATES
+my-helloworld-rs-78qck   1/1     Running   0          3m6s   10.56.0.8    gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+my-helloworld-rs-85lgn   1/1     Running   0          3m6s   10.56.2.16   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+my-helloworld-rs-8ch2t   1/1     Running   0          3m6s   10.56.1.7    gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs
+NAME               DESIRED   CURRENT   READY   AGE
+my-helloworld-rs   3         3         3       3m11s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs -o wide
+NAME               DESIRED   CURRENT   READY   AGE     CONTAINERS          IMAGES                                SELECTOR
+my-helloworld-rs   3         3         3       3m15s   my-helloworld-app   stacksimplify/kube-helloworld:1.0.0   app=my-helloworld
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+my-helloworld-rs-78qck   1/1     Running   0          3m4s
+my-helloworld-rs-85lgn   1/1     Running   0          3m4s
+my-helloworld-rs-8ch2t   1/1     Running   0          3m4s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get pods -o wide
+NAME                     READY   STATUS    RESTARTS   AGE    IP           NODE                                                  NOMINATED NODE   READINESS GATES
+my-helloworld-rs-78qck   1/1     Running   0          3m6s   10.56.0.8    gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+my-helloworld-rs-85lgn   1/1     Running   0          3m6s   10.56.2.16   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+my-helloworld-rs-8ch2t   1/1     Running   0          3m6s   10.56.1.7    gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs
+NAME               DESIRED   CURRENT   READY   AGE
+my-helloworld-rs   3         3         3       3m11s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs -o wide
+NAME               DESIRED   CURRENT   READY   AGE     CONTAINERS          IMAGES                                SELECTOR
+my-helloworld-rs   3         3         3       3m15s   my-helloworld-app   stacksimplify/kube-helloworld:1.0.0   app=my-helloworld
+
+
+```
+
+### Step-02-05: Verify the Owner of the Pod
+- Verify the owner reference of the pod.
+- Verify under **"name"** tag under **"ownerReferences"**. We will find the replicaset name to which this pod belongs to. 
+```t
+# List Pod with Output as YAML
+kubectl get pods <pod-name> -o yaml
+kubectl get pods my-helloworld-rs-c8rrj -o yaml 
+
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl describe pods my-helloworld-rs-78qck
+Name:             my-helloworld-rs-78qck
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-gke-public-standard--default-pool-73297d2f-pgnk/10.128.0.31
+Start Time:       Fri, 18 Aug 2023 14:59:01 +0800
+Labels:           app=my-helloworld
+Annotations:      <none>
+Status:           Running
+IP:               10.56.0.8
+IPs:
+  IP:           10.56.0.8
+Controlled By:  ReplicaSet/my-helloworld-rs
+Containers:
+  my-helloworld-app:
+    Container ID:   containerd://2ec0bd92eea5a43cb63b21fb329024fd1d82426aad0d8781407638426d6fe026
+    Image:          stacksimplify/kube-helloworld:1.0.0
+    Image ID:       docker.io/stacksimplify/kube-helloworld@sha256:eae077a33d55d74407e399fd6e3bfb12cfe98dd1be29173861579584cb175ed8
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Fri, 18 Aug 2023 14:59:07 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-t6fgj (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-t6fgj:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  7m39s  default-scheduler  Successfully assigned default/my-helloworld-rs-78qck to gke-gke-public-standard--default-pool-73297d2f-pgnk
+  Normal  Pulling    7m38s  kubelet            Pulling image "stacksimplify/kube-helloworld:1.0.0"
+  Normal  Pulled     7m34s  kubelet            Successfully pulled image "stacksimplify/kube-helloworld:1.0.0" in 4.326298589s (4.326316047s including waiting)
+  Normal  Created    7m34s  kubelet            Created container my-helloworld-app
+  Normal  Started    7m33s  kubelet            Started container my-helloworld-app
+
+
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get pods my-helloworld-rs-78qck -o yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2023-08-18T06:59:01Z"
+  generateName: my-helloworld-rs-
+  labels:
+    app: my-helloworld
+  name: my-helloworld-rs-78qck
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: my-helloworld-rs
+    uid: 048b3c66-e4c7-41b0-b83d-9c2420d74435
+  resourceVersion: "7302972"
+  uid: b894502f-d7f0-4a5f-b810-332cf3aca097
+spec:
+  containers:
+  - image: stacksimplify/kube-helloworld:1.0.0
+    imagePullPolicy: IfNotPresent
+    name: my-helloworld-app
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-t6fgj
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-gke-public-standard--default-pool-73297d2f-pgnk
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: kube-api-access-t6fgj
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2023-08-18T06:59:01Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2023-08-18T06:59:07Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2023-08-18T06:59:07Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2023-08-18T06:59:01Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://2ec0bd92eea5a43cb63b21fb329024fd1d82426aad0d8781407638426d6fe026
+    image: docker.io/stacksimplify/kube-helloworld:1.0.0
+    imageID: docker.io/stacksimplify/kube-helloworld@sha256:eae077a33d55d74407e399fd6e3bfb12cfe98dd1be29173861579584cb175ed8
+    lastState: {}
+    name: my-helloworld-app
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2023-08-18T06:59:07Z"
+  hostIP: 10.128.0.31
+  phase: Running
+  podIP: 10.56.0.8
+  podIPs:
+  - ip: 10.56.0.8
+  qosClass: BestEffort
+  startTime: "2023-08-18T06:59:01Z"
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
+
+
+```
+
+## Step-03: Expose ReplicaSet as a Service
+- Expose ReplicaSet with a service (Load Balancer Service) to access the application externally (from internet)
+```t
+# Expose ReplicaSet as a Service
+kubectl expose rs <ReplicaSet-Name>  --type=LoadBalancer --port=80 --target-port=8080 --name=<Service-Name-To-Be-Created>
+kubectl expose rs my-helloworld-rs  --type=LoadBalancer --port=80 --target-port=8080 --name=my-helloworld-rs-service
+
+# List Services
+kubectl get service
+kubectl get svc
+```
+- **Access the Application using External or Public IP**
+```t
+# Access Application
+http://<External-IP-from-get-service-output>/hello
+curl http://<External-IP-from-get-service-output>/hello
+
+# Observation
+1. Each time we access the application, request will be sent to different pod and pods id will be displayed for us. 
+```
+
+## Step-04: Test Replicaset Reliability or High Availability 
+- Test how the high availability or reliability concept is achieved automatically in Kubernetes
+- Whenever a POD is accidentally terminated due to some application issue, ReplicaSet should auto-create that Pod to maintain desired number of Replicas configured to achive High Availability.
+```t
+# To get Pod Name
+kubectl get pods
+
+# Delete the Pod
+kubectl delete pod <Pod-Name>
+
+# Verify the new pod got created automatically
+kubectl get pods   (Verify Age and name of new pod)
+``` 
+
+## Step-05: Test ReplicaSet Scalability feature 
+- Test how scalability is going to seamless & quick
+- Update the **replicas** field in **replicaset-demo.yml** from 3 to 6.
+```yaml
+# Before change
+spec:
+  replicas: 3
+
+# After change
+spec:
+  replicas: 6
+```
+- Update the ReplicaSet
+```t
+# Apply latest changes to ReplicaSet
+kubectl replace -f replicaset-demo.yml
+
+# Verify if new pods got created
+kubectl get pods -o wide
+```
+
+## Step-06: Delete ReplicaSet & Service
+### Step-06-01: Delete ReplicaSet
+```t
+# Delete ReplicaSet
+kubectl delete rs <ReplicaSet-Name>
+
+# Sample Commands
+kubectl delete rs/my-helloworld-rs
+[or]
+kubectl delete rs my-helloworld-rs
+
+# Verify if ReplicaSet got deleted
+kubectl get rs
+```
+
+### Step-06-02: Delete Service created for ReplicaSet
+```t
+# Delete Service
+kubectl delete svc <service-name>
+
+# Sample Commands
+kubectl delete svc my-helloworld-rs-service
+[or]
+kubectl delete svc/my-helloworld-rs-service
+
+# Verify if Service got deleted
+kubectl get svc
+```
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl create -f replicaset-kk.yml
+replicaset.apps/kubenginx-rs created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs
+kNAME               DESIRED   CURRENT   READY   AGE
+kubenginx-rs       3         3         3       14s
+my-helloworld-rs   3         3         3       60m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl expose rs kubenginx-rs --port=80 --target-port=80 --name=kk-svc
+service/kk-svc exposed
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs -o wide
+NAME               DESIRED   CURRENT   READY   AGE   CONTAINERS          IMAGES                                SELECTOR
+kubenginx-rs       3         3         3       75s   kubenginx           stacksimplify/kubenginx:1.0.0         application=kubenginx
+my-helloworld-rs   3         3         3       61m   my-helloworld-app   stacksimplify/kube-helloworld:1.0.0   app=my-helloworld
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get pods -o wide
+NAME                     READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+kubenginx-rs-dzwd5       1/1     Running   0          82s   10.56.1.13   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+kubenginx-rs-rg4zv       1/1     Running   0          82s   10.56.0.16   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+kubenginx-rs-ss69p       1/1     Running   0          82s   10.56.2.22   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+my-helloworld-rs-9bzmx   1/1     Running   0          61m   10.56.1.10   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+my-helloworld-rs-j4g89   1/1     Running   0          61m   10.56.2.19   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+my-helloworld-rs-kxs8c   1/1     Running   0          61m   10.56.0.11   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get svc -o wide
+NAME                      TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)        AGE   SELECTOR
+kk-svc                    ClusterIP      10.60.13.233   <none>         80/TCP         21s   application=kubenginx
+kubernetes                ClusterIP      10.60.0.1      <none>         443/TCP        8d    <none>
+my-helloworld-rs-80-svc   LoadBalancer   10.60.10.133   34.171.51.21   80:32718/TCP   39m   app=my-helloworld
+my-helloworld-rs-svc      LoadBalancer   10.60.13.67    34.16.94.250   80:30187/TCP   42m   app=my-helloworld
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get svc -o wide
+NAME                      TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)        AGE   SELECTOR
+kk-svc                    ClusterIP      10.60.13.233   <none>         80/TCP         87s   application=kubenginx
+kubernetes                ClusterIP      10.60.0.1      <none>         443/TCP        8d    <none>
+my-helloworld-rs-80-svc   LoadBalancer   10.60.10.133   34.171.51.21   80:32718/TCP   40m   app=my-helloworld
+my-helloworld-rs-svc      LoadBalancer   10.60.13.67    34.16.94.250   80:30187/TCP   43m   app=my-helloworld
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get svc -o wide
+NAME                      TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)        AGE    SELECTOR
+kk-svc                    ClusterIP      10.60.13.233   <none>         80/TCP         103s   application=kubenginx
+kubernetes                ClusterIP      10.60.0.1      <none>         443/TCP        8d     <none>
+my-helloworld-rs-80-svc   LoadBalancer   10.60.10.133   34.171.51.21   80:32718/TCP   41m    app=my-helloworld
+my-helloworld-rs-svc      LoadBalancer   10.60.13.67    34.16.94.250   80:30187/TCP   43m    app=my-helloworld
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl delete svc my-helloworld-rs-80-svc my-helloworld-rs-svc
+service "my-helloworld-rs-80-svc" deleted
+service "my-helloworld-rs-svc" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get svc -o wide
+NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE     SELECTOR
+kk-svc       ClusterIP   10.60.13.233   <none>        80/TCP    2m47s   application=kubenginx
+kubernetes   ClusterIP   10.60.0.1      <none>        443/TCP   8d      <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl expose rs kubenginx-rs --port=80 --target-port=80 --name=kk-svc-lb --type=LoadBalanc
+er
+service/kk-svc-lb exposed
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get svc -o wide
+NAME         TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE     SELECTOR
+kk-svc       ClusterIP      10.60.13.233   <none>        80/TCP         3m12s   application=kubenginx
+kk-svc-lb    LoadBalancer   10.60.9.200    <pending>     80:32027/TCP   3s      application=kubenginx
+kubernetes   ClusterIP      10.60.0.1      <none>        443/TCP        8d      <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get svc -o wide
+NAME         TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE     SELECTOR
+kk-svc       ClusterIP      10.60.13.233   <none>          80/TCP         3m53s   application=kubenginx
+kk-svc-lb    LoadBalancer   10.60.9.200    34.172.255.48   80:32027/TCP   44s     application=kubenginx
+kubernetes   ClusterIP      10.60.0.1      <none>          443/TCP        8d      <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs
+NAME               DESIRED   CURRENT   READY   AGE
+kubenginx-rs       3         3         3       5m39s
+my-helloworld-rs   3         3         3       66m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get rs -o wide
+NAME               DESIRED   CURRENT   READY   AGE     CONTAINERS          IMAGES                                SELECTOR
+kubenginx-rs       3         3         3       5m44s   kubenginx           stacksimplify/kubenginx:1.0.0         application=kubenginx
+my-helloworld-rs   3         3         3       66m     my-helloworld-app   stacksimplify/kube-helloworld:1.0.0   app=my-helloworld
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+kubenginx-rs-dzwd5       1/1     Running   0          5m50s
+kubenginx-rs-rg4zv       1/1     Running   0          5m50s
+kubenginx-rs-ss69p       1/1     Running   0          5m50s
+my-helloworld-rs-9bzmx   1/1     Running   0          66m
+my-helloworld-rs-j4g89   1/1     Running   0          66m
+my-helloworld-rs-kxs8c   1/1     Running   0          66m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get pods -o wide
+NAME                     READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES
+kubenginx-rs-dzwd5       1/1     Running   0          5m54s   10.56.1.13   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+kubenginx-rs-rg4zv       1/1     Running   0          5m54s   10.56.0.16   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+kubenginx-rs-ss69p       1/1     Running   0          5m54s   10.56.2.22   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+my-helloworld-rs-9bzmx   1/1     Running   0          66m     10.56.1.10   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+my-helloworld-rs-j4g89   1/1     Running   0          66m     10.56.2.19   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+my-helloworld-rs-kxs8c   1/1     Running   0          66m     10.56.0.11   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get svc
+NAME         TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE
+kk-svc       ClusterIP      10.60.13.233   <none>          80/TCP         4m59s
+kk-svc-lb    LoadBalancer   10.60.9.200    34.172.255.48   80:32027/TCP   110s
+kubernetes   ClusterIP      10.60.0.1      <none>          443/TCP        8d
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get svc -o wide
+NAME         TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE    SELECTOR
+kk-svc       ClusterIP      10.60.13.233   <none>          80/TCP         5m3s   application=kubenginx
+kk-svc-lb    LoadBalancer   10.60.9.200    34.172.255.48   80:32027/TCP   114s   application=kubenginx
+kubernetes   ClusterIP      10.60.0.1      <none>          443/TCP        8d     <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl describe rs kubenginx-rs
+Name:         kubenginx-rs
+Namespace:    default
+Selector:     application=kubenginx
+Labels:       application=kubenginx
+Annotations:  <none>
+Replicas:     3 current / 3 desired
+Pods Status:  3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  application=kubenginx
+  Containers:
+   kubenginx:
+    Image:        stacksimplify/kubenginx:1.0.0
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Events:
+  Type    Reason            Age    From                   Message
+  ----    ------            ----   ----                   -------
+  Normal  SuccessfulCreate  6m35s  replicaset-controller  Created pod: kubenginx-rs-rg4zv
+  Normal  SuccessfulCreate  6m35s  replicaset-controller  Created pod: kubenginx-rs-ss69p
+  Normal  SuccessfulCreate  6m35s  replicaset-controller  Created pod: kubenginx-rs-dzwd5
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl describe svc kk-svc-lb
+Name:                     kk-svc-lb
+Namespace:                default
+Labels:                   application=kubenginx
+Annotations:              cloud.google.com/neg: {"ingress":true}
+Selector:                 application=kubenginx
+Type:                     LoadBalancer
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.60.9.200
+IPs:                      10.60.9.200
+LoadBalancer Ingress:     34.172.255.48
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  32027/TCP
+Endpoints:                10.56.0.16:80,10.56.1.13:80,10.56.2.22:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason                Age    From                Message
+  ----    ------                ----   ----                -------
+  Normal  EnsuringLoadBalancer  2m30s  service-controller  Ensuring load balancer
+  Normal  EnsuredLoadBalancer   111s   service-controller  Ensured load balancer
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl describe pods kubenginx-rs-dzwd5
+Name:             kubenginx-rs-dzwd5
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-gke-public-standard--default-pool-0bc48b90-3jtt/10.128.0.29
+Start Time:       Fri, 18 Aug 2023 18:38:53 +0800
+Labels:           application=kubenginx
+Annotations:      <none>
+Status:           Running
+IP:               10.56.1.13
+IPs:
+  IP:           10.56.1.13
+Controlled By:  ReplicaSet/kubenginx-rs
+Containers:
+  kubenginx:
+    Container ID:   containerd://d2b8996da873425f4f907fe7211318401fe09f18eeedfd5cb46740a0a625bd2b
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Fri, 18 Aug 2023 18:38:59 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-84z86 (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-84z86:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  7m3s   default-scheduler  Successfully assigned default/kubenginx-rs-dzwd5 to gke-gke-public-standard--default-pool-0bc48b90-3jtt
+  Normal  Pulling    7m2s   kubelet            Pulling image "stacksimplify/kubenginx:1.0.0"
+  Normal  Pulled     6m57s  kubelet            Successfully pulled image "stacksimplify/kubenginx:1.0.0" in 4.991225598s (4.991269855s including waiting)
+  Normal  Created    6m57s  kubelet            Created container kubenginx
+  Normal  Started    6m57s  kubelet            Started container kubenginx
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get all
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/kubenginx-rs-dzwd5       1/1     Running   0          8m30s
+pod/kubenginx-rs-rg4zv       1/1     Running   0          8m30s
+pod/kubenginx-rs-ss69p       1/1     Running   0          8m30s
+pod/my-helloworld-rs-9bzmx   1/1     Running   0          68m
+pod/my-helloworld-rs-j4g89   1/1     Running   0          68m
+pod/my-helloworld-rs-kxs8c   1/1     Running   0          68m
+
+NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE
+service/kk-svc       ClusterIP      10.60.13.233   <none>          80/TCP         7m24s
+service/kk-svc-lb    LoadBalancer   10.60.9.200    34.172.255.48   80:32027/TCP   4m15s
+service/kubernetes   ClusterIP      10.60.0.1      <none>          443/TCP        8d
+
+NAME                               DESIRED   CURRENT   READY   AGE
+replicaset.apps/kubenginx-rs       3         3         3       8m32s
+replicaset.apps/my-helloworld-rs   3         3         3       69m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl delete svc kk-svc kk-svc-lb
+service "kk-svc" deleted
+service "kk-svc-lb" deleted
+kubectl delete rs kubenginx-rs
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl delete rs kubenginx-rs
+replicaset.apps "kubenginx-rs" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get all
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/my-helloworld-rs-9bzmx   1/1     Running   0          69m
+pod/my-helloworld-rs-j4g89   1/1     Running   0          69m
+pod/my-helloworld-rs-kxs8c   1/1     Running   0          69m
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.60.0.1    <none>        443/TCP   8d
+
+NAME                               DESIRED   CURRENT   READY   AGE
+replicaset.apps/my-helloworld-rs   3         3         3       69m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl delete rs my-helloworld-rs
+replicaset.apps "my-helloworld-rs" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.60.0.1    <none>        443/TCP   8d
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
+

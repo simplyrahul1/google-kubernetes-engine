@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: kubenginx-rs
+  labels:
+    application: kubenginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      application: kubenginx
+  template:
+    metadata:
+      labels:
+        application: kubenginx
+    spec:
+      containers:
+      - name: kubenginx
+        image: stacksimplify/kubenginx:1.0.0
