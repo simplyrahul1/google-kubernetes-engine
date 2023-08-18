@@ -647,3 +647,48 @@ NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 service/kubernetes   ClusterIP   10.60.0.1    <none>        443/TCP   8d
 rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
 
+#####
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run my-helloworld --image stacksimplify/kubenginx:1.0.0
+pod/my-helloworld created
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl get pods                                               
+NAME            READY   STATUS    RESTARTS   AGE
+my-helloworld   1/1     Running   0          20s
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl get pods -o wide
+NAME            READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+my-helloworld   1/1     Running   0          87s   172.17.0.3   minikube   <none>           <none>
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run mycurlpod --image=curlimages/curl -i --tty -- sh
+If you don't see a command prompt, try pressing enter.
+~ $ ifconfig
+eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:04  
+          inet addr:172.17.0.4  Bcast:172.17.255.255  Mask:255.255.0.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+~ $ curl http://172.17.0.3
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>~ $ exit
+Session ended, resume using 'kubectl attach mycurlpod -c mycurlpod -i -t' command when the pod is running
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % 
+
+
