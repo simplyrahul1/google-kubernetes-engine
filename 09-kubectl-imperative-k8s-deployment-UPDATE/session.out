@@ -1,0 +1,407 @@
+---
+title: Kubernetes - Update Deployment
+description: Learn and Implement Kubernetes Update Deployment
+---
+## Step-00: Introduction
+- We can update deployments using two options
+  - Set Image
+  - Edit Deployment
+
+## Step-01: Updating Application version V1 to V2 using "Set Image" Option
+### Update Deployment
+- **Observation:** Please Check the container name in `spec.container.name` yaml output and make a note of it and 
+replace in `kubectl set image` command <Container-Name>
+```t
+# Get Container Name from current deployment
+kubectl get deployment my-first-deployment -o yaml
+
+# Update Deployment - SHOULD WORK NOW
+kubectl set image deployment/<Deployment-Name> <Container-Name>=<Container-Image> 
+kubectl set image deployment/my-first-deployment kubenginx=stacksimplify/kubenginx:2.0.0 
+```
+
+### Verify Rollout Status (Deployment Status)
+- **Observation:** By default, rollout happens in a rolling update model, so no downtime.
+```t
+# Verify Rollout Status 
+kubectl rollout status deployment/my-first-deployment
+
+# Verify Deployment
+kubectl get deploy
+```
+### Describe Deployment
+- **Observation:**
+  - Verify the Events and understand that Kubernetes by default do  "Rolling Update"  for new application releases. 
+  - With that said, we will not have downtime for our application.
+```t
+# Descibe Deployment
+kubectl describe deployment my-first-deployment
+```
+### Verify ReplicaSet
+- **Observation:** New ReplicaSet will be created for new version
+```t
+# Verify ReplicaSet
+kubectl get rs
+```
+
+### Verify Pods
+- **Observation:** Pod template hash label of new replicaset should be present for PODs letting us 
+know these pods belong to new ReplicaSet.
+```t
+# List Pods
+kubectl get po
+```
+### Access the Application using Public IP
+- We should see `Application Version:V2` whenever we access the application in browser
+```t
+# Get Load Balancer IP
+kubectl get svc
+
+# Application URL
+http://<External-IP-from-get-service-output>
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+sara-deployment-58b4768b87-9rmvw   1/1     Running   0          8h
+sara-deployment-58b4768b87-rzbc5   1/1     Running   0          8h
+sara-deployment-58b4768b87-xlpbg   1/1     Running   0          8h
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get deploy
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+sara-deployment   3/3     3            3           8h
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl describe deploy sara-deployment
+Name:                   sara-deployment
+Namespace:              default
+CreationTimestamp:      Sat, 19 Aug 2023 13:29:40 +0800
+Labels:                 app=sara-deployment
+Annotations:            deployment.kubernetes.io/revision: 1
+                        kubernetes.io/change-cause: Deployment Create - App version 1.0.0
+Selector:               app=sara-deployment
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=sara-deployment
+  Containers:
+   kubenginx:
+    Image:        stacksimplify/kubenginx:1.0.0
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      True    MinimumReplicasAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   sara-deployment-58b4768b87 (3/3 replicas created)
+Events:          <none>
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl set image deployment/sara-deployment kubenginx=stacksimplify/kubenginx:2.0.0
+deployment.apps/sara-deployment image updated
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl rollout status deployment/sara-deployment
+deployment "sara-deployment" successfully rolled out
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl describe deploy sara-deployment
+Name:                   sara-deployment
+Namespace:              default
+CreationTimestamp:      Sat, 19 Aug 2023 13:29:40 +0800
+Labels:                 app=sara-deployment
+Annotations:            deployment.kubernetes.io/revision: 2
+                        kubernetes.io/change-cause: Deployment Create - App version 1.0.0
+Selector:               app=sara-deployment
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=sara-deployment
+  Containers:
+   kubenginx:
+    Image:        stacksimplify/kubenginx:2.0.0
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  sara-deployment-58b4768b87 (0/0 replicas created)
+NewReplicaSet:   sara-deployment-544b7fcc64 (3/3 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  39s   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 1
+  Normal  ScalingReplicaSet  36s   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 2 from 3
+  Normal  ScalingReplicaSet  36s   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 2 from 1
+  Normal  ScalingReplicaSet  33s   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 1 from 2
+  Normal  ScalingReplicaSet  33s   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 3 from 2
+  Normal  ScalingReplicaSet  30s   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 0 from 1
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get rs
+NAME                         DESIRED   CURRENT   READY   AGE
+sara-deployment-544b7fcc64   3         3         3       60s
+sara-deployment-58b4768b87   0         0         0       8h
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+sara-deployment-544b7fcc64-48xsk   1/1     Running   0          69s
+sara-deployment-544b7fcc64-9htf9   1/1     Running   0          63s
+sara-deployment-544b7fcc64-qjzmq   1/1     Running   0          66s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get svc
+NAME                     TYPE           CLUSTER-IP   EXTERNAL-IP      PORT(S)        AGE
+kubernetes               ClusterIP      10.60.0.1    <none>           443/TCP        10d
+sara-deployment-lb-svc   LoadBalancer   10.60.4.15   35.193.231.174   80:30497/TCP   8h
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl run -it --rm tempcurlpod --image=curlimages/curl --restart=Never -- http://35.193.231.174
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl run -it --rm tempcurlpod --image=curlimages/curl --restart=Never -- http://10.60.4.15
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$
+
+```
+
+### Update Change-Cause for the Kubernetes Deployment - Rollout History
+- **Observation:** We have the rollout history, so we can switch back to older revisions using revision history available to us.  
+```t
+# Verify Rollout History
+kubectl rollout history deployment/my-first-deployment
+
+# Update REVISION CHANGE-CAUSE
+kubectl annotate deployment/my-first-deployment kubernetes.io/change-cause="Deployment UPDATE - App Version 2.0.0 - SET IMAGE OPTION"
+
+# Verify Rollout History
+kubectl rollout history deployment/my-first-deployment
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl rollout history deployment/sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+1         Deployment Create - App version 1.0.0
+2         Deployment Create - App version 1.0.0
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl annotate deployment/sara-deployment kubernetes.io/change-cause="Deployment upda
+te - App Version 2.0.0 - Set Image option"
+deployment.apps/sara-deployment annotate
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl rollout history deployment/sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+1         Deployment Create - App version 1.0.0
+2         Deployment update - App Version 2.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$
+
+```
+
+
+## Step-02: Update the Application from V2 to V3 using "Edit Deployment" Option
+### Edit Deployment
+```t
+# Edit Deployment
+kubectl edit deployment/<Deployment-Name> 
+kubectl edit deployment/my-first-deployment 
+```
+
+```yaml
+# Change From 2.0.0
+    spec:
+      containers:
+      - image: stacksimplify/kubenginx:2.0.0
+
+# Change To 3.0.0
+    spec:
+      containers:
+      - image: stacksimplify/kubenginx:3.0.0
+```
+
+
+### Verify Rollout Status
+- **Observation:** Rollout happens in a rolling update model, so no downtime.
+```t
+# Verify Rollout Status 
+kubectl rollout status deployment/my-first-deployment
+
+# Describe Deployment
+kubectl describe deployment/my-first-deployment
+```
+### Verify Replicasets
+- **Observation:**  We should see 3 ReplicaSets now, as we have updated our application to 3rd version 3.0.0
+```t
+# Verify ReplicaSet and Pods
+kubectl get rs
+kubectl get po
+```
+
+### Access the Application using Public IP
+- We should see `Application Version:V3` whenever we access the application in browser
+```t
+# Get Load Balancer IP
+kubectl get svc
+
+# Application URL
+http://<External-IP-from-get-service-output>
+```
+
+### Update Change-Cause for the Kubernetes Deployment - Rollout History
+- **Observation:** We have the rollout history, so we can switch back to older revisions using revision history available to us. 
+```t
+# Verify Rollout History
+kubectl rollout history deployment/my-first-deployment
+
+# Update REVISION CHANGE-CAUSE
+kubectl annotate deployment/my-first-deployment kubernetes.io/change-cause="Deployment UPDATE - App Version 3.0.0 - EDIT DEPLOYMENT OPTION"
+
+# Verify Rollout History
+kubectl rollout history deployment/my-first-deployment
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl edit deployment sara-deployment
+deployment.apps/sara-deployment edited
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get deployment sara-deployment
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+sara-deployment   3/3     3            3           8h
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get rs
+NAME                         DESIRED   CURRENT   READY   AGE
+sara-deployment-544b7fcc64   0         0         0       13m
+sara-deployment-58b4768b87   0         0         0       8h
+sara-deployment-8b5f9c8fc    3         3         3       16s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get deployment sara-deployment
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+sara-deployment   3/3     3            3           8h
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get pods -o wide
+NAME                              READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+sara-deployment-8b5f9c8fc-6cp6j   1/1     Running   0          26s   10.56.0.9    gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+sara-deployment-8b5f9c8fc-mw55r   1/1     Running   0          32s   10.56.1.14   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+sara-deployment-8b5f9c8fc-xlrcf   1/1     Running   0          29s   10.56.2.28   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl get svc -o wide
+NAME                     TYPE           CLUSTER-IP   EXTERNAL-IP      PORT(S)        AGE   SELECTOR
+kubernetes               ClusterIP      10.60.0.1    <none>           443/TCP        10d   <none>
+sara-deployment-lb-svc   LoadBalancer   10.60.4.15   35.193.231.174   80:30497/TCP   8h    app=sara-deployment
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl run -it --rm tempcurlpod --image=curlimages/curl --restart=Never -- http://10.6
+0.4.15
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(250, 210, 242);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V3</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl run -it --rm tempcurlpod --image=curlimages/curl --restart=Never -- http://35.1
+93.231.174
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpod, falling back to streaming logs: unable to upgrade connection: container tempcurlpod not found in pod tempcurlpod_default
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(250, 210, 242);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V3</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl rollout status deploy sara-deployment
+deployment "sara-deployment" successfully rolled out
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl describe deploy sara-deployment
+Name:                   sara-deployment
+Namespace:              default
+CreationTimestamp:      Sat, 19 Aug 2023 13:29:40 +0800
+Labels:                 app=sara-deployment
+Annotations:            deployment.kubernetes.io/revision: 3
+                        kubernetes.io/change-cause: Deployment update - App Version 2.0.0 - Set Image option
+Selector:               app=sara-deployment
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=sara-deployment
+  Containers:
+   kubenginx:
+    Image:        stacksimplify/kubenginx:3.0.0
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  sara-deployment-58b4768b87 (0/0 replicas created), sara-deployment-544b7fcc64 (0/0 replicas created)
+NewReplicaSet:   sara-deployment-8b5f9c8fc (3/3 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  14m   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 1
+  Normal  ScalingReplicaSet  14m   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 2 from 3
+  Normal  ScalingReplicaSet  14m   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 2 from 1
+  Normal  ScalingReplicaSet  14m   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 1 from 2
+  Normal  ScalingReplicaSet  14m   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 3 from 2
+  Normal  ScalingReplicaSet  14m   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 0 from 1
+  Normal  ScalingReplicaSet  102s  deployment-controller  Scaled up replica set sara-deployment-8b5f9c8fc to 1
+  Normal  ScalingReplicaSet  99s   deployment-controller  Scaled down replica set sara-deployment-544b7fcc64 to 2 from 3
+  Normal  ScalingReplicaSet  99s   deployment-controller  Scaled up replica set sara-deployment-8b5f9c8fc to 2 from 1
+  Normal  ScalingReplicaSet  96s   deployment-controller  Scaled down replica set sara-deployment-544b7fcc64 to 1 from 2
+  Normal  ScalingReplicaSet  96s   deployment-controller  Scaled up replica set sara-deployment-8b5f9c8fc to 3 from 2
+  Normal  ScalingReplicaSet  93s   deployment-controller  Scaled down replica set sara-deployment-544b7fcc64 to 0 from 1
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl rollout status deploy sara-deployment
+deployment "sara-deployment" successfully rolled out
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+1         Deployment Create - App version 1.0.0
+2         Deployment update - App Version 2.0.0 - Set Image option
+3         Deployment update - App Version 2.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl annotate deployment/sara-deployment kubernetes.io/change-cause="Deployment upda
+te - App Version 3.0.0 - Set Image option"
+deployment.apps/sara-deployment annotate
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+1         Deployment Create - App version 1.0.0
+2         Deployment update - App Version 2.0.0 - Set Image option
+3         Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/09-kubectl-imperative-k8s-deployment-UPDATE$
+
+
+
+```
