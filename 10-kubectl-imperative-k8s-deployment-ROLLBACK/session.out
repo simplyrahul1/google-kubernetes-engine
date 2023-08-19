@@ -1,0 +1,317 @@
+---
+title: Kubernetes - Rollback Deployment
+description: Learn and Implement Kubernetes Rollback Deployment
+---
+
+## Step-00: Introduction
+- We can rollback a deployment in two ways.
+  - Previous Version
+  - Specific Version
+
+## Step-01: Rollback a Deployment to previous version
+
+### Check the Rollout History of a Deployment
+```t
+# List Deployment Rollout History
+kubectl rollout history deployment/<Deployment-Name>
+kubectl rollout history deployment/my-first-deployment  
+```
+
+### Verify changes in each revision
+- **Observation:** Review the "Annotations" and "Image" tags for clear understanding about changes.
+```t
+# List Deployment History with revision information
+kubectl rollout history deployment/my-first-deployment --revision=1
+kubectl rollout history deployment/my-first-deployment --revision=2
+kubectl rollout history deployment/my-first-deployment --revision=3
+```
+
+
+### Rollback to previous version
+- **Observation:** If we rollback, it will go back to revision-2 and its number increases to revision-4
+```t
+# Undo Deployment
+kubectl rollout undo deployment/my-first-deployment
+
+# List Deployment Rollout History
+kubectl rollout history deployment/my-first-deployment  
+```
+
+### Verify Deployment, Pods, ReplicaSets
+```t
+# Verify Deployment, Pods, ReplicaSets
+kubectl get deploy
+kubectl get rs
+kubectl get po
+kubectl describe deploy my-first-deployment
+```
+
+### Access the Application using Public IP
+- We should see `Application Version:V2` whenever we access the application in browser
+```t
+# Get Load Balancer IP
+kubectl get svc
+
+# Application URL
+http://<External-IP-from-get-service-output>
+```
+
+
+## Step-02: Rollback to specific revision
+### Check the Rollout History of a Deployment
+```t
+# List Deployment Rollout History
+kubectl rollout history deployment/<Deployment-Name>
+kubectl rollout history deployment/my-first-deployment 
+```
+### Rollback to specific revision
+```t
+# Rollback Deployment to Specific Revision
+kubectl rollout undo deployment/my-first-deployment --to-revision=3
+```
+
+### List Deployment History
+- **Observation:** If we rollback to revision 3, it will go back to revision-3 and its number increases to revision-5 in rollout history
+```t
+# List Deployment Rollout History
+kubectl rollout history deployment/my-first-deployment
+```
+
+
+### Access the Application using Public IP
+- We should see `Application Version:V3` whenever we access the application in browser
+```t
+# Get Load Balancer IP
+kubectl get svc
+
+# Application URL
+http://<Load-Balancer-IP>
+```
+
+## Step-03: Rolling Restarts of Application
+- Rolling restarts will kill the existing pods and recreate new pods in a rolling fashion. 
+```t
+# Rolling Restarts
+kubectl rollout restart deployment/<Deployment-Name>
+kubectl rollout restart deployment/my-first-deployment
+
+# Get list of Pods
+kubectl get po
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout status deploy sara-deployment
+deployment "sara-deployment" successfully rolled out
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+1         Deployment Create - App version 1.0.0
+2         Deployment update - App Version 2.0.0 - Set Image option
+3         Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout undo deploy sara-deployment
+deployment.apps/sara-deployment rolled back
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+1         Deployment Create - App version 1.0.0
+3         Deployment update - App Version 3.0.0 - Set Image option
+4         Deployment update - App Version 2.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ #kubectl rollout history deploy sara-deployment --to-revision=3
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl run -it --rm tempcurlpod --image=curlimages/curl --restart=Never -- http://35
+.193.231.174
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout history deploy sara-deployment --to-revision=3
+error: unknown flag: --to-revision
+See 'kubectl rollout history --help' for usage.
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout undoy deploy sara-deployment --to-revision=3
+error: unknown flag: --to-revision
+See 'kubectl rollout --help' for usage.
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout undo deploy sara-deployment --to-revision=3
+deployment.apps/sara-deployment rolled back
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+1         Deployment Create - App version 1.0.0
+4         Deployment update - App Version 2.0.0 - Set Image option
+5         Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl run -it --rm tempcurlpod --image=curlimages/curl --restart=Never -- http://35.193.231.174
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(250, 210, 242);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V3</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout undo deploy sara-deployment --to-revision=1
+deployment.apps/sara-deployment rolled back
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl run -it --rm tempcurlpodv1 --image=curlimages/curl --restart=Never -- http://
+35.193.231.174
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv1" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+4         Deployment update - App Version 2.0.0 - Set Image option
+5         Deployment update - App Version 3.0.0 - Set Image option
+6         Deployment Create - App version 1.0.0
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout undo deploy sara-deployment --to-revision=5
+deployment.apps/sara-deployment rolled back
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://
+35.193.231.174
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(250, 210, 242);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V3</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl get deploy sara-deployment
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+sara-deployment   3/3     3            3           9h
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl describe deploy sara-deployment
+Name:                   sara-deployment
+Namespace:              default
+CreationTimestamp:      Sat, 19 Aug 2023 13:29:40 +0800
+Labels:                 app=sara-deployment
+Annotations:            deployment.kubernetes.io/revision: 7
+                        kubernetes.io/change-cause: Deployment update - App Version 3.0.0 - Set Image option
+Selector:               app=sara-deployment
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=sara-deployment
+  Containers:
+   kubenginx:
+    Image:        stacksimplify/kubenginx:3.0.0
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  sara-deployment-58b4768b87 (0/0 replicas created), sara-deployment-544b7fcc64 (0/0 replicas created)
+NewReplicaSet:   sara-deployment-8b5f9c8fc (3/3 replicas created)
+Events:
+  Type    Reason             Age                   From                   Message
+  ----    ------             ----                  ----                   -------
+  Normal  ScalingReplicaSet  24m                   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 1
+  Normal  ScalingReplicaSet  24m                   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 2 from 3
+  Normal  ScalingReplicaSet  24m                   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 1 from 2
+  Normal  ScalingReplicaSet  24m                   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 3 from 2
+  Normal  ScalingReplicaSet  24m                   deployment-controller  Scaled down replica set sara-deployment-58b4768b87 to 0 from 1
+  Normal  ScalingReplicaSet  11m                   deployment-controller  Scaled up replica set sara-deployment-8b5f9c8fc to 1
+  Normal  ScalingReplicaSet  11m                   deployment-controller  Scaled down replica set sara-deployment-544b7fcc64 to 2 from 3
+  Normal  ScalingReplicaSet  11m                   deployment-controller  Scaled up replica set sara-deployment-8b5f9c8fc to 3 from 2
+  Normal  ScalingReplicaSet  3m18s                 deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 1 from 0
+  Normal  ScalingReplicaSet  3m17s (x2 over 24m)   deployment-controller  Scaled up replica set sara-deployment-544b7fcc64 to 2 from 1
+  Normal  ScalingReplicaSet  99s (x2 over 11m)     deployment-controller  Scaled up replica set sara-deployment-8b5f9c8fc to 2 from 1
+  Normal  ScalingReplicaSet  98s (x2 over 11m)     deployment-controller  Scaled down replica set sara-deployment-544b7fcc64 to 1 from 2
+  Normal  ScalingReplicaSet  96s (x2 over 11m)     deployment-controller  Scaled down replica set sara-deployment-544b7fcc64 to 0 from 1
+  Normal  ScalingReplicaSet  70s (x2 over 3m17s)   deployment-controller  Scaled down replica set sara-deployment-8b5f9c8fc to 2 from 3
+  Normal  ScalingReplicaSet  68s (x10 over 3m14s)  deployment-controller  (combined from similar events): Scaled up replica set sara-deployment-58b4768b87 to 3 from 2
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl get rs
+NAME                         DESIRED   CURRENT   READY   AGE
+sara-deployment-544b7fcc64   0         0         0       25m
+sara-deployment-58b4768b87   0         0         0       9h
+sara-deployment-8b5f9c8fc    3         3         3       12m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+4         Deployment update - App Version 2.0.0 - Set Image option
+6         Deployment Create - App version 1.0.0
+7         Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout undo deploy sara-deployment --to-revision=4
+deployment.apps/sara-deployment rolled back
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://35.193.231.174
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+6         Deployment Create - App version 1.0.0
+7         Deployment update - App Version 3.0.0 - Set Image option
+8         Deployment update - App Version 2.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl get rs
+NAME                         DESIRED   CURRENT   READY   AGE
+sara-deployment-544b7fcc64   3         3         3       25m
+sara-deployment-58b4768b87   0         0         0       9h
+sara-deployment-8b5f9c8fc    0         0         0       13m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout undo deploy sara-deployment --to-revision=7
+deployment.apps/sara-deployment rolled back
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+6         Deployment Create - App version 1.0.0
+8         Deployment update - App Version 2.0.0 - Set Image option
+9         Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl get rs
+NAME                         DESIRED   CURRENT   READY   AGE
+sara-deployment-544b7fcc64   0         0         0       26m
+sara-deployment-58b4768b87   0         0         0       9h
+sara-deployment-8b5f9c8fc    3         3         3       13m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://35.193.231.174
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(250, 210, 242);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V3</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl get pods
+NAME                              READY   STATUS    RESTARTS   AGE
+sara-deployment-8b5f9c8fc-7djqg   1/1     Running   0          29s
+sara-deployment-8b5f9c8fc-flf9m   1/1     Running   0          27s
+sara-deployment-8b5f9c8fc-h228q   1/1     Running   0          31s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl rollout restart deploy sara-deployment
+deployment.apps/sara-deployment restarted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl get deploy sara-deployment
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+sara-deployment   3/3     3            3           9h
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl get rs
+NAME                         DESIRED   CURRENT   READY   AGE
+sara-deployment-544b7fcc64   0         0         0       27m
+sara-deployment-58b4768b87   0         0         0       9h
+sara-deployment-5b77b9dfcd   3         3         3       19s
+sara-deployment-8b5f9c8fc    0         0         0       14m
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+sara-deployment-5b77b9dfcd-77t46   1/1     Running   0          29s
+sara-deployment-5b77b9dfcd-ljqpc   1/1     Running   0          27s
+sara-deployment-5b77b9dfcd-p5rpn   1/1     Running   0          31s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/10-kubectl-imperative-k8s-deployment-ROLLBACK$
+
+
+```
