@@ -647,3 +647,140 @@ NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 service/kubernetes   ClusterIP   10.60.0.1    <none>        443/TCP   8d
 rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/07-kubectl-declarative-k8s-ReplicaSets$
 
+########
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run my-helloworld --image stacksimplify/kubenginx:1.0.0
+pod/my-helloworld created
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl get pods                                               
+NAME            READY   STATUS    RESTARTS   AGE
+my-helloworld   1/1     Running   0          20s
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl get pods -o wide
+NAME            READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+my-helloworld   1/1     Running   0          87s   172.17.0.3   minikube   <none>           <none>
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run mycurlpod --image=curlimages/curl -i --tty -- sh
+If you don't see a command prompt, try pressing enter.
+~ $ ifconfig
+eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:04  
+          inet addr:172.17.0.4  Bcast:172.17.255.255  Mask:255.255.0.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+~ $ curl http://172.17.0.3
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>~ $ exit
+Session ended, resume using 'kubectl attach mycurlpod -c mycurlpod -i -t' command when the pod is running
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % 
+
+###
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run -it --rm mytempcurlpodv6 --image=curlimages/curl --restart=Never -- http://172.17.0.4 -vvv
+* processing: http://172.17.0.4
+*   Trying 172.17.0.4:80...
+* Connected to 172.17.0.4 (172.17.0.4) port 80
+> GET / HTTP/1.1
+> Host: 172.17.0.4
+> User-Agent: curl/8.2.1
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Server: nginx/1.17.10
+< Date: Fri, 18 Aug 2023 23:19:03 GMT
+< Content-Type: text/html
+< Content-Length: 218
+< Last-Modified: Sun, 17 May 2020 04:14:23 GMT
+< Connection: keep-alive
+< ETag: "5ec0ba1f-da"
+< Accept-Ranges: bytes
+< 
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+* Connection #0 to host 172.17.0.4 left intact
+</html>pod "mytempcurlpodv6" deleted
+
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run -it --rm mytempcurlpodv6 --image=curlimages/curl --restart=Never -- http://172.17.0.4    
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "mytempcurlpodv6" deleted
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % 
+
+###
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run -it --rm mybbpod --image=busybox --restart=Never -- sh -c "telnet 172.17.0.4 80"
+If you don't see a command prompt, try pressing enter.
+l
+HTTP/1.1 400 Bad Request
+Server: nginx/1.17.10
+Date: Fri, 18 Aug 2023 23:25:22 GMT
+Content-Type: text/html
+Content-Length: 158
+Connection: close
+
+<html>
+<head><title>400 Bad Request</title></head>
+<body>
+<center><h1>400 Bad Request</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+Connection closed by foreign host
+pod "mybbpod" deleted
+pod default/mybbpod terminated (Error)
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot %
+
+###
+
+Usage: wget 
+
+	--spider	Only check URL existence: $? is 0 if exists
+	--no-check-certificate	Don't validate the server's certificate
+	-T SEC		Network read timeout is SEC seconds
+
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run -it --rm mybbpod --image=busybox --restart=Never -- sh -c "wget --spider http://172.17.0.4"
+Connecting to 172.17.0.4 (172.17.0.4:80)
+remote file exists
+pod "mybbpod" deleted
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run -it --rm mybbpod --image=busybox --restart=Never -- sh -c "wget --spider -T 5 http://172.17.0.4"
+Connecting to 172.17.0.4 (172.17.0.4:80)
+remote file exists
+pod "mybbpod" deleted
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run -it --rm mybbpod --image=busybox --restart=Never -- sh -c "wget --spider -T 5 http://172.17.0.4:80"
+Connecting to 172.17.0.4:80 (172.17.0.4:80)
+remote file exists
+pod "mybbpod" deleted
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % kubectl run -it --rm mybbpod --image=busybox --restart=Never -- sh -c "wget --spider -T 5 http://172.17.0.4:8080"
+Connecting to 172.17.0.4:8080 (172.17.0.4:8080)
+wget: can't connect to remote host (172.17.0.4): Connection refused
+pod "mybbpod" deleted
+pod default/mybbpod terminated (Error)
+(base) rahulsinha@Mrunals-MacBook-Pro docuroot % 
