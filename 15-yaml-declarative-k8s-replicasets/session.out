@@ -1,0 +1,334 @@
+---
+title: Kubernetes ReplicaSets with YAML
+description: Learn to write and test Kubernetes ReplicaSets with YAML
+---
+
+## Step-01: Create ReplicaSet Definition
+- **01-replicaset-definition.yml**
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: myapp2-rs
+spec:
+  replicas: 3 # 3 Pods should exist at all times.
+  selector:  # Pods label should be defined in ReplicaSet label selector
+    matchLabels:
+      app: myapp2
+  template:
+    metadata:
+      name: myapp2-pod
+      labels:
+        app: myapp2 # Atleast 1 Pod label should match with ReplicaSet Label Selector
+    spec:
+      containers:
+      - name: myapp2
+        image: stacksimplify/kubenginx:2.0.0
+        ports:
+          - containerPort: 80
+```
+## Step-02: Create ReplicaSet
+- Create ReplicaSet with 3 Replicas
+```t
+# Create ReplicaSet
+kubectl apply -f 01-replicaset-definition.yml
+
+# List Replicasets
+kubectl get rs
+```
+- Delete a pod
+- ReplicaSet immediately creates the pod. 
+```t
+# List Pods
+kubectl get pods
+
+# Delete Pod
+kubectl delete pod <Pod-Name>
+```
+
+## Step-03: Create LoadBalancer Service for ReplicaSet
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicaset-loadbalancer-service
+spec:
+  type: LoadBalancer 
+  selector: 
+    app: myapp2 
+  ports: 
+    - name: http
+      port: 80
+      targetPort: 80
+     
+```
+- **Create LoadBalancer Service for ReplicaSet & Test**
+```t
+# Create LoadBalancer Service
+kubectl apply -f 02-replicaset-LoadBalancer-servie.yml
+
+# List LoadBalancer Service
+kubectl get svc
+
+# Access Application
+http://<Load-Balancer-Service-IP>
+```
+
+
+## Step-04: Clean-Up Kubernetes ReplicaSet and Service
+```t
+# Change Directory
+cd kube-manifests
+
+# Delete Pod
+kubectl delete -f 01-replicaset-definition.yml
+
+# Delete Service
+kubectl delete -f  02-replicaset-LoadBalancer-servie.yml
+```
+
+
+## API References
+- [ReplicaSet](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#replicaset-v1-apps)
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ cat kube-manifests/01-replicaset-definition.yml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata: # Dictionary
+  name: myapp2-rs
+spec: # Dictionary
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp2
+  template:
+    metadata: # Dictionary
+      name: myapp2-pod
+      labels:
+        app: myapp2 # Key Value Pairs
+    spec:
+      containers: # List
+        - name: myapp2-container
+          image: stacksimplify/kubenginx:2.0.0
+          ports:
+            - containerPort: 80          
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ kubectl apply -f kube-manifests/01-replicaset-definition.yml
+replicaset.apps/myapp2-rs created
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ cat kube-manifests/02-replicaset-LoadBalancer-servie.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicaset-loadbalancer-service
+spec:
+  type: LoadBalancer
+  # Loadbalance traffic across Pods matching this label selector
+  selector:
+    app: myapp2
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ kubectl apply -f kube-manifests/02-replicaset-LoadBalancer-servie.yml
+service/replicaset-loadbalancer-service created
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ kubectl get all -o wide
+NAME                  READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/myapp2-rs-lh76c   1/1     Running   0          45s   10.56.0.49   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+pod/myapp2-rs-p85fx   1/1     Running   0          45s   10.56.1.36   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/myapp2-rs-xdxmx   1/1     Running   0          45s   10.56.2.39   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+
+NAME                                      TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+service/kubernetes                        ClusterIP      10.60.0.1      <none>        443/TCP        10d   <none>
+service/replicaset-loadbalancer-service   LoadBalancer   10.60.10.118   <pending>     80:32085/TCP   8s    app=myapp2
+
+NAME                        DESIRED   CURRENT   READY   AGE   CONTAINERS         IMAGES                          SELECTOR
+replicaset.apps/myapp2-rs   3         3         3       46s   myapp2-container   stacksimplify/kubenginx:2.0.0   app=myapp2
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ for i in 10.56.0.49 10.56.1.36 10.56.2.39 10.60.10.118 ; do kubectl run -it tempcurlpod`echo $i
+ | awk -F "." '{print $4}'` --image=curlimages/curl --rm --restart=Never -- http://${i} ; done
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+</html>pod "tempcurlpod49" deleted
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+</html>pod "tempcurlpod36" deleted
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+</html>pod "tempcurlpod39" deleted
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+</html>pod "tempcurlpod118" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ for i in 10.56.0.49 10.56.1.36 10.56.2.39 10.60.10.118 ; do kubectl run -it tempcurlpod`echo $i | awk -F "." '{print $4}'` --image=curlimages/curl --rm --restart=Never -- http://${i} -v ; done
+* processing: http://10.56.0.49
+*   Trying 10.56.0.49:80...
+* Connected to 10.56.0.49 (10.56.0.49) port 80
+> GET / HTTP/1.1
+> Host: 10.56.0.49
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 07:13:37 GMT
+< Content-Type: text/html
+< Content-Length: 216
+< Last-Modified: Sun, 17 May 2020 04:30:51 GMT
+< Connection: keep-alive
+< ETag: "5ec0bdfb-d8"
+< Accept-Ranges: bytes
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+* Connection #0 to host 10.56.0.49 left intact
+</html>pod "tempcurlpod49" deleted
+* processing: http://10.56.1.36
+*   Trying 10.56.1.36:80...
+* Connected to 10.56.1.36 (10.56.1.36) port 80
+> GET / HTTP/1.1
+> Host: 10.56.1.36
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 07:13:42 GMT
+< Content-Type: text/html
+< Content-Length: 216
+< Last-Modified: Sun, 17 May 2020 04:30:51 GMT
+< Connection: keep-alive
+< ETag: "5ec0bdfb-d8"
+< Accept-Ranges: bytes
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+* Connection #0 to host 10.56.1.36 left intact
+</html>pod "tempcurlpod36" deleted
+* processing: http://10.56.2.39
+*   Trying 10.56.2.39:80...
+* Connected to 10.56.2.39 (10.56.2.39) port 80
+> GET / HTTP/1.1
+> Host: 10.56.2.39
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 07:13:47 GMT
+< Content-Type: text/html
+< Content-Length: 216
+< Last-Modified: Sun, 17 May 2020 04:30:51 GMT
+< Connection: keep-alive
+< ETag: "5ec0bdfb-d8"
+< Accept-Ranges: bytes
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+* Connection #0 to host 10.56.2.39 left intact
+</html>pod "tempcurlpod39" deleted
+* processing: http://10.60.10.118
+*   Trying 10.60.10.118:80...
+* Connected to 10.60.10.118 (10.60.10.118) port 80
+> GET / HTTP/1.1
+> Host: 10.60.10.118
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 07:13:52 GMT
+< Content-Type: text/html
+< Content-Length: 216
+< Last-Modified: Sun, 17 May 2020 04:30:51 GMT
+< Connection: keep-alive
+< ETag: "5ec0bdfb-d8"
+< Accept-Ranges: bytes
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(210, 226, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V2</p>
+   </body>
+* Connection #0 to host 10.60.10.118 left intact
+</html>pod "tempcurlpod118" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ kubectl get rs -o wide
+NAME        DESIRED   CURRENT   READY   AGE     CONTAINERS         IMAGES                          SELECTOR
+myapp2-rs   3         3         3       7m51s   myapp2-container   stacksimplify/kubenginx:2.0.0   app=myapp2
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ kubectl get pods -o wide
+NAME              READY   STATUS    RESTARTS   AGE    IP           NODE                                                  NOMINATED NODE   READINESS GATES
+myapp2-rs-lh76c   1/1     Running   0          8m9s   10.56.0.49   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+myapp2-rs-p85fx   1/1     Running   0          8m9s   10.56.1.36   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+myapp2-rs-xdxmx   1/1     Running   0          8m9s   10.56.2.39   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ kubectl get svc -o wide
+NAME                              TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)        AGE     SELECTOR
+kubernetes                        ClusterIP      10.60.0.1      <none>         443/TCP        10d     <none>
+replicaset-loadbalancer-service   LoadBalancer   10.60.10.118   34.122.74.91   80:32085/TCP   7m42s   app=myapp2
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$ kubectl describe rs myapp2-rs
+Name:         myapp2-rs
+Namespace:    default
+Selector:     app=myapp2
+Labels:       <none>
+Annotations:  <none>
+Replicas:     3 current / 3 desired
+Pods Status:  3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=myapp2
+  Containers:
+   myapp2-container:
+    Image:        stacksimplify/kubenginx:2.0.0
+    Port:         80/TCP
+    Host Port:    0/TCP
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Events:
+  Type    Reason            Age    From                   Message
+  ----    ------            ----   ----                   -------
+  Normal  SuccessfulCreate  8m43s  replicaset-controller  Created pod: myapp2-rs-lh76c
+  Normal  SuccessfulCreate  8m43s  replicaset-controller  Created pod: myapp2-rs-p85fx
+  Normal  SuccessfulCreate  8m43s  replicaset-controller  Created pod: myapp2-rs-xdxmx
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/15-yaml-declarative-k8s-replicasets$
