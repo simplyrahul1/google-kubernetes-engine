@@ -1,0 +1,296 @@
+---
+title: Kubernetes - Pause & Resume Deployments
+description: Implement Kubernetes - Pause & Resume Deployments
+---
+## Step-00: Introduction
+- Why do we need Pausing & Resuming Deployments?
+  - If we want to make multiple changes to our Deployment, we can pause the deployment make all changes and resume it. 
+- We are going to update our Application Version from **V3 to V4** as part of learning "Pause and Resume Deployments"  
+
+## Step-01: Pausing & Resuming Deployments
+### Check current State of Deployment & Application
+ ```t
+# Check the Rollout History of a Deployment
+kubectl rollout history deployment/my-first-deployment  
+Observation: Make a note of last version number
+
+# Get list of ReplicaSets
+kubectl get rs
+Observation: Make a note of number of replicaSets present.
+
+# Access the Application 
+http://<External-IP-from-get-service-output>
+Observation: Make a note of application version
+```
+
+### Pause Deployment and Two Changes
+```t
+# Pause the Deployment
+kubectl rollout pause deployment/<Deployment-Name>
+kubectl rollout pause deployment/my-first-deployment
+
+# Update Deployment - Application Version from V3 to V4
+kubectl set image deployment/my-first-deployment kubenginx=stacksimplify/kubenginx:4.0.0 
+
+# Check the Rollout History of a Deployment
+kubectl rollout history deployment/my-first-deployment  
+Observation: No new rollout should start, we should see same number of versions as we check earlier with last version number matches which we have noted earlier.
+
+# Get list of ReplicaSets
+kubectl get rs
+Observation: No new replicaSet created. We should have same number of replicaSets as earlier when we took note. 
+
+# Make one more change: set limits to our container
+kubectl set resources deployment/my-first-deployment -c=kubenginx --limits=cpu=20m,memory=30Mi
+```
+### Resume Deployment 
+```t
+# Resume the Deployment
+kubectl rollout resume deployment/my-first-deployment
+
+# Check the Rollout History of a Deployment
+kubectl rollout history deployment/my-first-deployment  
+Observation: You should see a new version got created
+
+# Update REVISION CHANGE-CAUSE
+kubectl annotate deployment/my-first-deployment kubernetes.io/change-cause="Deployment PAUSE RESUME Demo - App Version 4.0.0 "
+
+# Check the Rollout History of a Deployment
+kubectl rollout history deployment/my-first-deployment
+
+# Get list of ReplicaSets
+kubectl get rs
+Observation: You should see new ReplicaSet.
+
+# Get Load Balancer IP
+kubectl get svc
+```
+### Access Application
+```t
+# Access the Application 
+http://<External-IP-from-get-service-output>
+Observation: You should see Application V4 version
+```
+
+
+## Step-02: Clean-Up
+```t
+# Delete Deployment
+kubectl delete deployment my-first-deployment
+
+# Delete Service
+kubectl delete svc my-first-deployment-service
+
+# Get all Objects from Kubernetes default namespace
+kubectl get all
+```
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+6         Deployment Create - App version 1.0.0
+8         Deployment update - App Version 2.0.0 - Set Image option
+9         Deployment update - App Version 3.0.0 - Set Image option
+10        Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl describe deploy sara-deployment
+Name:                   sara-deployment
+Namespace:              default
+CreationTimestamp:      Sat, 19 Aug 2023 13:29:40 +0800
+Labels:                 app=sara-deployment
+Annotations:            deployment.kubernetes.io/revision: 10
+                        kubernetes.io/change-cause: Deployment update - App Version 3.0.0 - Set Image option
+Selector:               app=sara-deployment
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:       app=sara-deployment
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2023-08-19T22:39:33+08:00
+  Containers:
+   kubenginx:
+    Image:        stacksimplify/kubenginx:3.0.0
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      True    MinimumReplicasAvailable
+OldReplicaSets:  sara-deployment-58b4768b87 (0/0 replicas created), sara-deployment-544b7fcc64 (0/0 replicas created), sara-deployment-8b5f9c8fc (0/0 replicas created)
+NewReplicaSet:   sara-deployment-5b77b9dfcd (3/3 replicas created)
+Events:          <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ #kubectl set image deploy sara-deployment kubenginx=stacksimplify/kubenginx:4.0.0
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout pause deploy sara-deployment
+deployment.apps/sara-deployment paused
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl set image deploy sara-deployment kubenginx=stacksimplify/kubenginx:4.0.0
+deployment.apps/sara-deployment image updated
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+6         Deployment Create - App version 1.0.0
+8         Deployment update - App Version 2.0.0 - Set Image option
+9         Deployment update - App Version 3.0.0 - Set Image option
+10        Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout status deploy sara-deployment
+Waiting for deployment "sara-deployment" rollout to finish: 0 out of 3 new replicas have been updated...
+^Crahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+6         Deployment Create - App version 1.0.0
+8         Deployment update - App Version 2.0.0 - Set Image option
+9         Deployment update - App Version 3.0.0 - Set Image option
+10        Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl get rs
+NAME                         DESIRED   CURRENT   READY   AGE
+sara-deployment-544b7fcc64   0         0         0       12h
+sara-deployment-58b4768b87   0         0         0       20h
+sara-deployment-5b77b9dfcd   3         3         3       11h
+sara-deployment-8b5f9c8fc    0         0         0       12h
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+sara-deployment-5b77b9dfcd-77t46   1/1     Running   0          11h
+sara-deployment-5b77b9dfcd-bpwb8   1/1     Running   0          6h54m
+sara-deployment-5b77b9dfcd-p5rpn   1/1     Running   0          11h
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl set resources deploy sara-deployment -c=kubenginx --limits=cpu=20m,memory
+=30Mi
+deployment.apps/sara-deployment resource requirements updated
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout status deploy sara-deployment
+Waiting for deployment "sara-deployment" rollout to finish: 0 out of 3 new replicas have been updated...
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl describe deploy sara-deployment
+Name:                   sara-deployment
+Namespace:              default
+CreationTimestamp:      Sat, 19 Aug 2023 13:29:40 +0800
+Labels:                 app=sara-deployment
+Annotations:            deployment.kubernetes.io/revision: 10
+                        kubernetes.io/change-cause: Deployment update - App Version 3.0.0 - Set Image option
+Selector:               app=sara-deployment
+Replicas:               3 desired | 0 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:       app=sara-deployment
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2023-08-19T22:39:33+08:00
+  Containers:
+   kubenginx:
+    Image:      stacksimplify/kubenginx:4.0.0
+    Port:       <none>
+    Host Port:  <none>
+    Limits:
+      cpu:        20m
+      memory:     30Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status   Reason
+  ----           ------   ------
+  Available      True     MinimumReplicasAvailable
+  Progressing    Unknown  DeploymentPaused
+OldReplicaSets:  sara-deployment-58b4768b87 (0/0 replicas created), sara-deployment-544b7fcc64 (0/0 replicas created), sara-deployment-8b5f9c8fc (0/0 replicas created), sara-deployment-5b77b9dfcd (3/3 replicas created)
+NewReplicaSet:   <none>
+Events:          <none>
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout resume deploy sara-deployment
+deployment.apps/sara-deployment resumed
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout status deploy sara-deployment
+Waiting for deployment "sara-deployment" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "sara-deployment" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "sara-deployment" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "sara-deployment" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "sara-deployment" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "sara-deployment" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "sara-deployment" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "sara-deployment" rollout to finish: 1 old replicas are pending termination...
+deployment "sara-deployment" successfully rolled out
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl get rs -o wide
+NAME                         DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                          SELECTOR
+sara-deployment-544b7fcc64   0         0         0       12h   kubenginx    stacksimplify/kubenginx:2.0.0   app=sara-deployment,pod-template-hash=544b7fcc64
+sara-deployment-58b4768b87   0         0         0       21h   kubenginx    stacksimplify/kubenginx:1.0.0   app=sara-deployment,pod-template-hash=58b4768b87
+sara-deployment-5b77b9dfcd   0         0         0       11h   kubenginx    stacksimplify/kubenginx:3.0.0   app=sara-deployment,pod-template-hash=5b77b9dfcd
+sara-deployment-8b5f9c8fc    0         0         0       12h   kubenginx    stacksimplify/kubenginx:3.0.0   app=sara-deployment,pod-template-hash=8b5f9c8fc
+sara-deployment-bf89fdf57    3         3         3       38s   kubenginx    stacksimplify/kubenginx:4.0.0   app=sara-deployment,pod-template-hash=bf89fdf57
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl get pods -o wide
+NAME                              READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+sara-deployment-bf89fdf57-bcmxz   1/1     Running   0          35s   10.56.2.37   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+sara-deployment-bf89fdf57-fm6gp   1/1     Running   0          41s   10.56.1.34   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+sara-deployment-bf89fdf57-g4xds   1/1     Running   0          51s   10.56.0.3    gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl get svc -o wide
+NAME                     TYPE           CLUSTER-IP   EXTERNAL-IP      PORT(S)        AGE   SELECTOR
+kubernetes               ClusterIP      10.60.0.1    <none>           443/TCP        10d   <none>
+sara-deployment-lb-svc   LoadBalancer   10.60.4.15   35.193.231.174   80:30497/TCP   20h   app=sara-deployment
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl run -it --rm tempcurlpod --image=curlimages/curl --restart=Never -- http://10.60.4.15
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(250, 210, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V4</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://35.193.231.174
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(250, 210, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V4</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+6         Deployment Create - App version 1.0.0
+8         Deployment update - App Version 2.0.0 - Set Image option
+9         Deployment update - App Version 3.0.0 - Set Image option
+10        Deployment update - App Version 3.0.0 - Set Image option
+11        Deployment update - App Version 3.0.0 - Set Image option
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl annotate deploy sara-deployment kubernetes.io/change-cause="Deployment PA
+USE RESUME - App Version 4.0.0 "
+deployment.apps/sara-deployment annotate
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl rollout history deploy sara-deployment
+deployment.apps/sara-deployment
+REVISION  CHANGE-CAUSE
+6         Deployment Create - App version 1.0.0
+8         Deployment update - App Version 2.0.0 - Set Image option
+9         Deployment update - App Version 3.0.0 - Set Image option
+10        Deployment update - App Version 3.0.0 - Set Image option
+11        Deployment PAUSE RESUME - App Version 4.0.0
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$ kubectl get all -o wide
+NAME                                  READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/sara-deployment-bf89fdf57-bcmxz   1/1     Running   0          3m20s   10.56.2.37   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+pod/sara-deployment-bf89fdf57-fm6gp   1/1     Running   0          3m26s   10.56.1.34   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/sara-deployment-bf89fdf57-g4xds   1/1     Running   0          3m36s   10.56.0.3    gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+
+NAME                             TYPE           CLUSTER-IP   EXTERNAL-IP      PORT(S)        AGE   SELECTOR
+service/kubernetes               ClusterIP      10.60.0.1    <none>           443/TCP        10d   <none>
+service/sara-deployment-lb-svc   LoadBalancer   10.60.4.15   35.193.231.174   80:30497/TCP   20h   app=sara-deployment
+
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                          SELECTOR
+deployment.apps/sara-deployment   3/3     3            3           21h   kubenginx    stacksimplify/kubenginx:4.0.0   app=sara-deployment
+
+NAME                                         DESIRED   CURRENT   READY   AGE     CONTAINERS   IMAGES                          SELECTOR
+replicaset.apps/sara-deployment-544b7fcc64   0         0         0       12h     kubenginx    stacksimplify/kubenginx:2.0.0   app=sara-deployment,pod-template-hash=544b7fcc64
+replicaset.apps/sara-deployment-58b4768b87   0         0         0       21h     kubenginx    stacksimplify/kubenginx:1.0.0   app=sara-deployment,pod-template-hash=58b4768b87
+replicaset.apps/sara-deployment-5b77b9dfcd   0         0         0       11h     kubenginx    stacksimplify/kubenginx:3.0.0   app=sara-deployment,pod-template-hash=5b77b9dfcd
+replicaset.apps/sara-deployment-8b5f9c8fc    0         0         0       12h     kubenginx    stacksimplify/kubenginx:3.0.0   app=sara-deployment,pod-template-hash=8b5f9c8fc
+replicaset.apps/sara-deployment-bf89fdf57    3         3         3       3m38s   kubenginx    stacksimplify/kubenginx:4.0.0   app=sara-deployment,pod-template-hash=bf89fdf57
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/11-kubectl-imperative-k8s-deployment-PAUSE-RESUME$
