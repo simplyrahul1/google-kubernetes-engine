@@ -1,0 +1,423 @@
+---
+title: Kubernetes Services with YAML
+description: Learn to write and test Kubernetes Services with YAML
+---
+
+## Step-01: Introduction to Services
+- We are going to look in to below two services in detail with a frotnend and backend example
+  - LoadBalancer Service
+  - ClusterIP Service
+
+## Step-02: Create Backend Deployment & Cluster IP Service
+- Write the Deployment template for backend REST application.
+- Write the Cluster IP service template for backend REST application.
+- **Important Notes:** 
+  - Name of Cluster IP service should be `name: my-backend-service` because  same is configured in frontend nginx reverse proxy `default.conf`. 
+  - Test with different name and understand the issue we face
+  - We have also discussed about in our  [Section-12](https://github.com/stacksimplify/google-kubernetes-engine/tree/main/12-kubectl-imperative-k8s-services)
+```t
+# Change Directory
+cd kube-manifests
+
+# Deploy Backend Kubernetes Deployment and ClusterIP Service 
+kubectl get all
+kubectl apply -f 01-backend-deployment.yml -f 02-backend-clusterip-service.yml
+kubectl get all
+```
+
+
+## Step-03: Create Frontend Deployment & LoadBalancer Service
+- Write the Deployment template for frontend Nginx Application
+- Write the LoadBalancer service template for frontend Nginx Application
+```t
+# Change Directory
+cd kube-manifests
+
+# Deploy Frontend Kubernetes Deployment and LoadBalancer Service 
+kubectl get all
+kubectl apply -f 03-frontend-deployment.yml -f 04-frontend-LoadBalancer-service.yml
+kubectl get all
+```
+- **Access REST Application**
+```t
+# Get Service IP
+kubectl get svc
+
+# Access REST Application 
+http://<Load-Balancer-Service-IP>/hello
+curl http://<Load-Balancer-Service-IP>/hello
+```
+
+## Step-04: Delete & Recreate Objects using kubectl apply
+### Delete Objects (file by file)
+```t
+# Change Directory 
+cd kube-manifests/
+
+# Delete Objects File by file
+kubectl delete -f 01-backend-deployment.yml -f 02-backend-clusterip-service.yml -f 03-frontend-deployment.yml -f 04-frontend-LoadBalancer-service.yml
+kubectl get all
+```
+### Recreate Objects using YAML files in a folder
+```t
+# Change Directory 
+cd 17-yaml-declarative-k8s-services/
+
+# Recreate Objects by referencing a folder
+kubectl apply -f kube-manifests/
+kubectl get all
+```
+
+### Delete Objects using YAML files in folder
+```t
+# Change Directory 
+cd 17-yaml-declarative-k8s-services/
+
+# Delete Objects by just referencing a folder
+kubectl delete -f kube-manifests/
+kubectl get all
+```
+
+
+## Additional References - Use Label Selectors for get and delete
+- [Labels](https://kubernetes.io/docs/concepts/cluster-administration/manage-deployment/#using-labels-effectively)
+- [Labels-Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors)
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ cat kube-manifests/0
+01-backend-deployment.yml             02-backend-clusterip-service.yml      03-frontend-deployment.yml            04-frontend-LoadBalancer-service.yml
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ cat kube-manifests/01-backend-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-restapp
+  labels:
+    app: backend-restapp
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend-restapp
+  template:
+    metadata:
+      labels:
+        app: backend-restapp
+        tier: backend
+    spec:
+      containers:
+        - name: backend-restapp
+          image: stacksimplify/kube-helloworld:1.0.0
+          ports:
+            - containerPort: 8080        
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ cat kube-manifests/02-backend-clusterip-service.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-backend-service ## VERY VERY IMPORTANT - NGINX PROXYPASS needs this name
+  labels:
+    app: backend-restapp
+    tier: backend
+spec:
+  #type: ClusterIP is a default service in k8s
+  selector:
+    app: backend-restapp
+  ports:
+    - name: http
+      port: 8080 # ClusterIP Service Port
+      targetPort: 8080 # Container Port
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ kubectl apply -f kube-manifests/01-backend-deployment.yml -f kube-manifests/02-backend-clusterip-service.yml
+deployment.apps/backend-restapp created
+service/my-backend-service created
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ kubectl get all -o wide
+NAME                                   READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/backend-restapp-67d54fcb55-gnvr5   1/1     Running   0          49s   10.56.0.64   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+pod/backend-restapp-67d54fcb55-l6n7l   1/1     Running   0          49s   10.56.1.38   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/backend-restapp-67d54fcb55-v82sn   1/1     Running   0          49s   10.56.2.41   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+
+NAME                         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE   SELECTOR
+service/kubernetes           ClusterIP   10.60.0.1      <none>        443/TCP    10d   <none>
+service/my-backend-service   ClusterIP   10.60.10.110   <none>        8080/TCP   49s   app=backend-restapp
+
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS        IMAGES                                SELECTOR
+deployment.apps/backend-restapp   3/3     3            3           50s   backend-restapp   stacksimplify/kube-helloworld:1.0.0   app=backend-restapp
+
+NAME                                         DESIRED   CURRENT   READY   AGE   CONTAINERS        IMAGES                                SELECTOR
+replicaset.apps/backend-restapp-67d54fcb55   3         3         3       50s   backend-restapp   stacksimplify/kube-helloworld:1.0.0   app=backend-restapp,pod-template-hash=67d54fcb55
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ cat kube-manifests/03-frontend-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-nginxapp
+  labels:
+    app: frontend-nginxapp
+    tier: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend-nginxapp
+  template:
+    metadata:
+      labels:
+        app: frontend-nginxapp
+        tier: frontend
+    spec:
+      containers:
+        - name: frontend-nginxapp
+          image: stacksimplify/kube-frontend-nginx:1.0.0
+          ports:
+            - containerPort: 80
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ cat kube-manifests/04-frontend-LoadBalancer-service.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-nginxapp-loadbalancer-service
+  labels:
+    app: frontend-nginxapp
+    tier: frontend
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: frontend-nginxapp
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ kubectl apply -f kube-manifests/03-frontend-deployment.yml -f kube-manifests/04-frontend-LoadBalancer-service.yml
+deployment.apps/frontend-nginxapp created
+service/frontend-nginxapp-loadbalancer-service created
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ kubectl get all -o wide
+NAME                                     READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/backend-restapp-67d54fcb55-gnvr5     1/1     Running   0          90s   10.56.0.64   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+pod/backend-restapp-67d54fcb55-l6n7l     1/1     Running   0          90s   10.56.1.38   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/backend-restapp-67d54fcb55-v82sn     1/1     Running   0          90s   10.56.2.41   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-fktlg   1/1     Running   0          6s    10.56.1.39   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-kttf7   1/1     Running   0          6s    10.56.2.42   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-pqdlg   1/1     Running   0          6s    10.56.0.65   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+
+NAME                                             TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+service/frontend-nginxapp-loadbalancer-service   LoadBalancer   10.60.7.197    <pending>     80:30492/TCP   5s    app=frontend-nginxapp
+service/kubernetes                               ClusterIP      10.60.0.1      <none>        443/TCP        10d   <none>
+service/my-backend-service                       ClusterIP      10.60.10.110   <none>        8080/TCP       89s   app=backend-restapp
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS          IMAGES                                    SELECTOR
+deployment.apps/backend-restapp     3/3     3            3           91s   backend-restapp     stacksimplify/kube-helloworld:1.0.0       app=backend-restapp
+deployment.apps/frontend-nginxapp   3/3     3            3           7s    frontend-nginxapp   stacksimplify/kube-frontend-nginx:1.0.0   app=frontend-nginxapp
+
+NAME                                           DESIRED   CURRENT   READY   AGE   CONTAINERS          IMAGES                                    SELECTOR
+replicaset.apps/backend-restapp-67d54fcb55     3         3         3       91s   backend-restapp     stacksimplify/kube-helloworld:1.0.0       app=backend-restapp,pod-template-hash=67d54fcb55
+replicaset.apps/frontend-nginxapp-6b669d6bf6   3         3         3       7s    frontend-nginxapp   stacksimplify/kube-frontend-nginx:1.0.0   app=frontend-nginxapp,pod-template-hash=6b669d6bf6
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ kubectl get all -o wide
+NAME                                     READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/backend-restapp-67d54fcb55-gnvr5     1/1     Running   0          2m15s   10.56.0.64   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+pod/backend-restapp-67d54fcb55-l6n7l     1/1     Running   0          2m15s   10.56.1.38   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/backend-restapp-67d54fcb55-v82sn     1/1     Running   0          2m15s   10.56.2.41   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-fktlg   1/1     Running   0          51s     10.56.1.39   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-kttf7   1/1     Running   0          51s     10.56.2.42   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-pqdlg   1/1     Running   0          51s     10.56.0.65   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+
+NAME                                             TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE     SELECTOR
+service/frontend-nginxapp-loadbalancer-service   LoadBalancer   10.60.7.197    35.224.77.7   80:30492/TCP   51s     app=frontend-nginxapp
+service/kubernetes                               ClusterIP      10.60.0.1      <none>        443/TCP        10d     <none>
+service/my-backend-service                       ClusterIP      10.60.10.110   <none>        8080/TCP       2m15s   app=backend-restapp
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS          IMAGES                                    SELECTOR
+deployment.apps/backend-restapp     3/3     3            3           2m16s   backend-restapp     stacksimplify/kube-helloworld:1.0.0       app=backend-restapp
+deployment.apps/frontend-nginxapp   3/3     3            3           52s     frontend-nginxapp   stacksimplify/kube-frontend-nginx:1.0.0   app=frontend-nginxapp
+
+NAME                                           DESIRED   CURRENT   READY   AGE     CONTAINERS          IMAGES                                    SELECTOR
+replicaset.apps/backend-restapp-67d54fcb55     3         3         3       2m17s   backend-restapp     stacksimplify/kube-helloworld:1.0.0       app=backend-restapp,pod-template-hash=67d54fcb55
+replicaset.apps/frontend-nginxapp-6b669d6bf6   3         3         3       53s     frontend-nginxapp   stacksimplify/kube-frontend-nginx:1.0.0   app=frontend-nginxapp,pod-template-hash=6b669d6bf6
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ for i in 10.56.0.64 10.56.1.38 10.56.2.41 10.60.10.110 ; do kubectl run -it tempcurlpod`echo _$i_
+| awk -F "." '{print $4}'` --image=curlimages/curl --rm --restart=Never -- http://${i}:8080/hello -v ; done
+* processing: http://10.56.0.64:8080/hello
+*   Trying 10.56.0.64:8080...
+* Connected to 10.56.0.64 (10.56.0.64) port 8080
+> GET /hello HTTP/1.1
+> Host: 10.56.0.64:8080
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Date: Sun, 20 Aug 2023 07:57:30 GMT
+<
+* Connection #0 to host 10.56.0.64 left intact
+Hello World  V1 gnvr5pod "tempcurlpod" deleted
+* processing: http://10.56.1.38:8080/hello
+*   Trying 10.56.1.38:8080...
+* Connected to 10.56.1.38 (10.56.1.38) port 8080
+> GET /hello HTTP/1.1
+> Host: 10.56.1.38:8080
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Date: Sun, 20 Aug 2023 07:57:35 GMT
+<
+* Connection #0 to host 10.56.1.38 left intact
+Hello World  V1 l6n7lpod "tempcurlpod" deleted
+* processing: http://10.56.2.41:8080/hello
+*   Trying 10.56.2.41:8080...
+* Connected to 10.56.2.41 (10.56.2.41) port 8080
+> GET /hello HTTP/1.1
+> Host: 10.56.2.41:8080
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Date: Sun, 20 Aug 2023 07:57:40 GMT
+<
+* Connection #0 to host 10.56.2.41 left intact
+Hello World  V1 v82snpod "tempcurlpod" deleted
+* processing: http://10.60.10.110:8080/hello
+*   Trying 10.60.10.110:8080...
+* Connected to 10.60.10.110 (10.60.10.110) port 8080
+> GET /hello HTTP/1.1
+> Host: 10.60.10.110:8080
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Date: Sun, 20 Aug 2023 07:57:44 GMT
+<
+* Connection #0 to host 10.60.10.110 left intact
+Hello World  V1 gnvr5pod "tempcurlpod" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ kubectl get all -o wide
+NAME                                     READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/backend-restapp-67d54fcb55-gnvr5     1/1     Running   0          7m20s   10.56.0.64   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+pod/backend-restapp-67d54fcb55-l6n7l     1/1     Running   0          7m20s   10.56.1.38   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/backend-restapp-67d54fcb55-v82sn     1/1     Running   0          7m20s   10.56.2.41   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-fktlg   1/1     Running   0          5m56s   10.56.1.39   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-kttf7   1/1     Running   0          5m56s   10.56.2.42   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+pod/frontend-nginxapp-6b669d6bf6-pqdlg   1/1     Running   0          5m56s   10.56.0.65   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+pod/tempcurlpod38                        0/1     Error     0          3m25s   10.56.0.67   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+
+NAME                                             TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE     SELECTOR
+service/frontend-nginxapp-loadbalancer-service   LoadBalancer   10.60.7.197    35.224.77.7   80:30492/TCP   5m56s   app=frontend-nginxapp
+service/kubernetes                               ClusterIP      10.60.0.1      <none>        443/TCP        10d     <none>
+service/my-backend-service                       ClusterIP      10.60.10.110   <none>        8080/TCP       7m20s   app=backend-restapp
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS          IMAGES                                    SELECTOR
+deployment.apps/backend-restapp     3/3     3            3           7m21s   backend-restapp     stacksimplify/kube-helloworld:1.0.0       app=backend-restapp
+deployment.apps/frontend-nginxapp   3/3     3            3           5m57s   frontend-nginxapp   stacksimplify/kube-frontend-nginx:1.0.0   app=frontend-nginxapp
+
+NAME                                           DESIRED   CURRENT   READY   AGE     CONTAINERS          IMAGES                                    SELECTOR
+replicaset.apps/backend-restapp-67d54fcb55     3         3         3       7m21s   backend-restapp     stacksimplify/kube-helloworld:1.0.0       app=backend-restapp,pod-template-hash=67d54fcb55
+replicaset.apps/frontend-nginxapp-6b669d6bf6   3         3         3       5m57s   frontend-nginxapp   stacksimplify/kube-frontend-nginx:1.0.0   app=frontend-nginxapp,pod-template-hash=6b669d6bf6
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ for i in 10.56.0.65 10.56.1.39 10.56.2.42 10.60.7.197 35.224.77.7 ; do kubectl run -it tempcurlpod`echo $i | awk -F "." '{print $4}'` --image=curlimages/curl --rm --restart=Never -- http://${i}:80/hello -v ; done
+* processing: http://10.56.0.65:80/hello
+*   Trying 10.56.0.65:80...
+* Connected to 10.56.0.65 (10.56.0.65) port 80
+> GET /hello HTTP/1.1
+> Host: 10.56.0.65
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 08:01:27 GMT
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Connection: keep-alive
+<
+* Connection #0 to host 10.56.0.65 left intact
+Hello World  V1 v82snpod "tempcurlpod65" deleted
+* processing: http://10.56.1.39:80/hello
+*   Trying 10.56.1.39:80...
+* Connected to 10.56.1.39 (10.56.1.39) port 80
+> GET /hello HTTP/1.1
+> Host: 10.56.1.39
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 08:01:31 GMT
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Connection: keep-alive
+<
+* Connection #0 to host 10.56.1.39 left intact
+Hello World  V1 v82snpod "tempcurlpod39" deleted
+* processing: http://10.56.2.42:80/hello
+*   Trying 10.56.2.42:80...
+* Connected to 10.56.2.42 (10.56.2.42) port 80
+> GET /hello HTTP/1.1
+> Host: 10.56.2.42
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 08:01:36 GMT
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Connection: keep-alive
+<
+* Connection #0 to host 10.56.2.42 left intact
+Hello World  V1 l6n7lpod "tempcurlpod42" deleted
+* processing: http://10.60.7.197:80/hello
+*   Trying 10.60.7.197:80...
+* Connected to 10.60.7.197 (10.60.7.197) port 80
+> GET /hello HTTP/1.1
+> Host: 10.60.7.197
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 08:01:41 GMT
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Connection: keep-alive
+<
+* Connection #0 to host 10.60.7.197 left intact
+Hello World  V1 gnvr5pod "tempcurlpod197" deleted
+* processing: http://35.224.77.7:80/hello
+*   Trying 35.224.77.7:80...
+* Connected to 35.224.77.7 (35.224.77.7) port 80
+> GET /hello HTTP/1.1
+> Host: 35.224.77.7
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200
+< Server: nginx/1.17.10
+< Date: Sun, 20 Aug 2023 08:01:46 GMT
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 21
+< Connection: keep-alive
+<
+* Connection #0 to host 35.224.77.7 left intact
+Hello World  V1 gnvr5pod "tempcurlpod7" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$ kubectl delete -f kube-manifests
+deployment.apps "backend-restapp" deleted
+service "my-backend-service" deleted
+deployment.apps "frontend-nginxapp" deleted
+service "frontend-nginxapp-loadbalancer-service" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/17-yaml-declarative-k8s-services$
