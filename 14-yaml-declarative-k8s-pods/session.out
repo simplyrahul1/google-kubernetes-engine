@@ -1,0 +1,179 @@
+---
+title: Kubernetes Pods with YAML
+description: Learn to write and test Kubernetes Pods with YAML
+---
+
+## Step-01: Kubernetes YAML Top level Objects
+- Discuss about the k8s YAML top level objects
+- **kube-base-definition.yml**
+```yml
+apiVersion:
+kind:
+metadata:
+  
+spec:
+```
+- [Kubernetes Reference](https://kubernetes.io/docs/reference/)
+- [Kubernetes API Reference](https://kubernetes.io/docs/reference/kubernetes-api/)
+-  [Pod API Objects Reference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pod-v1-core)
+
+## Step-02: Create Simple Pod Definition using YAML 
+- We are going to create a very basic pod definition
+- **01-pod-definition.yml**
+```yaml
+apiVersion: v1 # String
+kind: Pod  # String
+metadata: # Dictionary
+  name: myapp-pod
+  labels: # Dictionary 
+    app: myapp         
+spec:
+  containers: # List
+    - name: myapp
+      image: stacksimplify/kubenginx:1.0.0
+      ports:
+        - containerPort: 80
+```
+- **Create Pod**
+```t
+# Change Directory
+cd kube-manifests
+
+# Create Pod
+kubectl create -f 01-pod-definition.yml
+[or]
+kubectl apply -f 01-pod-definition.yml
+
+# List Pods
+kubectl get pods
+```
+
+## Step-03: Create a LoadBalancer Service
+- **02-pod-LoadBalancer-service.yml**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-pod-loadbalancer-service  # Name of the Service
+spec:
+  type: LoadBalancer
+  selector:
+  # Loadbalance traffic across Pods matching this label selector
+    app: myapp
+  # Accept traffic sent to port 80    
+  ports: 
+    - name: http
+      port: 80    # Service Port
+      targetPort: 80 # Container Port
+```
+- **Create LoadBalancer Service for Pod**
+```t
+# Create Service
+kubectl apply -f 02-pod-LoadBalancer-service.yml
+
+# List Service
+kubectl get svc
+
+# Access Application
+http://<Load-Balancer-Service-IP>
+curl http://<Load-Balancer-Service-IP>
+```
+
+## Step-04: Clean-Up Kubernetes Pod and Service
+```t
+# Change Directory
+cd kube-manifests
+
+# Delete Pod
+kubectl delete -f 01-pod-definition.yml
+
+# Delete Service
+kubectl delete -f  02-pod-LoadBalancer-service.yml
+```
+
+
+## API Object References
+- [Kubernetes API Spec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/)
+- [Pod Spec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pod-v1-core)
+- [Service Spec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#service-v1-core)
+- [Kubernetes API Reference](https://kubernetes.io/docs/reference/kubernetes-api/)
+
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ cat kube-manifests/0
+01-pod-definition.yml            02-pod-LoadBalancer-service.yml
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ cat kube-manifests/01-pod-definition.yml
+apiVersion: v1 # String
+kind: Pod # String
+metadata: # Dictionary
+  name: myapp-pod
+  labels: # Dictionary
+    app: myapp # Key Value Pairs
+spec:
+  containers: # List
+    - name: myapp
+      image: stacksimplify/kubenginx:1.0.0
+      ports: # List
+        - containerPort: 80
+
+
+    rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ cat kube-manifests/02-pod-LoadBalancer-service.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-pod-loadbalancer-service
+spec:
+  type: LoadBalancer
+  # Loadbalance traffic across Pods matching this label selector
+  selector:
+    app: myapp
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Portrahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ kubectl apply -f kube-manifests/
+pod/myapp-pod created
+service/myapp-pod-loadbalancer-service created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ kubectl get pods
+NAME        READY   STATUS    RESTARTS   AGE
+myapp-pod   1/1     Running   0          12s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ kubectl get pods -o wide
+NAME        READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+myapp-pod   1/1     Running   0          19s   10.56.0.45   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ kubectl get svc -o wide
+NAME                             TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+kubernetes                       ClusterIP      10.60.0.1      <none>        443/TCP        10d   <none>
+myapp-pod-loadbalancer-service   LoadBalancer   10.60.12.151   <pending>     80:32013/TCP   30s   app=myapp
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ kubectl run -it tempcurlv1 --image=curlimages/curl --rm --restart=Never -- http://10.56.0.45
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlv1" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ kubectl run -it tempcurlv1 --image=curlimages/curl --rm --restart=Never -- http://10.60.12.151
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlv1" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ kubectl get svc -o wide
+NAME                             TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE    SELECTOR
+kubernetes                       ClusterIP      10.60.0.1      <none>           443/TCP        10d    <none>
+myapp-pod-loadbalancer-service   LoadBalancer   10.60.12.151   35.193.231.174   80:32013/TCP   2m5s   app=myapp
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$ kubectl run -it tempcurlv1 --image=curlimages/curl --rm --restart=Never -- http://35.193.231.174
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlv1, falling back to streaming logs: unable to upgrade connection: container tempcurlv1 not found in pod tempcurlv1_default
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlv1" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/14-yaml-declarative-k8s-pods$
