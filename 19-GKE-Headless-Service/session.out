@@ -1,0 +1,727 @@
+---
+title: GCP Google Kubernetes Engine GKE Headless Service
+description: Implement GCP Google Kubernetes Engine GKE Headless Service
+---
+
+## Step-00: Pre-requisites
+1. Verify if GKE Cluster is created
+2. Verify if kubeconfig for kubectl is configured in your local terminal
+```t
+# Configure kubeconfig for kubectl
+gcloud container clusters get-credentials <CLUSTER-NAME> --region <REGION> --project <PROJECT>
+
+# Replace Values CLUSTER-NAME, ZONE, PROJECT
+gcloud container clusters get-credentials standard-public-cluster-1 --region us-central1 --project kdaida123
+
+# List GKE Kubernetes Worker Nodes
+kubectl get nodes
+```
+## Step-01: Introduction
+- Implement Kubernetes ClusterIP and Headless Service
+- Understand Headless Service in detail
+
+## Step-02: 01-kubernetes-deployment.yaml
+```yaml
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 4
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          #image: stacksimplify/kubenginx:1.0.0
+          image: us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0
+          ports: 
+            - containerPort: 8080          
+```
+
+## Step-03: 02-kubernetes-clusterip-service.yaml
+```yaml
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-cip-service
+spec:
+  type: ClusterIP # ClusterIP, # NodePort, # LoadBalancer, # ExternalName
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 8080 # Container Port
+```
+
+## Step-04: 03-kubernetes-headless-service.yaml
+- Add `spec.clusterIP: None`
+###  VERY IMPORTANT NODE
+1. When using Headless Service, we should use both the  "Service Port and Target Port" same. 
+2. Headless Service directly sends traffic to Pod with Pod IP and Container Port. 
+3. DNS resolution directly happens from headless service to Pod IP.
+
+```yaml
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-headless-service
+spec:
+  #type: ClusterIP # ClusterIP, # NodePort, # LoadBalancer, # ExternalName
+  clusterIP: None
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 8080 # Service Port
+      targetPort: 8080 # Container Port
+
+```
+
+## Step-05: Deply Kubernetes Manifests
+```t
+# Deploy Kubernetes Manifests
+kubectl apply -f 01-kube-manifests
+
+# List Deployments
+kubectl get deploy
+
+# List Pods
+kubectl get pods
+kubectl get pods -o wide
+Observation: make a note of Pod IP
+
+# List Services
+kubectl get svc
+Observation: 
+1. "CLUSTER-IP" will be "NONE" for Headless Service
+
+## Sample 
+Kalyans-Mac-mini:19-GKE-Headless-Service kalyanreddy$ kubectl get svc
+NAME                      TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes                ClusterIP   10.24.0.1    <none>        443/TCP   135m
+myapp1-cip-service        ClusterIP   10.24.2.34   <none>        80/TCP    4m9s
+myapp1-headless-service   ClusterIP   None         <none>        80/TCP    4m9s
+Kalyans-Mac-mini:19-GKE-Headless-Service kalyanreddy$ 
+
+```
+
+
+## Step-06: Review Curl Kubernetes Manifests
+- **Project Folder:** 02-kube-manifests-curl
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-pod
+spec:
+  containers:
+  - name: curl
+    image: curlimages/curl 
+    command: [ "sleep", "600" ]
+```
+
+## Step-07: Deply Curl-pod and Verify ClusterIP and Headless Services
+```t
+# Deploy curl-pod
+kubectl apply -f 02-kube-manifests-curl
+
+# List Services
+kubectl get svc
+
+# GKE Cluster Kubernetes Service Full DNS Name format
+<svc>.<ns>.svc.cluster.local
+
+# Will open up a terminal session into the container
+kubectl exec -it curl-pod -- sh
+
+# ClusterIP Service: nslookup and curl Test
+nslookup myapp1-cip-service.default.svc.cluster.local
+curl myapp1-cip-service.default.svc.cluster.local
+
+### ClusterIP Service nslookup Outptu
+ $ nslookup myapp1-cip-service.default.svc.cluster.local
+Server:		10.24.0.10
+Address:	10.24.0.10:53
+
+Name:	myapp1-cip-service.default.svc.cluster.local
+Address: 10.24.2.34
+
+# Headless Service: nslookup and curl Test
+nslookup myapp1-headless-service.default.svc.cluster.local
+curl myapp1-headless-service.default.svc.cluster.local:8080
+Observation:
+1. There is no specific IP for Headless Service
+2. It will be directly dns resolved to Pod IP
+3. That said we should use the same port as Container Port for Headless Service (VERY VERY IMPORTANT)
+
+### Headless Service nslookup Output
+$ nslookup myapp1-headless-service.default.svc.cluster.local
+Server:		10.24.0.10
+Address:	10.24.0.10:53
+
+Name:	myapp1-headless-service.default.svc.cluster.local
+Address: 10.20.0.25
+Name:	myapp1-headless-service.default.svc.cluster.local
+Address: 10.20.0.26
+Name:	myapp1-headless-service.default.svc.cluster.local
+Address: 10.20.1.28
+Name:	myapp1-headless-service.default.svc.cluster.local
+Address: 10.20.1.29
+```
+
+## Step-08: Clean-Up
+```t
+# Delete Kubernetes Resources
+kubectl delete -f 01-kube-manifests
+
+# Delete Kubernetes Resources - Curl Pod
+kubectl delete -f 02-kube-manifests-curl
+```
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ cat 01-kube-manifests/0
+01-kubernetes-deployment.yaml         02-kubernetes-clusterip-service.yaml  03-kubernetes-headless-service.yaml
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ cat 01-kube-manifests/01-kubernetes-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 4
+  selector:
+    matchLabels:
+      app: myapp1
+  template:
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          #image: stacksimplify/kubenginx:1.0.0
+          image: us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0
+          ports:
+            - containerPort: 8080
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ cat 01-kube-manifests/02-kubernetes-clusterip-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp1-cip-service
+spec:
+  type: ClusterIP # ClusterIP, # NodePort, # LoadBalancer, # ExternalName
+  selector:
+    app: myapp1
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 8080 # Container Port
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ cat 01-kube-manifests/03-kubernetes-headless-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp1-headless-service
+spec:
+  #type: ClusterIP # ClusterIP, # NodePort, # LoadBalancer, # ExternalName
+  clusterIP: None
+  selector:
+    app: myapp1
+  ports:
+    - name: http
+      port: 8080 # Service Port
+      targetPort: 8080 # Container Port
+
+## VERY IMPORTANT NODE
+# 1. When using Headless Service, we should use both the  "Service Port and Target Port" same.
+# 2. Headless Service directly sends traffic to Pod with Pod IP and Container Port.
+# 3. DNS resolution directly happens from headless service to Pod IP.
+
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl apply -f 01-kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-cip-service created
+service/myapp1-headless-service created
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl get all
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-857d6f88d6-4xgp9   1/1     Running   0          11s
+pod/myapp1-deployment-857d6f88d6-9t6l7   1/1     Running   0          11s
+pod/myapp1-deployment-857d6f88d6-b7hck   1/1     Running   0          11s
+pod/myapp1-deployment-857d6f88d6-g8lmb   1/1     Running   0          11s
+
+NAME                              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+service/kubernetes                ClusterIP   10.60.0.1     <none>        443/TCP    11d
+service/myapp1-cip-service        ClusterIP   10.60.5.190   <none>        80/TCP     10s
+service/myapp1-headless-service   ClusterIP   None          <none>        8080/TCP   10s
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   4/4     4            4           12s
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-857d6f88d6   4         4         4       12s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl get all -o wide
+NAME                                     READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/myapp1-deployment-857d6f88d6-4xgp9   1/1     Running   0          41s   10.56.0.95   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+pod/myapp1-deployment-857d6f88d6-9t6l7   1/1     Running   0          41s   10.56.1.42   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/myapp1-deployment-857d6f88d6-b7hck   1/1     Running   0          41s   10.56.2.43   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+pod/myapp1-deployment-857d6f88d6-g8lmb   1/1     Running   0          41s   10.56.0.96   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+
+NAME                              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE   SELECTOR
+service/kubernetes                ClusterIP   10.60.0.1     <none>        443/TCP    11d   <none>
+service/myapp1-cip-service        ClusterIP   10.60.5.190   <none>        80/TCP     40s   app=myapp1
+service/myapp1-headless-service   ClusterIP   None          <none>        8080/TCP   40s   app=myapp1
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS         IMAGES                                                          SELECTOR
+deployment.apps/myapp1-deployment   4/4     4            4           42s   myapp1-container   us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0   app=myapp1
+
+NAME                                           DESIRED   CURRENT   READY   AGE   CONTAINERS         IMAGES                                                          SELECTOR
+replicaset.apps/myapp1-deployment-857d6f88d6   4         4         4       42s   myapp1-container   us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0   app=myapp1,pod-template-hash=857d6f88d6
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl describe svc myapp1-cip-service
+Name:              myapp1-cip-service
+Namespace:         default
+Labels:            <none>
+Annotations:       cloud.google.com/neg: {"ingress":true}
+Selector:          app=myapp1
+Type:              ClusterIP
+IP Family Policy:  SingleStack
+IP Families:       IPv4
+IP:                10.60.5.190
+IPs:               10.60.5.190
+Port:              http  80/TCP
+TargetPort:        8080/TCP
+Endpoints:         10.56.0.95:8080,10.56.0.96:8080,10.56.1.42:8080 + 1 more...
+Session Affinity:  None
+Events:            <none>
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl describe svc myapp1-headless-service
+Name:              myapp1-headless-service
+Namespace:         default
+Labels:            <none>
+Annotations:       cloud.google.com/neg: {"ingress":true}
+Selector:          app=myapp1
+Type:              ClusterIP
+IP Family Policy:  SingleStack
+IP Families:       IPv4
+IP:                None
+IPs:               None
+Port:              http  8080/TCP
+TargetPort:        8080/TCP
+Endpoints:         10.56.0.95:8080,10.56.0.96:8080,10.56.1.42:8080 + 1 more...
+Session Affinity:  None
+Events:            <none>
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "nslookup myapp1-cip-serv
+ice.default.svc.cluster.local"
+Server:         10.60.0.10
+Address:        10.60.0.10:53
+
+Name:   myapp1-cip-service.default.svc.cluster.local
+Address: 10.60.5.190
+
+
+pod "tempcurlpod" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "nslookup myapp1-headless-service.default.svc.cluster.local"
+Server:         10.60.0.10
+Address:        10.60.0.10:53
+
+Name:   myapp1-headless-service.default.svc.cluster.local
+Address: 10.56.0.96
+Name:   myapp1-headless-service.default.svc.cluster.local
+Address: 10.56.1.42
+Name:   myapp1-headless-service.default.svc.cluster.local
+Address: 10.56.2.43
+Name:   myapp1-headless-service.default.svc.cluster.local
+Address: 10.56.0.95
+
+
+pod "tempcurlpod" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://myapp1-cip-service.def
+ault.svc.cluster.local --connect-timeout 3
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv1" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl get pods -o wide
+NAME                                 READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES
+myapp1-deployment-857d6f88d6-4xgp9   1/1     Running   0          8m39s   10.56.0.95   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+myapp1-deployment-857d6f88d6-9t6l7   1/1     Running   0          8m39s   10.56.1.42   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+myapp1-deployment-857d6f88d6-b7hck   1/1     Running   0          8m39s   10.56.2.43   gke-gke-public-standard--default-pool-175a9d00-v6mb   <none>           <none>
+myapp1-deployment-857d6f88d6-g8lmb   1/1     Running   0          8m39s   10.56.0.96   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ for i in {1..8} ; do kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://myapp1-cip-service.default.svc.cluster.local --connect-timeout 3 ; done
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-9t6l7
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-g8lmb
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv1" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ for i in {1..8} ; do kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://myapp1-headless-service.default.svc.cluster.local:8080 --connect-timeout 3 ; done
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-g8lmb
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-9t6l7
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-g8lmb
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-g8lmb
+pod "tempcurlpodv1" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv1" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ shuf -i 1-100000 -n 1
+98422
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ shuf -i 1-100000 -n 2
+23950
+91590
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ shuf -i 1-100000 -n 1
+88575
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ shuf -i 1-100 -n 1
+51
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ for i in 10.56.0.95 10.56.1.42 10.56.2.43 10.56.0.96 ; do kubectl run -it tempcurlpodv`shuf -i 1-100 -n 1`
+--image=curlimages/curl --rm --restart=Never -- http://${i}:8080 --connect-timeout 3 ; done
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpodv91, falling back to streaming logs: unable to upgrade connection: container tempcurlpodv91 not found in pod tempcurlpodv91_default
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv91" deleted
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpodv79, falling back to streaming logs: unable to upgrade connection: container tempcurlpodv79 not found in pod tempcurlpodv79_default
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-9t6l7
+pod "tempcurlpodv79" deleted
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpodv14, falling back to streaming logs: unable to upgrade connection: container tempcurlpodv14 not found in pod tempcurlpodv14_default
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+pod "tempcurlpodv14" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-g8lmb
+pod "tempcurlpodv71" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ for i in 10.56.0.95 10.56.1.42 10.56.2.43 10.56.0.96 ; do kubectl run -it tempcurlpodv --image=curlimages/c
+url --rm --restart=Never -- http://${i}:8080 --connect-timeout 3 ; done
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpodv, falling back to streaming logs: unable to upgrade connection: container tempcurlpodv not found in pod tempcurlpodv_default
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-9t6l7
+pod "tempcurlpodv" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+pod "tempcurlpodv" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-g8lmb
+pod "tempcurlpodv" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl get svc -o wide
+NAME                      TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE   SELECTOR
+kubernetes                ClusterIP   10.60.0.1     <none>        443/TCP    11d   <none>
+myapp1-cip-service        ClusterIP   10.60.5.190   <none>        80/TCP     17m   app=myapp1
+myapp1-headless-service   ClusterIP   None          <none>        8080/TCP   17m   app=myapp1
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ for i in  myapp1-headless-service.default.svc.cluster.local ; do kubectl run -it tempcurlpodv --image=curli
+mages/curl --rm --restart=Never -- http://${i}:8080 --connect-timeout 3 ; done
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ for i in  10.60.5.190 myapp1-cip-service.default.svc.cluster.local ; do kubectl run -it tempcurlpodv --imag
+e=curlimages/curl --rm --restart=Never -- http://${i} --connect-timeout 3 ; done
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv" deleted
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-4xgp9
+pod "tempcurlpodv" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ for i in  10.60.5.190 myapp1-cip-service.default.svc.cluster.local ; do kubectl run -it tempcurlpodv --image=curlimages/curl --rm --restart=Never -- http://${i} -vvv --connect-timeout 3 ; done
+* processing: http://10.60.5.190
+*   Trying 10.60.5.190:80...
+* Connected to 10.60.5.190 (10.60.5.190) port 80
+> GET / HTTP/1.1
+> Host: 10.60.5.190
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Date: Sun, 20 Aug 2023 22:47:00 GMT
+< Content-Length: 74
+< Content-Type: text/plain; charset=utf-8
+<
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-g8lmb
+* Connection #0 to host 10.60.5.190 left intact
+pod "tempcurlpodv" deleted
+* processing: http://myapp1-cip-service.default.svc.cluster.local
+*   Trying 10.60.5.190:80...
+* Connected to myapp1-cip-service.default.svc.cluster.local (10.60.5.190) port 80
+> GET / HTTP/1.1
+> Host: myapp1-cip-service.default.svc.cluster.local
+> User-Agent: curl/8.2.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Date: Sun, 20 Aug 2023 22:47:05 GMT
+< Content-Length: 74
+< Content-Type: text/plain; charset=utf-8
+<
+Hello, world!
+Version: 2.0.0
+Hostname: myapp1-deployment-857d6f88d6-b7hck
+* Connection #0 to host myapp1-cip-service.default.svc.cluster.local left intact
+pod "tempcurlpodv" deleted
+
+https://speedtestdemon.com/a-guide-to-curls-performance-metrics-how-to-analyze-a-speed-test-result/#google_vignette
+https://github.com/speedtestdemon/speed-tests/blob/master/curl-format.txt
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ vim curl-format.txt
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ cat curl-format.txt
+   time_namelookup: %{time_namelookup}s\n 
+      time_connect: %{time_connect}s\n
+   time_appconnect: %{time_appconnect}s\n 
+  time_pretransfer: %{time_pretransfer}s\n
+     time_redirect: %{time_redirect}s\n 
+time_starttransfer: %{time_starttransfer}s\n
+ ----------\n 
+time_total: %{time_total}s\n
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ curl -L -w "@curl-format.txt" -o tmp -s http://google.com
+   time_namelookup: 0.009771s
+       time_connect: 0.013978s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.014023s
+     time_redirect: 0.016445s
+ time_starttransfer: 0.056780s
+ ----------
+ time_total: 0.059555s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh
+If you don't see a command prompt, try pressing enter.
+~ $ vi curl-format.txt
+~ $ for i in  10.60.5.190 myapp1-cip-service.default.svc.cluster.local ; do curl -L -w "@curl-format.txt" -o tmp -s ${i} ; done
+   time_namelookup: 0.000032s
+       time_connect: 0.000498s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.000660s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.001229s
+ ----------
+ time_total: 0.001356s
+   time_namelookup: 0.027697s
+       time_connect: 0.028304s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.028558s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.029085s
+ ----------
+ time_total: 0.029339s
+
+~ $ for i in  10.60.5.190 myapp1-cip-service.default.svc.cluster.local 10.60.5.190 myapp1-cip-service.default.svc.cluster.local; do curl -L -w "@curl-format.txt" -o tmp -s ${i} ; done
+   time_namelookup: 0.000038s
+       time_connect: 0.001745s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.001864s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.002510s
+ ----------
+ time_total: 0.002693s
+   time_namelookup: 0.027964s
+       time_connect: 0.028458s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.028588s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.028973s
+ ----------
+ time_total: 0.029277s
+   time_namelookup: 0.000031s
+       time_connect: 0.000253s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.000317s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.000799s
+ ----------
+ time_total: 0.000905s
+   time_namelookup: 0.021356s
+       time_connect: 0.021546s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.021614s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.022277s
+ ----------
+ time_total: 0.022385s
+
+~ $ for i in  10.60.5.190 myapp1-cip-service.default.svc.cluster.local 10.60.5.190 myapp1-cip-service.default.svc.cluster.local 10.60.5.190 myapp1-cip-service.default.svc.cluster.local; do
+ curl -L -w "@curl-format.txt" -o tmp -s ${i} ; done
+   time_namelookup: 0.000030s
+       time_connect: 0.002530s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.002746s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.003699s
+ ----------
+ time_total: 0.003878s
+   time_namelookup: 0.027623s
+       time_connect: 0.029204s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.029338s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.029744s
+ ----------
+ time_total: 0.029863s
+   time_namelookup: 0.000030s
+       time_connect: 0.000251s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.000314s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.001157s
+ ----------
+ time_total: 0.001257s
+   time_namelookup: 0.021756s
+       time_connect: 0.022146s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.022246s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.022568s
+ ----------
+ time_total: 0.022679s
+   time_namelookup: 0.000028s
+       time_connect: 0.000474s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.000589s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.001093s
+ ----------
+ time_total: 0.001265s
+   time_namelookup: 0.024374s
+       time_connect: 0.024637s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.024746s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.025021s
+ ----------
+ time_total: 0.025144s
+
+~ $ for i in  myapp1-headless-service.default.svc.cluster.local myapp1-headless-service.default.svc.cluster.local; do curl -L -w "@curl-format.txt" -o tmp -s ${i} ; done
+   time_namelookup: 0.033100s
+       time_connect: 0.000000s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.000000s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.000000s
+ ----------
+ time_total: 0.046546s
+   time_namelookup: 0.023215s
+       time_connect: 0.000000s
+   time_appconnect: 0.000000s
+   time_pretransfer: 0.000000s
+     time_redirect: 0.000000s
+ time_starttransfer: 0.000000s
+ ----------
+ time_total: 1.224568s
+
+
+~ $ exit
+pod "tempcurlpod" deleted
+pod default/tempcurlpod terminated (Error)
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl get all
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-857d6f88d6-4xgp9   1/1     Running   0          31m
+pod/myapp1-deployment-857d6f88d6-9t6l7   1/1     Running   0          31m
+pod/myapp1-deployment-857d6f88d6-b7hck   1/1     Running   0          31m
+pod/myapp1-deployment-857d6f88d6-g8lmb   1/1     Running   0          31m
+
+NAME                              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+service/kubernetes                ClusterIP   10.60.0.1     <none>        443/TCP    11d
+service/myapp1-cip-service        ClusterIP   10.60.5.190   <none>        80/TCP     31m
+service/myapp1-headless-service   ClusterIP   None          <none>        8080/TCP   31m
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   4/4     4            4           31m
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-857d6f88d6   4         4         4       31m
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl delete -f 01-kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-cip-service" deleted
+service "myapp1-headless-service" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.60.0.1    <none>        443/TCP   11d
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/19-GKE-Headless-Service$
