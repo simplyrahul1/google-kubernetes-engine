@@ -1,0 +1,340 @@
+---
+title: GCP Google Kubernetes Engine GKE NodePort Service
+description: Implement GCP Google Kubernetes Engine GKE NodePort Service
+---
+
+## Step-00: Pre-requisites
+1. Verify if GKE Cluster is created
+2. Verify if kubeconfig for kubectl is configured in your local terminal
+```t
+# Configure kubeconfig for kubectl
+gcloud container clusters get-credentials <CLUSTER-NAME> --region <REGION> --project <PROJECT>
+
+# Replace Values CLUSTER-NAME, ZONE, PROJECT
+gcloud container clusters get-credentials standard-public-cluster-1 --region us-central1 --project kdaida123
+
+# List GKE Kubernetes Worker Nodes
+kubectl get nodes
+
+# List GKE Kubernetes Worker Nodes with -o wide option
+kubectl get nodes -o wide
+Observation: 
+1. You should see External-IP Address (Public IP accesible via internet)
+2. That is the key thing for testing the Kubernetes NodePort Service on GKE Cluster
+```
+## Step-01: Introduction
+- Implement Kubernetes NodePort Service 
+
+## Step-02: 01-kubernetes-deployment.yaml
+```yaml
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80      
+```
+
+## Step-03: 02-kubernetes-nodeport-service.yaml
+- If you don't speciy `nodePort: 30080` it will dynamically assign one port from range `30000-32768`
+```yaml
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-nodeport-service
+spec:
+  type: NodePort # clusterIP, # NodePort, # LoadBalancer, # ExternalName
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+      nodePort: 30080 # NodePort (Optional)(Node Port Range: 30000-32768)
+```
+
+
+## Step-04: Deply Kubernetes Manifests
+```t
+# Deploy Kubernetes Manifests
+kubectl apply -f kube-manifests
+
+# List Deployments
+kubectl get deploy
+
+# List Pods
+kubectl get po
+
+# List Services
+kubectl get svc
+```
+
+## Step-05: Access Application
+```t
+# List Kubernetes Worker Node with -0 wide
+kubectl get nodes -o wide
+Observation: 
+1. Make a note of any one Node External-IP (Public IP Address)
+
+# Access Application
+http://<NODE-EXTERNAL-IP>:<NodePort>
+http://104.154.52.12:30080
+Observation:
+1. This should fail
+```
+
+## Step-06: Create Firewall Rule
+```t
+# Create Firewall Rule
+gcloud compute firewall-rules create fw-rule-gke-node-port \
+    --allow tcp:NODE_PORT
+
+# Replace NODE_PORT
+gcloud compute firewall-rules create fw-rule-gke-node-port \
+    --allow tcp:30080   
+
+# List Firewall Rules
+gcloud compute firewall-rules list    
+```
+
+## Step-07:Access Application
+```t
+# List Kubernetes Worker Node with -0 wide
+kubectl get nodes -o wide
+Observation: 
+1. Make a note of any one Node External-IP (Public IP Address)
+
+# Access Application
+http://<NODE-EXTERNAL-IP>:<NodePort>
+http://104.154.52.12:30080
+Observation:
+1. This should Pass
+```
+
+
+
+## Step-08: Clean-Up
+```t
+# Delete Kubernetes Resources
+kubectl delete -f kube-manifests
+
+# Delete NodePort Service Firewall Rule
+gcloud compute firewall-rules delete fw-rule-gke-node-port
+
+# List Firewall Rules
+gcloud compute firewall-rules list 
+```
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ cat kube-manifests/0
+01-kubernetes-deployment.yaml        02-kubernetes-nodeport-service.yaml
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ cat kube-manifests/01-kubernetes-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml
+deployment.apps/myapp1-deployment created
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ cat kube-manifests/02-kubernetes-nodeport-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp1-nodeport-service
+spec:
+  type: NodePort # ClusterIP, # NodePort, # LoadBalancer, # ExternalName
+  selector:
+    app: myapp1
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+      nodePort: 30080 # NodePort (Optional)(Node Port Range: 30000-32768)
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl apply -f kube-manifests/02-kubernetes-nodeport-service.yaml
+service/myapp1-nodeport-service created
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl get all -o wide
+NAME                                    READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/myapp1-deployment-b99ccfb9d-85fn6   1/1     Running   0          7s    10.56.1.41   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/myapp1-deployment-b99ccfb9d-dhxj4   1/1     Running   0          7s    10.56.0.81   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+
+NAME                              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+service/kubernetes                ClusterIP   10.60.0.1     <none>        443/TCP        11d   <none>
+service/myapp1-nodeport-service   NodePort    10.60.7.220   <none>        80:30080/TCP   7s    app=myapp1
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS         IMAGES                          SELECTOR
+deployment.apps/myapp1-deployment   2/2     2            2           8s    myapp1-container   stacksimplify/kubenginx:1.0.0   app=myapp1
+
+NAME                                          DESIRED   CURRENT   READY   AGE   CONTAINERS         IMAGES                          SELECTOR
+replicaset.apps/myapp1-deployment-b99ccfb9d   2         2         2       8s    myapp1-container   stacksimplify/kubenginx:1.0.0   app=myapp1,pod-template-hash=b99ccfb9d
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://10.56.0.81
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv1" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://10.56.1.41
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv1" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://10.60.7.220:80 --conne
+ct-timeout 3
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv1" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl get all -o wide
+NAME                                    READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES
+pod/myapp1-deployment-b99ccfb9d-85fn6   1/1     Running   0          7m46s   10.56.1.41   gke-gke-public-standard--default-pool-0bc48b90-3jtt   <none>           <none>
+pod/myapp1-deployment-b99ccfb9d-dhxj4   1/1     Running   0          7m46s   10.56.0.81   gke-gke-public-standard--default-pool-73297d2f-pgnk   <none>           <none>
+
+NAME                              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE     SELECTOR
+service/kubernetes                ClusterIP   10.60.0.1     <none>        443/TCP        11d     <none>
+service/myapp1-nodeport-service   NodePort    10.60.7.220   <none>        80:30080/TCP   7m47s   app=myapp1
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS         IMAGES                          SELECTOR
+deployment.apps/myapp1-deployment   2/2     2            2           7m47s   myapp1-container   stacksimplify/kubenginx:1.0.0   app=myapp1
+
+NAME                                          DESIRED   CURRENT   READY   AGE     CONTAINERS         IMAGES                          SELECTOR
+replicaset.apps/myapp1-deployment-b99ccfb9d   2         2         2       7m48s   myapp1-container   stacksimplify/kubenginx:1.0.0   app=myapp1,pod-template-hash=b99ccfb9d
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl get node -o wide
+NAME                                                  STATUS   ROLES    AGE     VERSION            INTERNAL-IP   EXTERNAL-IP      OS-IMAGE             KERNEL-VERSION    CONTAINER-RUNTIME
+gke-gke-public-standard--default-pool-0bc48b90-3jtt   Ready    <none>   36h     v1.27.3-gke.1700   10.128.0.34   34.72.220.118    Ubuntu 22.04.2 LTS   5.15.0-1037-gke   containerd://1.7.0
+gke-gke-public-standard--default-pool-175a9d00-v6mb   Ready    <none>   5d13h   v1.27.3-gke.1700   10.128.0.25   34.123.216.198   Ubuntu 22.04.2 LTS   5.15.0-1037-gke   containerd://1.7.0
+gke-gke-public-standard--default-pool-73297d2f-pgnk   Ready    <none>   17h     v1.27.3-gke.1700   10.128.0.35   35.188.24.118    Ubuntu 22.04.2 LTS   5.15.0-1037-gke   containerd://1.7.0
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://34.72.220.118:30080 --
+connect-timeout 3
+If you don't see a command prompt, try pressing enter.
+curl: (28) Failed to connect to 34.72.220.118 port 30080 after 3001 ms: Timeout was reached
+pod "tempcurlpodv1" deleted
+pod default/tempcurlpodv1 terminated (Error)
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ gcloud compute firewall-rules create fw-rule-gke-node-port --allow tcp:30080
+ERROR: (gcloud.compute.firewall-rules.create) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+
+https://console.cloud.google.com/net-security/firewall-manager/firewall-policies/details/nodeport-30080?project=expanded-origin-395402
+
+
+{
+  "allowed": [
+    {
+      "IPProtocol": "tcp",
+      "ports": [
+        "30080"
+      ]
+    }
+  ],
+  "creationTimestamp": "2023-08-20T06:11:39.741-07:00",
+  "description": "nodeport-30080",
+  "destinationRanges": [
+    "0.0.0.0/0"
+  ],
+  "direction": "INGRESS",
+  "disabled": false,
+  "enableLogging": false,
+  "id": "8668037243963682788",
+  "kind": "compute#firewall",
+  "logConfig": {
+    "enable": false
+  },
+  "name": "nodeport-30080",
+  "network": "projects/expanded-origin-395402/global/networks/default",
+  "priority": 1000,
+  "selfLink": "projects/expanded-origin-395402/global/firewalls/nodeport-30080",
+  "sourceRanges": [
+    "0.0.0.0/0"
+  ]
+}
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl run -it tempcurlpodv2 --image=curlimages/curl --rm --restart=Never -- http://34.72.220.118:30080 --connect-timeout 5
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv2" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl run -it tempcurlpodv2 --image=curlimages/curl --rm --restart=Never -- http://34.123.216.198:30080 -
+-connect-timeout 5
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv2" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl run -it tempcurlpodv2 --image=curlimages/curl --rm --restart=Never -- http://35.188.24.118:30080 --
+connect-timeout 5
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv2" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$ kubectl delete -f kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-nodeport-service" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/18-GKE-NodePort-Service$
