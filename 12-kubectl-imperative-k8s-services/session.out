@@ -1,0 +1,194 @@
+---
+title: Kubernetes Services
+description: Learn about Kubernetes ClusterIP and Load Balancer Services
+---
+## Step-01: Introduction to Services
+- **Service Types**
+  1. ClusterIp
+  2. NodePort
+  3. LoadBalancer
+  4. ExternalName
+  5. Ingress
+- We are going to look in to ClusterIP and LoadBalancer Service in this section with a detailed example. 
+- LoadBalancer Type is primarily for cloud providers and it will differ cloud to cloud, so we will do it accordingly (per cloud basis)
+- ExternalName doesn't have Imperative commands and we need to write YAML definition for the same, so we will look in to it as and when it is required in our course. 
+
+## Step-02: ClusterIP Service - Backend Application Setup
+- Create a deployment for Backend Application (Spring Boot REST Application)
+- Create a ClusterIP service for load balancing backend application. 
+```t
+# Create Deployment for Backend Rest App
+kubectl create deployment my-backend-rest-app --image=stacksimplify/kube-helloworld:1.0.0 
+kubectl get deploy
+
+# Create ClusterIp Service for Backend Rest App
+kubectl expose deployment my-backend-rest-app --port=8080 --target-port=8080 --name=my-backend-service
+kubectl get svc
+Observation: We don't need to specify "--type=ClusterIp" because default setting is to create ClusterIp Service. 
+```
+- **Important Note:** If backend application port (Container Port: 8080) and Service Port (8080) are same we don't need to use **--target-port=8080** but for avoiding the confusion i have added it. Same case applies to frontend application and service. 
+
+- **Backend HelloWorld Application Source** [kube-helloworld](https://github.com/stacksimplify/kubernetes-fundamentals/tree/master/00-Docker-Images/02-kube-backend-helloworld-springboot/kube-helloworld)
+
+
+## Step-03: LoadBalancer Service - Frontend Application Setup
+- We have implemented **LoadBalancer Service** multiple times so far (in pods, replicasets and deployments), even then we are going to implement one more time to get a full architectural view in relation with ClusterIp service. 
+- Create a deployment for Frontend Application (Nginx acting as Reverse Proxy)
+- Create a LoadBalancer service for load balancing frontend application. 
+- **Important Note:** In Nginx reverse proxy, ensure backend service name `my-backend-service` is updated when you are building the frontend container. We already built it and put ready for this demo (stacksimplify/kube-frontend-nginx:1.0.0)
+- **Nginx Conf File**
+```conf
+server {
+    listen       80;
+    server_name  localhost;
+    location / {
+    # Update your backend application Kubernetes Cluster-IP Service name  and port below      
+    # proxy_pass http://<Backend-ClusterIp-Service-Name>:<Port>;      
+    proxy_pass http://my-backend-service:8080;
+    }
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}
+```
+- **Docker Image Location:** https://hub.docker.com/repository/docker/stacksimplify/kube-frontend-nginx
+- **Frontend Nginx Reverse Proxy Application Source** [kube-frontend-nginx](https://github.com/stacksimplify/kubernetes-fundamentals/tree/master/00-Docker-Images/03-kube-frontend-nginx)
+```t
+# Create Deployment for Frontend Nginx Proxy
+kubectl create deployment my-frontend-nginx-app --image=stacksimplify/kube-frontend-nginx:1.0.0 
+kubectl get deploy
+
+# Create LoadBalancer Service for Frontend Nginx Proxy
+kubectl expose deployment my-frontend-nginx-app  --type=LoadBalancer --port=80 --target-port=80 --name=my-frontend-service
+kubectl get svc
+
+# Get Load Balancer IP
+kubectl get svc
+http://<External-IP-from-get-service-output>/hello
+curl http://<External-IP-from-get-service-output>/hello
+
+# Scale backend with 10 replicas
+kubectl scale --replicas=10 deployment/my-backend-rest-app
+
+# Test again to view the backend service Load Balancing
+http://<External-IP-from-get-service-output>/hello
+curl http://<External-IP-from-get-service-output>/hello
+```
+
+## Step-04: Clean-Up Kubernetes Deployment and Services
+```t
+# List Services
+kubectl get svc 
+
+# Delete Services
+kubectl delete service my-backend-service 
+kubectl delete service my-frontend-service 
+
+# List Deployments
+kubectl get deploy
+
+# Delete Deployments
+kubectl delete deployment my-backend-rest-app   
+kubectl delete deployment my-frontend-nginx-app
+```
+
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ #Internet ==> LB Svc==> Frontend Deployment ==> ClusterIP Svc ==> Backend Deployment
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl create deployment my-backend-rest-app --image=stacksimplify/kube-helloworld:1.0.0
+deployment.apps/my-backend-rest-app created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl expose deployment my-backend-rest-app --port=8080 --target-port=8080 --name=my-backend-service
+service/my-backend-service exposed
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl create deployment my-frontend-nginx-app --image=stacksimplify/kube-frontend-nginx:1.0.0
+deployment.apps/my-frontend-nginx-app created
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl expose deployment my-frontend-nginx-app  --type=LoadBalancer --port=80 --target-port=80 --name=my-frontend-service
+service/my-frontend-service exposed
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+my-backend-rest-app     1/1     1            1           64s
+my-frontend-nginx-app   1/1     1            1           20s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get svc
+NAME                  TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+kubernetes            ClusterIP      10.60.0.1      <none>        443/TCP        10d
+my-backend-service    ClusterIP      10.60.4.2      <none>        8080/TCP       31s
+my-frontend-service   LoadBalancer   10.60.13.212   <pending>     80:30718/TCP   15s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- http://10.60.4.2:8080/hello
+Hello World  V1 s49nmpod "tempcurlpod" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- http://10.60.13.212/hello
+Hello World  V1 s49nmpod "tempcurlpod" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get svc
+NAME                  TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+kubernetes            ClusterIP      10.60.0.1      <none>        443/TCP        10d
+my-backend-service    ClusterIP      10.60.4.2      <none>        8080/TCP       4m19s
+my-frontend-service   LoadBalancer   10.60.13.212   34.68.69.12   80:30718/TCP   4m3s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- http://34.68.69.12/hello
+Hello World  V1 s49nmpod "tempcurlpod" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+my-backend-rest-app     1/1     1            1           5m30s
+my-frontend-nginx-app   1/1     1            1           4m46s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get rs
+NAME                               DESIRED   CURRENT   READY   AGE
+my-backend-rest-app-7df999dfb4     1         1         1       5m34s
+my-frontend-nginx-app-5ffdd88484   1         1         1       4m50s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+my-backend-rest-app-7df999dfb4-s49nm     1/1     Running   0          5m38s
+my-frontend-nginx-app-5ffdd88484-z4m7b   1/1     Running   0          4m54s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl scale deploy my-backend-rest-app --replicas=3
+deployment.apps/my-backend-rest-app scaled
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+my-backend-rest-app     3/3     3            3           6m46s
+my-frontend-nginx-app   1/1     1            1           6m2s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get rs
+NAME                               DESIRED   CURRENT   READY   AGE
+my-backend-rest-app-7df999dfb4     3         3         3       6m50s
+my-frontend-nginx-app-5ffdd88484   1         1         1       6m6s
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+my-backend-rest-app-7df999dfb4-6mpvt     1/1     Running   0          19s
+my-backend-rest-app-7df999dfb4-rft5z     1/1     Running   0          19s
+my-backend-rest-app-7df999dfb4-s49nm     1/1     Running   0          6m57s
+my-frontend-nginx-app-5ffdd88484-z4m7b   1/1     Running   0          6m13s
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ for i in {1..6} ; do kubectl run -it tempcurlpodv${i} --image=curlimages/curl --rm --restart=Never -- http://34.68.69.12/hello ;  done
+Hello World  V1 6mpvtpod "tempcurlpodv1" deleted
+Hello World  V1 s49nmpod "tempcurlpodv2" deleted
+Hello World  V1 s49nmpod "tempcurlpodv3" deleted
+Hello World  V1 rft5zpod "tempcurlpodv4" deleted
+Hello World  V1 6mpvtpod "tempcurlpodv5" deleted
+Hello World  V1 6mpvtpod "tempcurlpodv6" deleted
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ for i in {11..16} ; do kubectl run -it tempcurlpodv${i} --image=curlimages/curl --rm --restart=N
+ever -- http://34.68.69.12/hello && echo "\n ";  done
+Hello World  V1 s49nmpod "tempcurlpodv11" deleted
+\n
+Hello World  V1 s49nmpod "tempcurlpodv12" deleted
+\n
+Hello World  V1 6mpvtpod "tempcurlpodv13" deleted
+\n
+Hello World  V1 6mpvtpod "tempcurlpodv14" deleted
+\n
+Hello World  V1 6mpvtpod "tempcurlpodv15" deleted
+\n
+Hello World  V1 6mpvtpod "tempcurlpodv16" deleted
+\n
+
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$ for i in {7..11} ; do kubectl run -it tempcurlpodv${i} --image=curlimages/curl --rm --restart=Ne
+ver -- http://34.68.69.12/hello ;  done
+Hello World  V1 rft5zpod "tempcurlpodv7" deleted
+Hello World  V1 6mpvtpod "tempcurlpodv8" deleted
+Hello World  V1 rft5zpod "tempcurlpodv9" deleted
+Hello World  V1 rft5zpod "tempcurlpodv10" deleted
+Hello World  V1 rft5zpod "tempcurlpodv11" deleted
+rahul@DESKTOP-C4GRDQ2:~/github/google-kubernetes-engine/12-kubectl-imperative-k8s-services$
+
