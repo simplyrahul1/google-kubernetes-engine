@@ -1,0 +1,193 @@
+simplyrahul@DESKTOP-C4GRDQ2:~$ kubectl get all
+E0827 00:08:23.259998      68 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~$ kubectl get all
+E0827 00:09:19.957839      98 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+E0827 00:09:49.958732      98 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+E0827 00:10:19.959682      98 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+E0827 00:10:49.960247      98 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+E0827 00:11:19.960535      98 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+Unable to connect to the server: dial tcp 34.121.36.68:443: i/o timeout
+
+simplyrahul@DESKTOP-C4GRDQ2:~$ gcloud container clusters get-credentials private-standard-22aug2023-2 --region us-central1 --project expanded-origin-395402
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for private-standard-22aug2023-2.
+simplyrahul@DESKTOP-C4GRDQ2:~$ kubectl get all
+E0827 00:14:04.302489     132 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+E0827 00:14:34.303748     132 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+E0827 00:15:04.304528     132 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+E0827 00:15:34.305800     132 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+E0827 00:16:04.306362     132 memcache.go:265] couldn't get current server API group list: Get "https://34.121.36.68/api?timeout=32s": dial tcp 34.121.36.68:443: i/o timeout
+Unable to connect to the server: dial tcp 34.121.36.68:443: i/o timeout
+
+simplyrahul@DESKTOP-C4GRDQ2:~$ kubectl get all
+NAME                                     READY   STATUS             RESTARTS   AGE
+pod/myapp1-deployment-7df8d7458d-4mxsn   0/1     ImagePullBackOff   0          10h
+pod/myapp1-deployment-7df8d7458d-7p524   0/1     ImagePullBackOff   0          10h
+
+NAME                        TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE
+service/kubernetes          ClusterIP      10.80.0.1     <none>          443/TCP        4d16h
+service/myapp1-lb-service   LoadBalancer   10.80.9.180   34.29.187.187   80:31972/TCP   10h
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   0/2     2            0           10h
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-7df8d7458d   2         2         0       10h
+
+simplyrahul@DESKTOP-C4GRDQ2:~$ cd gke/github/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github$ ls
+01-Create-GCP-Account                              26-GKE-PD-Volume-Snapshots-and-Restore          51-GKE-Ingress-ClientIP-Affinity
+02-Create-GKE-Cluster                              27-GKE-PD-Volume-Clone                          52-GKE-Ingress-Cookie-Affinity
+03-gcloud-cli-install-macos                        28-GKE-Storage-with-GCP-CloudSQL-Public         53-GKE-Ingress-HealthCheck-with-backendConfig
+04-gcloud-cli-install-windowsos                    29-GKE-Storage-with-GCP-CloudSQL-Private        54-GKE-Ingress-InternalLB
+05-Docker-For-Beginners                            30-GCP-CloudSQL-Private-NO-ExternalNameService  55-GKE-Ingress-Cloud-Armor
+06-kubectl-imperative-k8s-pods                     31-GKE-FileStore-default-StorageClass           56-GKE-Artifact-Registry
+07-kubectl-declarative-k8s-ReplicaSets             32-GKE-FileStore-custom-StorageClass            57-GKE-Continuous-Integration
+08-kubectl-imperative-k8s-deployment-CREATE        33-GKE-FileStore-Backup-and-Restore             58-GKE-Continuous-Delivery-with-CloudBuild
+09-kubectl-imperative-k8s-deployment-UPDATE        34-GKE-Ingress-Basics                           59-Kubernetes-liveness-probe
+10-kubectl-imperative-k8s-deployment-ROLLBACK      35-GKE-Ingress-Context-Path-Routing             60-Kubernetes-Startup-Probe
+11-kubectl-imperative-k8s-deployment-PAUSE-RESUME  36-GKE-Ingress-Custom-Health-Check              61-Kubernetes-Readiness-Probe
+12-kubectl-imperative-k8s-services                 37-Google-Cloud-Domains                         62-Kubernetes-Requests-and-Limits
+13-YAML-Basics                                     38-GKE-Ingress-ExternalIP                       63-GKE-Cluster-Autoscaling
+14-yaml-declarative-k8s-pods                       39-GKE-Ingress-Google-Managed-SSL               64-Kubernetes-Namespaces
+15-yaml-declarative-k8s-replicasets                40-GKE-Ingress-Google-Managed-SSL-Redirect      65-Kubernetes-Namespaces-ResourceQuota
+16-yaml-declarative-k8s-deployments                41-GKE-Workload-Identity                        66-Kubernetes-Namespaces-LimitRange
+17-yaml-declarative-k8s-services                   42-GKE-ExternalDNS-Install                      67-GKE-Horizontal-Pod-Autoscaler
+18-GKE-NodePort-Service                            43-GKE-ExternalDNS-Ingress-Demo                 68-GKE-AutoPilot-Cluster
+19-GKE-Headless-Service                            44-GKE-ExternalDNS-Service-Demo                 69-Access-To-Multiple-Clusters
+20-GKE-Private-Cluster                             45-GKE-Ingress-NameBasedVhost-Routing           README.md
+21-GKE-PD-existing-SC-standard-rwo                 46-GKE-Ingress-SSL-Policy                       course-presentation
+22-GKE-PD-existing-SC-premium-rwo                  47-GKE-Ingress-with-Identity-Aware-Proxy        git-deploy.sh
+23-GKE-PD-Custom-StorageClass                      48-GKE-Ingress-SelfSigned-SSL                   images
+24-GKE-PD-preexisting-PD                           49-GKE-Ingress-Preshared-SSL
+25-GKE-PD-Regional-PD                              50-GKE-Ingress-Cloud-CDN
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github$ cd 20-GKE-Private-Cluster/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ ls -ltr
+total 16
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 kube-manifests
+-rw-r--r-- 1 simplyrahul simplyrahul 8505 Aug 26 14:03 README.md
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl get all
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-7df8d7458d-4mxsn   1/1     Running   0          15h
+pod/myapp1-deployment-7df8d7458d-7p524   1/1     Running   0          15h
+
+NAME                        TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE
+service/kubernetes          ClusterIP      10.80.0.1     <none>          443/TCP        4d21h
+service/myapp1-lb-service   LoadBalancer   10.80.9.180   34.29.187.187   80:31972/TCP   15h
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   2/2     2            2           15h
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-7df8d7458d   2         2         2       15h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7df8d7458d-4mxsn   1/1     Running   0          15h
+myapp1-deployment-7df8d7458d-7p524   1/1     Running   0          15h
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl describe pods myapp1-deployment-7df8d7458d-4mxsn
+Name:             myapp1-deployment-7df8d7458d-4mxsn
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-76d79b51-6f20/10.128.0.51
+Start Time:       Sat, 26 Aug 2023 14:05:06 +0800
+Labels:           app=myapp1
+                  pod-template-hash=7df8d7458d
+Annotations:      <none>
+Status:           Running
+IP:               10.76.2.15
+IPs:
+  IP:           10.76.2.15
+Controlled By:  ReplicaSet/myapp1-deployment-7df8d7458d
+Containers:
+  myapp1-container:
+    Container ID:   containerd://20f27fff4a0212a560c4231f558ac088ba3355d2b61fa9c8036437dddd9c2645
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 27 Aug 2023 05:52:03 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-j7qmm (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-j7qmm:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason   Age                     From     Message
+  ----     ------   ----                    ----     -------
+  Warning  Failed   13m (x43 over 15h)      kubelet  Failed to pull image "stacksimplify/kubenginx:1.0.0": rpc error: code = DeadlineExceeded desc = failed to pull and unpack image "docker.io/stacksimplify/kubenginx:1.0.0": failed to resolve reference "docker.io/stacksimplify/kubenginx:1.0.0": failed to do request: Head "https://registry-1.docker.io/v2/stacksimplify/kubenginx/manifests/1.0.0": dial tcp 44.205.64.79:443: i/o timeout
+  Normal   BackOff  3m36s (x3476 over 15h)  kubelet  Back-off pulling image "stacksimplify/kubenginx:1.0.0"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7df8d7458d-4mxsn   1/1     Running   0          15h
+myapp1-deployment-7df8d7458d-7p524   1/1     Running   0          15h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl get svc
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1     <none>          443/TCP        4d21h
+myapp1-lb-service   LoadBalancer   10.80.9.180   34.29.187.187   80:31972/TCP   15h
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://10.80.9.180 --connect-timeout 3
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv1" deleted
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl run -it tempcurlpodv1 --image=curlimages/curl --rm --restart=Never -- http://34.29.187.187 --connect-timeout 3
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv1" deleted
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl delete -f kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ curl ifconfig.me
+103.252.203.106simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl get nodes
+NAME                                                  STATUS   ROLES    AGE     VERSION
+gke-private-standard-22a-default-pool-76d79b51-6f20   Ready    <none>   4d21h   v1.27.3-gke.100
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff   Ready    <none>   4d21h   v1.27.3-gke.100
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg   Ready    <none>   4d21h   v1.27.3-gke.100
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl get nodes
+NAME                                                  STATUS   ROLES    AGE     VERSION
+gke-private-standard-22a-default-pool-76d79b51-6f20   Ready    <none>   4d21h   v1.27.3-gke.100
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff   Ready    <none>   4d21h   v1.27.3-gke.100
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg   Ready    <none>   4d21h   v1.27.3-gke.100
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$ kubectl get nodes
+NAME                                                  STATUS   ROLES    AGE     VERSION
+gke-private-standard-22a-default-pool-76d79b51-6f20   Ready    <none>   4d21h   v1.27.3-gke.100
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff   Ready    <none>   4d21h   v1.27.3-gke.100
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg   Ready    <none>   4d21h   v1.27.3-gke.100
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/20-GKE-Private-Cluster$
