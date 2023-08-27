@@ -1,0 +1,138 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ cat kube-manifests/00-storage-class.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: regionalpd-storageclass
+provisioner: pd.csi.storage.gke.io
+parameters:
+  #type: pd-standard # Note: To use regional persistent disks of type pd-standard, set the PersistentVolumeClaim.storage attribute to 200Gi or higher. If you need a smaller persistent disk, use pd-ssd instead of pd-standard.
+  type: pd-ssd
+  replication-type: regional-pd
+volumeBindingMode: WaitForFirstConsumer
+#allowedTopologies:  ##-->COMMENTED BECAUSE WE ARE USING REGIONAL GKE CLUSTER
+#- matchLabelExpressions:
+#  - key: topology.gke.io/zone
+#    values:
+#    - us-central1-c
+#    - us-central1-b
+
+## Important Note - Regional PD
+# 1. If using a regional GKE cluster, you can leave allowedTopologies unspecified.
+# 2. If you do this, when you create a Pod that consumes a
+#PersistentVolumeClaim which uses this StorageClass a regional persistent
+#disk is provisioned with two zones. One zone is the same as the zone
+#that the Pod is scheduled in. The other zone is randomly picked from
+#the zones available to the cluster.
+# 3. When using a zonal cluster, allowedTopologies must be set.
+
+# STORAGE CLASS
+# 1. A StorageClass provides a way for administrators
+# to describe the "classes" of storage they offer.
+# 2. Here we are offering GCP PD Storage for GKE Clustersimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ cat kube-manifests/01-persistent-volume-claim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: regionalpd-storageclass
+  resources:
+    requests:
+      storage: 4Gi
+
+# NEED FOR PVC
+# 1. Dynamic volume provisioning allows storage volumes to be created
+# on-demand.
+
+# 2. Without dynamic provisioning, cluster administrators have to manually
+# make calls to their cloud or storage provider to create new storage
+# volumes, and then create PersistentVolume objects to represent them in k8s
+
+# 3. The dynamic provisioning feature eliminates the need for cluster
+# administrators to pre-provision storage. Instead, it automatically
+# provisions storage when it is requested by users.
+
+# 4. PVC: Users request dynamically provisioned storage by including
+# a storage class in their PersistentVolumeClaim
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl apply -f kube-manifests/
+storageclass.storage.k8s.io/regionalpd-storageclass created
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl get svc
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)        AGE
+kubernetes                   ClusterIP      10.80.0.1     <none>         443/TCP        5d10h
+mysql                        ClusterIP      None          <none>         3306/TCP       41s
+usermgmt-webapp-lb-service   LoadBalancer   10.80.1.218   34.31.249.86   80:32059/TCP   40s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d10h
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d10h
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d10h
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d10h
+regionalpd-storageclass     pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   false                  51s
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   5d10h
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d10h
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d10h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS              REASON   AGE
+pvc-1a20e390-2bce-48ef-9079-13a5e3a6615b   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   regionalpd-storageclass            59s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS              AGE
+mysql-pv-claim   Bound    pvc-1a20e390-2bce-48ef-9079-13a5e3a6615b   4Gi        RWO            regionalpd-storageclass   70s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl get deploy
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+mysql             1/1     1            1           2m7s
+usermgmt-webapp   1/1     1            1           2m6s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+mysql-d95875db9-nrqfq              1/1     Running   0          2m18s
+usermgmt-webapp-77f5f9cf7d-s7hsf   1/1     Running   0          2m17s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl get cm
+NAME                               DATA   AGE
+kube-root-ca.crt                   1      5d10h
+usermanagement-dbcreation-script   1      2m36s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl describe pv pvc-1a20e390-2bce-48ef-9079-13a5e3a6615b
+Name:              pvc-1a20e390-2bce-48ef-9079-13a5e3a6615b
+Labels:            <none>
+Annotations:       pv.kubernetes.io/provisioned-by: pd.csi.storage.gke.io
+                   volume.kubernetes.io/provisioner-deletion-secret-name:
+                   volume.kubernetes.io/provisioner-deletion-secret-namespace:
+Finalizers:        [kubernetes.io/pv-protection external-attacher/pd-csi-storage-gke-io]
+StorageClass:      regionalpd-storageclass
+Status:            Bound
+Claim:             default/mysql-pv-claim
+Reclaim Policy:    Delete
+Access Modes:      RWO
+VolumeMode:        Filesystem
+Capacity:          4Gi
+Node Affinity:
+  Required Terms:
+    Term 0:        topology.gke.io/zone in [us-central1-c]
+    Term 1:        topology.gke.io/zone in [us-central1-a]
+Message:
+Source:
+    Type:              CSI (a Container Storage Interface (CSI) volume source)
+    Driver:            pd.csi.storage.gke.io
+    FSType:            ext4
+    VolumeHandle:      projects/expanded-origin-395402/regions/us-central1/disks/pvc-1a20e390-2bce-48ef-9079-13a5e3a6615b
+    ReadOnly:          false
+    VolumeAttributes:      storage.kubernetes.io/csiProvisionerIdentity=1692727494068-2111-pd.csi.storage.gke.io
+Events:                <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ kubectl delete -f kube-manifests/
+storageclass.storage.k8s.io "regionalpd-storageclass" deleted
+persistentvolumeclaim "mysql-pv-claim" deleted
+configmap "usermanagement-dbcreation-script" deleted
+deployment.apps "mysql" deleted
+service "mysql" deleted
+deployment.apps "usermgmt-webapp" deleted
+service "usermgmt-webapp-lb-service" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$
