@@ -1,0 +1,264 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ cd ../23-GKE-PD-Custom-StorageClass/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ cd kube-manifests/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$ ls -ltr
+total 28
+-rw-r--r-- 1 simplyrahul simplyrahul  255 Aug 26 14:03 06-UserMgmtWebApp-LoadBalancer-Service.yaml
+-rw-r--r-- 1 simplyrahul simplyrahul 1142 Aug 26 14:03 05-UserMgmtWebApp-Deployment.yaml
+-rw-r--r-- 1 simplyrahul simplyrahul  178 Aug 26 14:03 04-mysql-clusterip-service.yaml
+-rw-r--r-- 1 simplyrahul simplyrahul 1051 Aug 26 14:03 03-mysql-deployment.yaml
+-rw-r--r-- 1 simplyrahul simplyrahul  494 Aug 26 14:03 02-UserManagement-ConfigMap.yaml
+-rw-r--r-- 1 simplyrahul simplyrahul  921 Aug 26 14:03 01-persistent-volume-claim.yaml
+-rw-r--r-- 1 simplyrahul simplyrahul  479 Aug 26 14:03 00-storage-class.yaml
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$ cat 00-storage-class.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gke-pd-standard-rwo-sc
+provisioner: pd.csi.storage.gke.io
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+parameters:
+  type: pd-balanced # Other Options supported are pd-ssd, pd-standard
+
+# STORAGE CLASS
+# 1. A StorageClass provides a way for administrators
+# to describe the "classes" of storage they offer.
+# 2. Here we are offering GCP PD Storage for GKE Clustersimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d8h
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   5d8h
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d8h
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$ kubectl apply -f 00-storage-class.yaml
+storageclass.storage.k8s.io/gke-pd-standard-rwo-sc created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+gke-pd-standard-rwo-sc      pd.csi.storage.gke.io          Retain          WaitForFirstConsumer   true                   15s
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d8h
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   5d8h
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d8h
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$ cat 01-persistent-volume-claim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gke-pd-standard-rwo-sc
+  resources:
+    requests:
+      storage: 4Gi # Commment at Step-09
+      #storage: 8Gi # UnCommment at Step-09
+
+# NEED FOR PVC
+# 1. Dynamic volume provisioning allows storage volumes to be created
+# on-demand.
+
+# 2. Without dynamic provisioning, cluster administrators have to manually
+# make calls to their cloud or storage provider to create new storage
+# volumes, and then create PersistentVolume objects to represent them in k8s
+
+# 3. The dynamic provisioning feature eliminates the need for cluster
+# administrators to pre-provision storage. Instead, it automatically
+# provisions storage when it is requested by users.
+
+# 4. PVC: Users request dynamically provisioned storage by including
+# a storage class in their PersistentVolumeClaim
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass/kube-manifests$ cd ../
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl apply -f kube-manifests/
+storageclass.storage.k8s.io/gke-pd-standard-rwo-sc unchanged
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+gke-pd-standard-rwo-sc      pd.csi.storage.gke.io          Retain          WaitForFirstConsumer   true                   2m7s
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d8h
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   5d8h
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d8h
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS             REASON   AGE
+pvc-2d75e283-a4e7-45b1-8928-38aba4626720   4Gi        RWO            Retain           Bound    default/mysql-pv-claim   gke-pd-standard-rwo-sc            29s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pvc --show-labels
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS             AGE   LABELS
+mysql-pv-claim   Bound    pvc-2d75e283-a4e7-45b1-8928-38aba4626720   4Gi        RWO            gke-pd-standard-rwo-sc   48s   <none>
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get deploy --show-labels
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE   LABELS
+mysql             1/1     1            1           62s   <none>
+usermgmt-webapp   1/1     1            1           60s   app=usermgmt-webapp
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pods --show-labels
+NAME                               READY   STATUS    RESTARTS   AGE   LABELS
+mysql-d95875db9-hwnj4              1/1     Running   0          71s   app=mysql,pod-template-hash=d95875db9
+usermgmt-webapp-77f5f9cf7d-ww2gh   1/1     Running   0          70s   app=usermgmt-webapp,pod-template-hash=77f5f9cf7d
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get svc --show-labels
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE    LABELS
+kubernetes                   ClusterIP      10.80.0.1     <none>          443/TCP        5d8h   component=apiserver,provider=kubernetes
+mysql                        ClusterIP      None          <none>          3306/TCP       80s    <none>
+usermgmt-webapp-lb-service   LoadBalancer   10.80.4.163   34.31.246.157   80:31078/TCP   79s    app=usermgmt-webapp
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl logs -f usermgmt-webapp-77f5f9cf7d-ww2gh
+Defaulted container "usermgmt-webapp" out of: usermgmt-webapp, init-db (init)
+27-Aug-2023 09:09:12.726 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server version:        Apache Tomcat/8.0.51
+27-Aug-2023 09:09:12.740 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server built:          Apr 9 2018 21:20:15 UTC
+27-Aug-2023 09:09:12.741 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server number:         8.0.51.0
+27-Aug-2023 09:09:12.742 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Name:               Linux
+27-Aug-2023 09:09:12.742 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Version:            5.15.109+
+27-Aug-2023 09:09:12.743 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Architecture:          amd64
+27-Aug-2023 09:09:12.744 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Java Home:             /usr/lib/jvm/java-1.8-openjdk/jre
+27-Aug-2023 09:09:12.745 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Version:           1.8.0_151-b12
+27-Aug-2023 09:09:12.745 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Vendor:            Oracle Corporation
+27-Aug-2023 09:09:12.745 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:         /usr/local/tomcat
+27-Aug-2023 09:09:12.746 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:         /usr/local/tomcat
+27-Aug-2023 09:09:12.747 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.config.file=/usr/local/tomcat/conf/logging.properties
+27-Aug-2023 09:09:12.747 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+27-Aug-2023 09:09:12.748 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djdk.tls.ephemeralDHKeySize=2048
+27-Aug-2023 09:09:12.748 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+27-Aug-2023 09:09:12.749 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dignore.endorsed.dirs=
+27-Aug-2023 09:09:12.749 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.base=/usr/local/tomcat
+27-Aug-2023 09:09:12.750 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.home=/usr/local/tomcat
+27-Aug-2023 09:09:12.750 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.io.tmpdir=/usr/local/tomcat/temp
+27-Aug-2023 09:09:12.751 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent Loaded APR based Apache Tomcat Native library 1.2.16 using APR version 1.6.3.
+27-Aug-2023 09:09:12.752 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
+27-Aug-2023 09:09:12.770 INFO [main] org.apache.catalina.core.AprLifecycleListener.initializeSSL OpenSSL successfully initialized (OpenSSL 1.0.2o  27 Mar 2018)
+27-Aug-2023 09:09:13.128 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["http-apr-8080"]
+27-Aug-2023 09:09:13.152 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["ajp-apr-8009"]
+27-Aug-2023 09:09:13.158 INFO [main] org.apache.catalina.startup.Catalina.load Initialization processed in 1458 ms
+27-Aug-2023 09:09:13.215 INFO [main] org.apache.catalina.core.StandardService.startInternal Starting service Catalina
+27-Aug-2023 09:09:13.215 INFO [main] org.apache.catalina.core.StandardEngine.startInternal Starting Servlet Engine: Apache Tomcat/8.0.51
+27-Aug-2023 09:09:13.281 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive /usr/local/tomcat/webapps/ROOT.war
+27-Aug-2023 09:09:19.231 INFO [localhost-startStop-1] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v2.1.6.RELEASE)
+
+2023-08-27 09:09:21.633  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : Starting SpringbootSecurityInternalApplication v1.0.0-MySQLDB on usermgmt-webapp-77f5f9cf7d-ww2gh with PID 1 (/usr/local/tomcat/webapps/ROOT/WEB-INF/classes started by root in /usr/local/tomcat)
+2023-08-27 09:09:21.664  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : No active profile set, falling back to default profiles: default
+2023-08-27 09:09:25.593  INFO 1 --- [ost-startStop-1] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 3803 ms
+Loading class `com.mysql.jdbc.Driver'. This is deprecated. The new driver class is `com.mysql.cj.jdbc.Driver'. The driver is automatically registered via the SPI and manual loading of the driver class is generally unnecessary.
+2023-08-27 09:09:27.744  INFO 1 --- [ost-startStop-1] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+        name: default
+        ...]
+2023-08-27 09:09:27.995  INFO 1 --- [ost-startStop-1] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.10.Final}
+2023-08-27 09:09:28.015  INFO 1 --- [ost-startStop-1] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2023-08-27 09:09:28.372  INFO 1 --- [ost-startStop-1] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2023-08-27 09:09:28.795  INFO 1 --- [ost-startStop-1] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL57Dialect
+2023-08-27 09:09:34.327  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : Started SpringbootSecurityInternalApplication in 14.51 seconds (JVM running for 23.404)
+27-Aug-2023 09:09:34.399 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deployment of web application archive /usr/local/tomcat/webapps/ROOT.war has finished in 21,117 ms
+27-Aug-2023 09:09:34.408 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-apr-8080"]
+27-Aug-2023 09:09:34.438 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["ajp-apr-8009"]
+27-Aug-2023 09:09:34.443 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 21284 ms
+2023-08-27 09:11:49.695  INFO 1 --- [apr-8080-exec-3] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2023-08-27 09:11:49.742  INFO 1 --- [apr-8080-exec-3] o.s.web.servlet.DispatcherServlet        : Completed initialization in 43 ms
+2023-08-27 09:11:58.048  INFO 1 --- [pr-8080-exec-10] c.s.r.services.CustomUserDetailsService  : In CustomUserDetailsService class
+2023-08-27 09:11:58.117  INFO 1 --- [pr-8080-exec-10] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2023-08-27 09:11:58.826  INFO 1 --- [pr-8080-exec-10] c.s.r.services.CustomUserDetails         : Retruning role details from CustomUserDetails class
+2023-08-27 09:11:58.829  INFO 1 --- [pr-8080-exec-10] c.s.r.services.CustomUserDetails         : Role Details: {}[ROLE_ADMIN]
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ vim kube-manifests/01-persistent-volume-claim.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl apply -f kube-manifests/
+storageclass.storage.k8s.io/gke-pd-standard-rwo-sc unchanged
+persistentvolumeclaim/mysql-pv-claim configured
+configmap/usermanagement-dbcreation-script unchanged
+deployment.apps/mysql unchanged
+service/mysql unchanged
+deployment.apps/usermgmt-webapp unchanged
+service/usermgmt-webapp-lb-service unchanged
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS             REASON   AGE
+pvc-2d75e283-a4e7-45b1-8928-38aba4626720   8Gi        RWO            Retain           Bound    default/mysql-pv-claim   gke-pd-standard-rwo-sc            8m59s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS             AGE
+mysql-pv-claim   Bound    pvc-2d75e283-a4e7-45b1-8928-38aba4626720   8Gi        RWO            gke-pd-standard-rwo-sc   9m14s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get svc
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE
+kubernetes                   ClusterIP      10.80.0.1     <none>          443/TCP        5d8h
+mysql                        ClusterIP      None          <none>          3306/TCP       9m55s
+usermgmt-webapp-lb-service   LoadBalancer   10.80.4.163   34.31.246.157   80:31078/TCP   9m54s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+gke-pd-standard-rwo-sc      pd.csi.storage.gke.io          Retain          WaitForFirstConsumer   true                   14m
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d8h
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   5d8h
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d8h
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d8h
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ ls
+README.md  kube-manifests
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl delete -f kube-manifests/
+storageclass.storage.k8s.io "gke-pd-standard-rwo-sc" deleted
+persistentvolumeclaim "mysql-pv-claim" deleted
+configmap "usermanagement-dbcreation-script" deleted
+deployment.apps "mysql" deleted
+service "mysql" deleted
+deployment.apps "usermgmt-webapp" deleted
+service "usermgmt-webapp-lb-service" deleted
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d9h
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d9h
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d9h
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d9h
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   5d9h
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d9h
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d9h
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS     CLAIM                    STORAGECLASS             REASON   AGE
+pvc-2d75e283-a4e7-45b1-8928-38aba4626720   8Gi        RWO            Retain           Released   default/mysql-pv-claim   gke-pd-standard-rwo-sc            24m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pvc
+No resources found in default namespace.
+
+### Create clone of the disk with name "preexisting-pd"
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl delete pv pvc-2d75e283-a4e7-45b1-8928-38aba4626720
+persistentvolume "pvc-2d75e283-a4e7-45b1-8928-38aba4626720" deleted
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pv
+No resources found
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ kubectl get pvc
+No resources found in default namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$ vim kube-manifests/01-persistent-volume-claim.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/23-GKE-PD-Custom-StorageClass$
