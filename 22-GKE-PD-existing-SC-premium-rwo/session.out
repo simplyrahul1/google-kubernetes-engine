@@ -1,0 +1,112 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github$ cd 22-GKE-PD-existing-SC-premium-rwo/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl apply -f kube-manifests/
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl get sc
+kuNAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d7h
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d7h
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d7h
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d7h
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   5d7h
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   5d7h
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   5d7h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-7b33e41b-807a-477b-8ad9-04f0c862b561   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   premium-rwo             38s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-7b33e41b-807a-477b-8ad9-04f0c862b561   4Gi        RWO            premium-rwo    54s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl get deploy
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+mysql             1/1     1            1           61s
+usermgmt-webapp   1/1     1            1           59s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl get pods -o wide --showlabels
+error: unknown flag: --showlabels
+See 'kubectl get --help' for usage.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl get pods -o wide --show-labels
+NAME                               READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+mysql-d95875db9-h2zxf              1/1     Running   0          82s   10.76.1.20   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql,pod-template-hash=d95875db9
+usermgmt-webapp-7d7879857b-ml77v   1/1     Running   0          81s   10.76.1.19   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp,pod-template-hash=7d7879857b
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl get svc -o wide --show-labels
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE    SELECTOR              LABELS
+kubernetes                   ClusterIP      10.80.0.1     <none>          443/TCP        5d7h   <none>                component=apiserver,provider=kubernetes
+mysql                        ClusterIP      None          <none>          3306/TCP       92s    app=mysql             <none>
+usermgmt-webapp-lb-service   LoadBalancer   10.80.3.160   35.232.147.12   80:32593/TCP   91s    app=usermgmt-webapp   app=usermgmt-webapp
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl logs -f usermgmt-webapp-7d7879857b-ml77v
+Defaulted container "usermgmt-webapp" out of: usermgmt-webapp, init-db (init)
+27-Aug-2023 08:14:46.391 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server version:        Apache Tomcat/8.0.51
+27-Aug-2023 08:14:46.405 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server built:          Apr 9 2018 21:20:15 UTC
+27-Aug-2023 08:14:46.406 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server number:         8.0.51.0
+27-Aug-2023 08:14:46.406 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Name:               Linux
+27-Aug-2023 08:14:46.407 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Version:            5.15.109+
+27-Aug-2023 08:14:46.407 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Architecture:          amd64
+27-Aug-2023 08:14:46.409 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Java Home:             /usr/lib/jvm/java-1.8-openjdk/jre
+27-Aug-2023 08:14:46.409 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Version:           1.8.0_151-b12
+27-Aug-2023 08:14:46.410 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Vendor:            Oracle Corporation
+27-Aug-2023 08:14:46.410 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:         /usr/local/tomcat
+27-Aug-2023 08:14:46.411 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:         /usr/local/tomcat
+27-Aug-2023 08:14:46.412 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.config.file=/usr/local/tomcat/conf/logging.properties
+27-Aug-2023 08:14:46.413 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+27-Aug-2023 08:14:46.414 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djdk.tls.ephemeralDHKeySize=2048
+27-Aug-2023 08:14:46.414 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+27-Aug-2023 08:14:46.415 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dignore.endorsed.dirs=
+27-Aug-2023 08:14:46.415 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.base=/usr/local/tomcat
+27-Aug-2023 08:14:46.416 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.home=/usr/local/tomcat
+27-Aug-2023 08:14:46.417 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.io.tmpdir=/usr/local/tomcat/temp
+27-Aug-2023 08:14:46.418 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent Loaded APR based Apache Tomcat Native library 1.2.16 using APR version 1.6.3.
+27-Aug-2023 08:14:46.420 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
+27-Aug-2023 08:14:46.453 INFO [main] org.apache.catalina.core.AprLifecycleListener.initializeSSL OpenSSL successfully initialized (OpenSSL 1.0.2o  27 Mar 2018)
+27-Aug-2023 08:14:46.764 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["http-apr-8080"]
+27-Aug-2023 08:14:46.781 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["ajp-apr-8009"]
+27-Aug-2023 08:14:46.784 INFO [main] org.apache.catalina.startup.Catalina.load Initialization processed in 1451 ms
+27-Aug-2023 08:14:46.857 INFO [main] org.apache.catalina.core.StandardService.startInternal Starting service Catalina
+27-Aug-2023 08:14:46.857 INFO [main] org.apache.catalina.core.StandardEngine.startInternal Starting Servlet Engine: Apache Tomcat/8.0.51
+27-Aug-2023 08:14:46.933 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive /usr/local/tomcat/webapps/ROOT.war
+27-Aug-2023 08:14:52.503 INFO [localhost-startStop-1] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v2.1.6.RELEASE)
+
+2023-08-27 08:14:55.099  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : Starting SpringbootSecurityInternalApplication v1.0.0-MySQLDB on usermgmt-webapp-7d7879857b-ml77v with PID 1 (/usr/local/tomcat/webapps/ROOT/WEB-INF/classes started by root in /usr/local/tomcat)
+2023-08-27 08:14:55.123  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : No active profile set, falling back to default profiles: default
+2023-08-27 08:14:59.505  INFO 1 --- [ost-startStop-1] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 4260 ms
+Loading class `com.mysql.jdbc.Driver'. This is deprecated. The new driver class is `com.mysql.cj.jdbc.Driver'. The driver is automatically registered via the SPI and manual loading of the driver class is generally unnecessary.
+2023-08-27 08:15:01.606  INFO 1 --- [ost-startStop-1] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+        name: default
+        ...]
+2023-08-27 08:15:01.824  INFO 1 --- [ost-startStop-1] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.10.Final}
+2023-08-27 08:15:01.829  INFO 1 --- [ost-startStop-1] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2023-08-27 08:15:02.295  INFO 1 --- [ost-startStop-1] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2023-08-27 08:15:02.735  INFO 1 --- [ost-startStop-1] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL57Dialect
+2023-08-27 08:15:08.668  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : Started SpringbootSecurityInternalApplication in 15.557 seconds (JVM running for 24.141)
+27-Aug-2023 08:15:08.761 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deployment of web application archive /usr/local/tomcat/webapps/ROOT.war has finished in 21,827 ms
+27-Aug-2023 08:15:08.772 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-apr-8080"]
+27-Aug-2023 08:15:08.792 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["ajp-apr-8009"]
+27-Aug-2023 08:15:08.809 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 22023 ms
+2023-08-27 08:16:28.398  INFO 1 --- [apr-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2023-08-27 08:16:28.449  INFO 1 --- [apr-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 50 ms
+2023-08-27 08:16:38.674  INFO 1 --- [apr-8080-exec-6] c.s.r.services.CustomUserDetailsService  : In CustomUserDetailsService class
+2023-08-27 08:16:38.753  INFO 1 --- [apr-8080-exec-6] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2023-08-27 08:16:39.868  INFO 1 --- [apr-8080-exec-6] c.s.r.services.CustomUserDetails         : Retruning role details from CustomUserDetails class
+2023-08-27 08:16:39.869  INFO 1 --- [apr-8080-exec-6] c.s.r.services.CustomUserDetails         : Role Details: {}[ROLE_ADMIN]
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$ kubectl delete -f kube-manifests/
+persistentvolumeclaim "mysql-pv-claim" deleted
+configmap "usermanagement-dbcreation-script" deleted
+deployment.apps "mysql" deleted
+service "mysql" deleted
+deployment.apps "usermgmt-webapp" deleted
+service "usermgmt-webapp-lb-service" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/22-GKE-PD-existing-SC-premium-rwo$
