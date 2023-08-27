@@ -145,3 +145,4 @@ service "mysql" deleted
 deployment.apps "usermgmt-webapp" deleted
 service "usermgmt-webapp-lb-service" deleted
 
+Delete the persistent Disk : preexistingdisk
