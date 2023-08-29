@@ -1,0 +1,8 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: my-snapshot1-use2
+spec:
+  volumeSnapshotClassName: my-snapshotclass-use2
+  source:
+    persistentVolumeClaimName: mysql-pv-claim

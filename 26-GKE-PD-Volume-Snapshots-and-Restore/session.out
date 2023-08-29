@@ -1,0 +1,467 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/25-GKE-PD-Regional-PD$ cd ../26-GKE-PD-Volume-Snapshots-and-Restore/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ ls -ltr
+total 20
+-rw-r--r-- 1 simplyrahul simplyrahul 7675 Aug 26 14:03 README.md
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 03-Volume-Restore
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 02-Volume-Snapshot
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 01-kube-manifests
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl apply -f 01-kube-manifests/
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   7d21h
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   7d21h
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   7d21h
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   7d21h
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   7d21h
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   7d21h
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   7d21h
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-ecc06820-921c-4928-b8f8-d2593208bd77   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            18s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-ecc06820-921c-4928-b8f8-d2593208bd77   4Gi        RWO            standard-rwo   45s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get deploy
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+mysql             1/1     1            1           59s
+usermgmt-webapp   1/1     1            1           56s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+mysql-d95875db9-29r6n              1/1     Running   0          65s
+usermgmt-webapp-77f5f9cf7d-nkczf   1/1     Running   0          65s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get svc
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)        AGE
+kubernetes                   ClusterIP      10.80.0.1     <none>         443/TCP        7d21h
+mysql                        ClusterIP      None          <none>         3306/TCP       73s
+usermgmt-webapp-lb-service   LoadBalancer   10.80.3.171   35.202.69.65   80:30759/TCP   72s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ ls -ltr
+total 20
+-rw-r--r-- 1 simplyrahul simplyrahul 7675 Aug 26 14:03 README.md
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 03-Volume-Restore
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 02-Volume-Snapshot
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 01-kube-manifests
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cat 02-Volume-Snapshot/0
+01-VolumeSnapshotClass.yaml  02-VolumeSnapshot.yaml
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cat 02-Volume-Snapshot/01-VolumeSnapshotClass.yaml
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: my-snapshotclass
+driver: pd.csi.storage.gke.io
+deletionPolicy: Delete
+#parameters:
+#  storage-locations: us-east2
+
+# Optional Note:
+# To use a custom storage location, add a storage-locations parameter to the snapshot class.
+# To use this parameter, your clusters must use version 1.21 or later.
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cat 02-Volume-Snapshot/02-VolumeSnapshot.yaml
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: my-snapshot1
+spec:
+  volumeSnapshotClassName: my-snapshotclass
+  source:
+    persistentVolumeClaimName: mysql-pv-claimsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl apply -f 02-Volume-Snapshot
+volumesnapshotclass.snapshot.storage.k8s.io/my-snapshotclass created
+volumesnapshot.snapshot.storage.k8s.io/my-snapshot1 created
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshotclass
+NAME               DRIVER                  DELETIONPOLICY   AGE
+my-snapshotclass   pd.csi.storage.gke.io   Delete           21s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshot
+NAME           READYTOUSE   SOURCEPVC        SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS      SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+my-snapshot1   true         mysql-pv-claim                           4Gi           my-snapshotclass   snapcontent-fd524560-5eab-4404-b0f1-cf2517043422   34s            36s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshot -o wide
+NAME           READYTOUSE   SOURCEPVC        SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS      SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+my-snapshot1   true         mysql-pv-claim                           4Gi           my-snapshotclass   snapcontent-fd524560-5eab-4404-b0f1-cf2517043422   48s            50s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshot -o wide --show-labels
+NAME           READYTOUSE   SOURCEPVC        SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS      SNAPSHOTCONTENT                                    CREATIONTIME   AGE   LABELS
+my-snapshot1   true         mysql-pv-claim                           4Gi           my-snapshotclass   snapcontent-fd524560-5eab-4404-b0f1-cf2517043422   57s            59s   <none>
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl describe volumesnapshot my-snapshot1
+Name:         my-snapshot1
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  snapshot.storage.k8s.io/v1
+Kind:         VolumeSnapshot
+Metadata:
+  Creation Timestamp:  2023-08-29T22:06:59Z
+  Finalizers:
+    snapshot.storage.kubernetes.io/volumesnapshot-as-source-protection
+    snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+  Generation:        1
+  Resource Version:  7082765
+  UID:               fd524560-5eab-4404-b0f1-cf2517043422
+Spec:
+  Source:
+    Persistent Volume Claim Name:  mysql-pv-claim
+  Volume Snapshot Class Name:      my-snapshotclass
+Status:
+  Bound Volume Snapshot Content Name:  snapcontent-fd524560-5eab-4404-b0f1-cf2517043422
+  Creation Time:                       2023-08-29T22:07:01Z
+  Ready To Use:                        true
+  Restore Size:                        4Gi
+Events:
+  Type    Reason            Age    From                 Message
+  ----    ------            ----   ----                 -------
+  Normal  CreatingSnapshot  2m30s  snapshot-controller  Waiting for a snapshot default/my-snapshot1 to be created by the CSI driver.
+  Normal  SnapshotCreated   2m20s  snapshot-controller  Snapshot default/my-snapshot1 was successfully created by the CSI driver.
+  Normal  SnapshotReady     2m2s   snapshot-controller  Snapshot default/my-snapshot1 is ready to use.
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshot  -o yaml
+apiVersion: v1
+items:
+- apiVersion: snapshot.storage.k8s.io/v1
+  kind: VolumeSnapshot
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"snapshot.storage.k8s.io/v1","kind":"VolumeSnapshot","metadata":{"annotations":{},"name":"my-snapshot1","namespace":"default"},"spec":{"source":{"persistentVolumeClaimName":"mysql-pv-claim"},"volumeSnapshotClassName":"my-snapshotclass"}}
+    creationTimestamp: "2023-08-29T22:06:59Z"
+    finalizers:
+    - snapshot.storage.kubernetes.io/volumesnapshot-as-source-protection
+    - snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+    generation: 1
+    name: my-snapshot1
+    namespace: default
+    resourceVersion: "7082765"
+    uid: fd524560-5eab-4404-b0f1-cf2517043422
+  spec:
+    source:
+      persistentVolumeClaimName: mysql-pv-claim
+    volumeSnapshotClassName: my-snapshotclass
+  status:
+    boundVolumeSnapshotContentName: snapcontent-fd524560-5eab-4404-b0f1-cf2517043422
+    creationTime: "2023-08-29T22:07:01Z"
+    readyToUse: true
+    restoreSize: 4Gi
+kind: List
+metadata:
+  resourceVersion: ""
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cp 02-Volume-Snapshot/01-VolumeSnapshotClass.yaml 02-Volume-Snapshot/011-VolumeSnapshotClass-use1.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ vim 02-Volume-Snapshot/011-VolumeSnapshotClass-use1.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ mv 02-Volume-Snapshot/011-VolumeSnapshotClass-use1.yaml 02-Volume-Snapshot/011-VolumeSnapshotClass-use2.yaml
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cat 02-Volume-Snapshot/011-VolumeSnapshotClass-use2.yaml
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: my-snapshotclass-use2
+driver: pd.csi.storage.gke.io
+deletionPolicy: Delete
+parameters:
+  storage-locations: us-east2
+
+# Optional Note:
+# To use a custom storage location, add a storage-locations parameter to the snapshot class.
+# To use this parameter, your clusters must use version 1.21 or later.
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cp 02-Volume-Snapshot/02-VolumeSnapshot.yaml 02-Volume-Snapshot/021-VolumeSnapshot-use2.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ vim 02-Volume-Snapshot/021-VolumeSnapshot-use2.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cat 02-Volume-Snapshot/021-VolumeSnapshot-use2.yaml
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: my-snapshot1-use2
+spec:
+  volumeSnapshotClassName: my-snapshotclass-use2
+  source:
+    persistentVolumeClaimName: mysql-pv-claim
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl apply -f 02-Volume-Snapshot/011-VolumeSnapshotClass-use2.yaml
+volumesnapshotclass.snapshot.storage.k8s.io/my-snapshotclass-use2 created
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl apply -f 02-Volume-Snapshot/021-VolumeSnapshot-use2.yaml
+volumesnapshot.snapshot.storage.k8s.io/my-snapshot1-use2 created
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshotclass
+NAME                    DRIVER                  DELETIONPOLICY   AGE
+my-snapshotclass        pd.csi.storage.gke.io   Delete           10m
+my-snapshotclass-use2   pd.csi.storage.gke.io   Delete           35s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshot
+NAME                READYTOUSE   SOURCEPVC        SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS           SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+my-snapshot1        true         mysql-pv-claim                           4Gi           my-snapshotclass        snapcontent-fd524560-5eab-4404-b0f1-cf2517043422   11m            11m
+my-snapshot1-use2   false        mysql-pv-claim                                         my-snapshotclass-use2   snapcontent-2042c084-a742-4711-aa61-a4d352fb6859                  32s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl describe volumesnapshotclass my-snapshotclass-use2
+Name:             my-snapshotclass-use2
+Namespace:
+Labels:           <none>
+Annotations:      <none>
+API Version:      snapshot.storage.k8s.io/v1
+Deletion Policy:  Delete
+Driver:           pd.csi.storage.gke.io
+Kind:             VolumeSnapshotClass
+Metadata:
+  Creation Timestamp:  2023-08-29T22:17:22Z
+  Generation:          1
+  Resource Version:    7088939
+  UID:                 1e1efd07-56e2-47ac-99eb-c832ec811090
+Parameters:
+  Storage - Locations:  us-east2
+Events:                 <none>
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl describe volumesnapshotclass my-snapshotclass
+Name:             my-snapshotclass
+Namespace:
+Labels:           <none>
+Annotations:      <none>
+API Version:      snapshot.storage.k8s.io/v1
+Deletion Policy:  Delete
+Driver:           pd.csi.storage.gke.io
+Kind:             VolumeSnapshotClass
+Metadata:
+  Creation Timestamp:  2023-08-29T22:06:59Z
+  Generation:          1
+  Resource Version:    7082388
+  UID:                 f87ff183-8dce-402a-a2d9-ba4b648b96e5
+Events:                <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshot my-snapshot1-use2
+NAME                READYTOUSE   SOURCEPVC        SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS           SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+my-snapshot1-use2   false        mysql-pv-claim                                         my-snapshotclass-use2   snapcontent-2042c084-a742-4711-aa61-a4d352fb6859                  2m15s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl describe volumesnapshot my-snapshot1-use2
+Name:         my-snapshot1-use2
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  snapshot.storage.k8s.io/v1
+Kind:         VolumeSnapshot
+Metadata:
+  Creation Timestamp:  2023-08-29T22:17:44Z
+  Finalizers:
+    snapshot.storage.kubernetes.io/volumesnapshot-as-source-protection
+    snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+  Generation:        1
+  Resource Version:  7089171
+  UID:               2042c084-a742-4711-aa61-a4d352fb6859
+Spec:
+  Source:
+    Persistent Volume Claim Name:  mysql-pv-claim
+  Volume Snapshot Class Name:      my-snapshotclass-use2
+Status:
+  Bound Volume Snapshot Content Name:  snapcontent-2042c084-a742-4711-aa61-a4d352fb6859
+  Ready To Use:                        false
+Events:
+  Type    Reason            Age    From                 Message
+  ----    ------            ----   ----                 -------
+  Normal  CreatingSnapshot  2m28s  snapshot-controller  Waiting for a snapshot default/my-snapshot1-use2 to be created by the CSI driver.
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshot my-snapshot1-use2
+NAME                READYTOUSE   SOURCEPVC        SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS           SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+my-snapshot1-use2   false        mysql-pv-claim                                         my-snapshotclass-use2   snapcontent-2042c084-a742-4711-aa61-a4d352fb6859                  5m1s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl describe volumesnapshot my-snapshot1-use2
+Name:         my-snapshot1-use2
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  snapshot.storage.k8s.io/v1
+Kind:         VolumeSnapshot
+Metadata:
+  Creation Timestamp:  2023-08-29T22:17:44Z
+  Finalizers:
+    snapshot.storage.kubernetes.io/volumesnapshot-as-source-protection
+    snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+  Generation:        1
+  Resource Version:  7089171
+  UID:               2042c084-a742-4711-aa61-a4d352fb6859
+Spec:
+  Source:
+    Persistent Volume Claim Name:  mysql-pv-claim
+  Volume Snapshot Class Name:      my-snapshotclass-use2
+Status:
+  Bound Volume Snapshot Content Name:  snapcontent-2042c084-a742-4711-aa61-a4d352fb6859
+  Ready To Use:                        false
+Events:
+  Type    Reason            Age    From                 Message
+  ----    ------            ----   ----                 -------
+  Normal  CreatingSnapshot  5m11s  snapshot-controller  Waiting for a snapshot default/my-snapshot1-use2 to be created by the CSI driver.
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ ls -ltr
+total 20
+-rw-r--r-- 1 simplyrahul simplyrahul 7675 Aug 26 14:03 README.md
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 03-Volume-Restore
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 01-kube-manifests
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 30 06:17 02-Volume-Snapshot
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cat 03-Volume-Restore/0
+01-restore-pvc.yaml       02-mysql-deployment.yaml
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cat 03-Volume-Restore/01-restore-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-restore
+spec:
+  dataSource:
+    name: my-snapshot1
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+  storageClassName: standard-rwo
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gisimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ cat 03-Volume-Restore/02-mysql-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: dbpassword11
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+            - name: usermanagement-dbcreation-script
+              mountPath: /docker-entrypoint-initdb.d #https://hub.docker.com/_/mysql Refer Initializing a fresh instance
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            #claimName: mysql-pv-claim
+            claimName: pvc-restore
+        - name: usermanagement-dbcreation-script
+          configMap:
+            name: usermanagement-dbcreation-script
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-ecc06820-921c-4928-b8f8-d2593208bd77   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            24m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-ecc06820-921c-4928-b8f8-d2593208bd77   4Gi        RWO            standard-rwo   24m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl apply -f 03-Volume-Restore/
+persistentvolumeclaim/pvc-restore created
+deployment.apps/mysql configured
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pvc
+NAME             STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound     pvc-ecc06820-921c-4928-b8f8-d2593208bd77   4Gi        RWO            standard-rwo   25m
+pvc-restore      Pending                                                                        standard-rwo   11s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-ecc06820-921c-4928-b8f8-d2593208bd77   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            25m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-ecc06820-921c-4928-b8f8-d2593208bd77   4Gi        RWO            standard-rwo   25m
+pvc-restore      Bound    pvc-02d1b952-fb33-4e52-b47f-f1b905daaa46   4Gi        RWO            standard-rwo   34s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-02d1b952-fb33-4e52-b47f-f1b905daaa46   4Gi        RWO            Delete           Bound    default/pvc-restore      standard-rwo            10s
+pvc-ecc06820-921c-4928-b8f8-d2593208bd77   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            25m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get deploy
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+mysql             1/1     1            1           26m
+usermgmt-webapp   1/1     1            1           26m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+mysql-659c75ff7-jb8kf              1/1     Running   0          59s
+usermgmt-webapp-77f5f9cf7d-nkczf   1/1     Running   0          26m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get svc
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)        AGE
+kubernetes                   ClusterIP      10.80.0.1     <none>         443/TCP        7d22h
+mysql                        ClusterIP      None          <none>         3306/TCP       26m
+usermgmt-webapp-lb-service   LoadBalancer   10.80.3.171   35.202.69.65   80:30759/TCP   26m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get volumesnapshot my-snapshot1-use2
+NAME                READYTOUSE   SOURCEPVC        SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS           SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+my-snapshot1-use2   false        mysql-pv-claim                                         my-snapshotclass-use2   snapcontent-2042c084-a742-4711-aa61-a4d352fb6859                  10m
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl describe volumesnapshot my-snapshot1-use2
+Name:         my-snapshot1-use2
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  snapshot.storage.k8s.io/v1
+Kind:         VolumeSnapshot
+Metadata:
+  Creation Timestamp:  2023-08-29T22:17:44Z
+  Finalizers:
+    snapshot.storage.kubernetes.io/volumesnapshot-as-source-protection
+    snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+  Generation:        1
+  Resource Version:  7089171
+  UID:               2042c084-a742-4711-aa61-a4d352fb6859
+Spec:
+  Source:
+    Persistent Volume Claim Name:  mysql-pv-claim
+  Volume Snapshot Class Name:      my-snapshotclass-use2
+Status:
+  Bound Volume Snapshot Content Name:  snapcontent-2042c084-a742-4711-aa61-a4d352fb6859
+  Ready To Use:                        false
+Events:
+  Type    Reason            Age   From                 Message
+  ----    ------            ----  ----                 -------
+  Normal  CreatingSnapshot  10m   snapshot-controller  Waiting for a snapshot default/my-snapshot1-use2 to be created by the CSI driver.
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl delete -f 01-kube-manifests/
+persistentvolumeclaim "mysql-pv-claim" deleted
+configmap "usermanagement-dbcreation-script" deleted
+deployment.apps "mysql" deleted
+service "mysql" deleted
+deployment.apps "usermgmt-webapp" deleted
+service "usermgmt-webapp-lb-service" deleted
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   7d22h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/26-GKE-PD-Volume-Snapshots-and-Restore$
