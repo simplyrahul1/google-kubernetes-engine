@@ -1,0 +1,502 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls
+01-kube-manifests  02-Use-Cloned-Volume-kube-manifests  03-With-NodeSelectors  README.md
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls 01-kube-manifests/
+01-persistent-volume-claim.yaml  02-UserManagement-ConfigMap.yaml  03-mysql-deployment.yaml  04-mysql-clusterip-service.yaml  05-UserMgmtWebApp-Deployment.yaml  06-UserMgmtWebApp-LoadBalancer-Service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ cat 01-kube-manifests/01-persistent-volume-claim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard-rwo
+  resources:
+    requests:
+      storage: 4Gi
+
+# NEED FOR PVC
+# 1. Dynamic volume provisioning allows storage volumes to be created
+# on-demand.
+
+# 2. Without dynamic provisioning, cluster administrators have to manually
+# make calls to their cloud or storage provider to create new storage
+# volumes, and then create PersistentVolume objects to represent them in k8s
+
+# 3. The dynamic provisioning feature eliminates the need for cluster
+# administrators to pre-provision storage. Instead, it automatically
+# provisions storage when it is requested by users.
+
+# 4. PVC: Users request dynamically provisioned storage by including
+# a storage class in their PersistentVolumeClaim
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl apply -f 01-kube-manifests/
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   18d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   18d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   18d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   18d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   18d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   18d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   18d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-c9e4a51b-5196-4e17-b533-bd3e53a2b2b8   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            19s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-c9e4a51b-5196-4e17-b533-bd3e53a2b2b8   4Gi        RWO            standard-rwo   29s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get cm
+NAME                               DATA   AGE
+kube-root-ca.crt                   1      18d
+usermanagement-dbcreation-script   1      54s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get deploy -o wide --show-labels
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS        IMAGES                                             SELECTOR              LABELS
+mysql             1/1     1            1           66s   mysql             mysql:8.0                                          app=mysql             <none>
+usermgmt-webapp   1/1     1            1           65s   usermgmt-webapp   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp   app=usermgmt-webapp
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pods -o wide --show-labels
+NAME                               READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+mysql-d95875db9-4g2z6              1/1     Running   0          83s   10.76.1.51   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql,pod-template-hash=d95875db9
+usermgmt-webapp-77f5f9cf7d-d9qsn   1/1     Running   0          82s   10.76.1.50   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp,pod-template-hash=77f5f9cf7d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get svc -o wide --show-labels
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE   SELECTOR              LABELS
+kubernetes                   ClusterIP      10.80.0.1     <none>          443/TCP        18d   <none>                component=apiserver,provider=kubernetes
+mysql                        ClusterIP      None          <none>          3306/TCP       95s   app=mysql             <none>
+usermgmt-webapp-lb-service   LoadBalancer   10.80.10.88   35.223.45.209   80:32279/TCP   94s   app=usermgmt-webapp   app=usermgmt-webapp
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ### Created new user
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ #102 abhishek Abhishek Sinha abhishek@gmail.com ssn-abhishek
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ #userid username firstname lastname email ssn role
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls 02-Use-Cloned-Volume-kube-manifests/
+01-podpvc-clone.yaml  02-UserManagement-ConfigMap.yaml  03-mysql-deployment.yaml  04-mysql-clusterip-service.yaml  05-UserMgmtWebApp-Deployment.yaml  06-UserMgmtWebApp-LoadBalancer-Service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ cat 02-Use-Cloned-Volume-kube-manifests/01-podpvc-clone.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: podpvc-clone
+spec:
+  dataSource:
+    name: mysql-pv-claim # the name of the source PersistentVolumeClaim that you created as part of UMS Web App
+    kind: PersistentVolumeClaim
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard-rwo  # same as the StorageClass of the source PersistentVolumeClaim.
+  resources:
+    requests:
+      storage: 4Gi # the amount of storage to request, which must be at least the size of the source PersistentVolumeClaimsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl apply -f 02-Use-Cloned-Volume-kube-manifests/
+persistentvolumeclaim/podpvc-clone created
+configmap/usermanagement-dbcreation-script2 created
+deployment.apps/mysql2 created
+service/mysql2 created
+deployment.apps/usermgmt-webapp2 created
+service/usermgmt-webapp2-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   18d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   18d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   18d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   18d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   18d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   18d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   18d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-c9e4a51b-5196-4e17-b533-bd3e53a2b2b8   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            7m11s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-c9e4a51b-5196-4e17-b533-bd3e53a2b2b8   4Gi        RWO            standard-rwo   7m32s
+podpvc-clone     Bound    pvc-42fa36b2-9fb3-4ec2-98df-c1ea46488154   4Gi        RWO            standard-rwo   36s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-c9e4a51b-5196-4e17-b533-bd3e53a2b2b8   4Gi        RWO            standard-rwo   7m54s
+podpvc-clone     Bound    pvc-42fa36b2-9fb3-4ec2-98df-c1ea46488154   4Gi        RWO            standard-rwo   58s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-42fa36b2-9fb3-4ec2-98df-c1ea46488154   4Gi        RWO            Delete           Bound    default/podpvc-clone     standard-rwo            32s
+pvc-c9e4a51b-5196-4e17-b533-bd3e53a2b2b8   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            7m53s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-c9e4a51b-5196-4e17-b533-bd3e53a2b2b8   4Gi        RWO            standard-rwo   8m15s
+podpvc-clone     Bound    pvc-42fa36b2-9fb3-4ec2-98df-c1ea46488154   4Gi        RWO            standard-rwo   79s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get cm
+NAME                                DATA   AGE
+kube-root-ca.crt                    1      18d
+usermanagement-dbcreation-script    1      8m39s
+usermanagement-dbcreation-script2   1      102s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl describe cm usermanagement-dbcreation-script
+Name:         usermanagement-dbcreation-script
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+mysql_usermgmt.sql:
+----
+DROP DATABASE IF EXISTS webappdb;
+CREATE DATABASE webappdb;
+
+BinaryData
+====
+
+Events:  <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl describe cm usermanagement-dbcreation-script2
+Name:         usermanagement-dbcreation-script2
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+mysql_usermgmt.sql:
+----
+DROP DATABASE IF EXISTS webappdb;
+CREATE DATABASE webappdb;
+
+BinaryData
+====
+
+Events:  <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get deploy -o wide --show-labels
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS         IMAGES                                             SELECTOR               LABELS
+mysql              0/1     1            0           9m28s   mysql              mysql:8.0                                          app=mysql              <none>
+mysql2             1/1     1            1           2m32s   mysql2             mysql:8.0                                          app=mysql2             <none>
+usermgmt-webapp    1/1     1            1           9m27s   usermgmt-webapp    stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp    app=usermgmt-webapp
+usermgmt-webapp2   1/1     1            1           2m31s   usermgmt-webapp2   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp2   app=usermgmt-webapp2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pods -o wide --show-labels
+NAME                               READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+mysql-d95875db9-4g2z6              0/1     Error     0          9m37s   10.76.1.51   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql,pod-template-hash=d95875db9
+mysql2-5c6bb5d6b7-pg2q5            1/1     Running   0          2m41s   10.76.1.53   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql2,pod-template-hash=5c6bb5d6b7
+usermgmt-webapp-77f5f9cf7d-d9qsn   1/1     Running   0          9m36s   10.76.1.50   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp,pod-template-hash=77f5f9cf7d
+usermgmt-webapp2-bc8dc9d76-npc88   1/1     Running   0          2m40s   10.76.1.52   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp2,pod-template-hash=bc8dc9d76
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get svc -o wide --show-labels
+NAME                          TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE    SELECTOR               LABELS
+kubernetes                    ClusterIP      10.80.0.1     <none>          443/TCP        18d    <none>                 component=apiserver,provider=kubernetes
+mysql                         ClusterIP      None          <none>          3306/TCP       10m    app=mysql              <none>
+mysql2                        ClusterIP      None          <none>          3306/TCP       3m4s   app=mysql2             <none>
+usermgmt-webapp-lb-service    LoadBalancer   10.80.10.88   35.223.45.209   80:32279/TCP   10m    app=usermgmt-webapp    app=usermgmt-webapp
+usermgmt-webapp2-lb-service   LoadBalancer   10.80.2.238   34.28.54.202    80:30105/TCP   3m3s   app=usermgmt-webapp2   app=usermgmt-webapp2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pods -o wide --show-labels
+NAME                               READY   STATUS     RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+mysql-d95875db9-4g2z6              0/1     Evicted    0          12m     <none>       gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql,pod-template-hash=d95875db9
+mysql-d95875db9-pj7zb              0/1     Pending    0          4s      <none>       <none>                                                <none>           <none>            app=mysql,pod-template-hash=d95875db9
+mysql2-5c6bb5d6b7-7nbqt            0/1     Pending    0          4s      <none>       <none>                                                <none>           <none>            app=mysql2,pod-template-hash=5c6bb5d6b7
+mysql2-5c6bb5d6b7-pg2q5            0/1     Evicted    0          5m25s   <none>       gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql2,pod-template-hash=5c6bb5d6b7
+usermgmt-webapp-77f5f9cf7d-78ptb   0/1     Init:0/1   0          4s      <none>       gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=usermgmt-webapp,pod-template-hash=77f5f9cf7d
+usermgmt-webapp-77f5f9cf7d-d9qsn   0/1     Evicted    0          12m     <none>       gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp,pod-template-hash=77f5f9cf7d
+usermgmt-webapp2-bc8dc9d76-csng9   0/1     Init:0/1   0          4s      <none>       gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=usermgmt-webapp2,pod-template-hash=bc8dc9d76
+usermgmt-webapp2-bc8dc9d76-npc88   0/1     Error      0          5m24s   10.76.1.52   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp2,pod-template-hash=bc8dc9d76
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl describe pod usermgmt-webapp2-bc8dc9d76-npc88
+Name:             usermgmt-webapp2-bc8dc9d76-npc88
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-f62b7b3f-4qbg/10.128.0.50
+Start Time:       Sat, 09 Sep 2023 12:06:51 +0800
+Labels:           app=usermgmt-webapp2
+                  pod-template-hash=bc8dc9d76
+Annotations:      <none>
+Status:           Failed
+Reason:           Evicted
+Message:          Pod was rejected: The node had condition: [MemoryPressure].
+IP:               10.76.1.52
+IPs:
+  IP:           10.76.1.52
+Controlled By:  ReplicaSet/usermgmt-webapp2-bc8dc9d76
+Init Containers:
+  init-db:
+    Container ID:  containerd://d7a72fe679d1ea9d9ecb681bfe9b9ea30a0f51b118a93ee05aa17802816f1ee5
+    Image:         busybox:1.31
+    Image ID:      docker.io/library/busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql2 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Sat, 09 Sep 2023 12:06:55 +0800
+      Finished:     Sat, 09 Sep 2023 12:08:22 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-4hh4h (ro)
+Containers:
+  usermgmt-webapp2:
+    Container ID:   containerd://d872e34cfe1584486c3175d9712162cb7b69f2253eff716c0b7f72c5ad9c2157
+    Image:          stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+    Image ID:       docker.io/stacksimplify/kube-usermgmt-webapp@sha256:41b45003c6b6eee62a288151cedf9f3675c14b940866edc63e9c6ea2b027fab4
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Terminated
+      Reason:       Error
+      Exit Code:    143
+      Started:      Sat, 09 Sep 2023 12:08:24 +0800
+      Finished:     Sat, 09 Sep 2023 12:11:56 +0800
+    Ready:          False
+    Restart Count:  0
+    Environment:
+      DB_HOSTNAME:  mysql2
+      DB_PORT:      3306
+      DB_NAME:      webappdb
+      DB_USERNAME:  root
+      DB_PASSWORD:  dbpassword11
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-4hh4h (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+Volumes:
+  kube-api-access-4hh4h:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason        Age                From               Message
+  ----     ------        ----               ----               -------
+  Normal   Scheduled     6m26s              default-scheduler  Successfully assigned default/usermgmt-webapp2-bc8dc9d76-npc88 to gke-private-standard-22a-default-pool-f62b7b3f-4qbg
+  Normal   Pulled        6m23s              kubelet            Container image "busybox:1.31" already present on machine
+  Normal   Created       6m22s              kubelet            Created container init-db
+  Normal   Started       6m22s              kubelet            Started container init-db
+  Normal   Pulling       4m55s              kubelet            Pulling image "stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB"
+  Normal   Pulled        4m53s              kubelet            Successfully pulled image "stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB" in 1.239879728s (1.239917162s including waiting)
+  Normal   Created       4m53s              kubelet            Created container usermgmt-webapp2
+  Normal   Started       4m52s              kubelet            Started container usermgmt-webapp2
+  Warning  NodeNotReady  3m5s               node-controller    Node is not ready
+  Warning  Evicted       111s               kubelet            The node had condition: [MemoryPressure].
+  Normal   Killing       102s               kubelet            Stopping container usermgmt-webapp2
+  Warning  FailedMount   67s (x6 over 84s)  kubelet            MountVolume.SetUp failed for volume "kube-api-access-4hh4h" : object "default"/"kube-root-ca.crt" not registered
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get nodes -o wide
+NAME                                                  STATUS   ROLES    AGE   VERSION           INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                             KERNEL-VERSION   CONTAINER-RUNTIME
+gke-private-standard-22a-default-pool-76d79b51-6f20   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.51   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.49   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.50   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get deploy -o wide --show-labels
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS         IMAGES                                             SELECTOR               LABELS
+mysql              0/1     1            0           15m     mysql              mysql:8.0                                          app=mysql              <none>
+mysql2             0/1     1            0           8m38s   mysql2             mysql:8.0                                          app=mysql2             <none>
+usermgmt-webapp    0/1     1            0           15m     usermgmt-webapp    stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp    app=usermgmt-webapp
+usermgmt-webapp2   0/1     1            0           8m37s   usermgmt-webapp2   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp2   app=usermgmt-webapp2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl stop deploy mysql usermgmt-webapp
+error: unknown command "stop" for "kubectl"
+
+Did you mean this?
+        top
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl scale deployment mysql --replicas 0
+deployment.apps/mysql scaled
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl scale deployment usermgmt-webapp --replicas 0
+deployment.apps/usermgmt-webapp scaled
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get deploy -o wide --show-labels
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS         IMAGES                                             SELECTOR               LABELS
+mysql              0/0     0            0           19m   mysql              mysql:8.0                                          app=mysql              <none>
+mysql2             1/1     1            1           12m   mysql2             mysql:8.0                                          app=mysql2             <none>
+usermgmt-webapp    0/0     0            0           19m   usermgmt-webapp    stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp    app=usermgmt-webapp
+usermgmt-webapp2   1/1     1            1           12m   usermgmt-webapp2   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp2   app=usermgmt-webapp2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl describe pod usermgmt-webapp2-bc8dc9d76-npc88
+Name:             usermgmt-webapp2-bc8dc9d76-npc88
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-f62b7b3f-4qbg/10.128.0.50
+Start Time:       Sat, 09 Sep 2023 12:06:51 +0800
+Labels:           app=usermgmt-webapp2
+                  pod-template-hash=bc8dc9d76
+Annotations:      <none>
+Status:           Failed
+Reason:           Evicted
+Message:          Pod was rejected: The node had condition: [MemoryPressure].
+IP:               10.76.1.52
+IPs:
+  IP:           10.76.1.52
+Controlled By:  ReplicaSet/usermgmt-webapp2-bc8dc9d76
+Init Containers:
+  init-db:
+    Container ID:  containerd://d7a72fe679d1ea9d9ecb681bfe9b9ea30a0f51b118a93ee05aa17802816f1ee5
+    Image:         busybox:1.31
+    Image ID:      docker.io/library/busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql2 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Sat, 09 Sep 2023 12:06:55 +0800
+      Finished:     Sat, 09 Sep 2023 12:08:22 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-4hh4h (ro)
+Containers:
+  usermgmt-webapp2:
+    Container ID:   containerd://d872e34cfe1584486c3175d9712162cb7b69f2253eff716c0b7f72c5ad9c2157
+    Image:          stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+    Image ID:       docker.io/stacksimplify/kube-usermgmt-webapp@sha256:41b45003c6b6eee62a288151cedf9f3675c14b940866edc63e9c6ea2b027fab4
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Terminated
+      Reason:       Error
+      Exit Code:    143
+      Started:      Sat, 09 Sep 2023 12:08:24 +0800
+      Finished:     Sat, 09 Sep 2023 12:11:56 +0800
+    Ready:          False
+    Restart Count:  0
+    Environment:
+      DB_HOSTNAME:  mysql2
+      DB_PORT:      3306
+      DB_NAME:      webappdb
+      DB_USERNAME:  root
+      DB_PASSWORD:  dbpassword11
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-4hh4h (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+Volumes:
+  kube-api-access-4hh4h:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason        Age                    From               Message
+  ----     ------        ----                   ----               -------
+  Normal   Scheduled     13m                    default-scheduler  Successfully assigned default/usermgmt-webapp2-bc8dc9d76-npc88 to gke-private-standard-22a-default-pool-f62b7b3f-4qbg
+  Normal   Pulled        13m                    kubelet            Container image "busybox:1.31" already present on machine
+  Normal   Created       13m                    kubelet            Created container init-db
+  Normal   Started       13m                    kubelet            Started container init-db
+  Normal   Pulling       11m                    kubelet            Pulling image "stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB"
+  Normal   Pulled        11m                    kubelet            Successfully pulled image "stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB" in 1.239879728s (1.239917162s including waiting)
+  Normal   Created       11m                    kubelet            Created container usermgmt-webapp2
+  Normal   Started       11m                    kubelet            Started container usermgmt-webapp2
+  Warning  NodeNotReady  9m52s                  node-controller    Node is not ready
+  Warning  Evicted       8m38s                  kubelet            The node had condition: [MemoryPressure].
+  Normal   Killing       8m29s                  kubelet            Stopping container usermgmt-webapp2
+  Warning  FailedMount   7m54s (x6 over 8m11s)  kubelet            MountVolume.SetUp failed for volume "kube-api-access-4hh4h" : object "default"/"kube-root-ca.crt" not registered
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl rollout restart deploy mysql2
+deployment.apps/mysql2 restarted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl rollout restart deploy usermgmt-webapp2
+deployment.apps/usermgmt-webapp2 restarted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get deploy -o wide --show-labels
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS         IMAGES                                             SELECTOR               LABELS
+mysql              0/0     0            0           21m   mysql              mysql:8.0                                          app=mysql              <none>
+mysql2             1/1     1            1           14m   mysql2             mysql:8.0                                          app=mysql2             <none>
+usermgmt-webapp    0/0     0            0           21m   usermgmt-webapp    stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp    app=usermgmt-webapp
+usermgmt-webapp2   1/1     1            1           14m   usermgmt-webapp2   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp2   app=usermgmt-webapp2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get pods -o wide --show-labels
+NAME                               READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+mysql-d95875db9-4g2z6              0/1     Evicted   0          21m   <none>       gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql,pod-template-hash=d95875db9
+mysql2-5c6bb5d6b7-pg2q5            0/1     Evicted   0          14m   <none>       gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql2,pod-template-hash=5c6bb5d6b7
+mysql2-78479c9bd-qx4lr             1/1     Running   0          33s   10.76.1.56   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql2,pod-template-hash=78479c9bd
+usermgmt-webapp-77f5f9cf7d-d9qsn   0/1     Evicted   0          21m   <none>       gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp,pod-template-hash=77f5f9cf7d
+usermgmt-webapp2-7d946b9cd-jspkd   1/1     Running   0          21s   10.76.1.57   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp2,pod-template-hash=7d946b9cd
+usermgmt-webapp2-bc8dc9d76-npc88   0/1     Error     0          14m   10.76.1.52   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp2,pod-template-hash=bc8dc9d76
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get svc -o wide --show-labels
+NAME                          TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE   SELECTOR               LABELS
+kubernetes                    ClusterIP      10.80.0.1     <none>          443/TCP        18d   <none>                 component=apiserver,provider=kubernetes
+mysql                         ClusterIP      None          <none>          3306/TCP       22m   app=mysql              <none>
+mysql2                        ClusterIP      None          <none>          3306/TCP       15m   app=mysql2             <none>
+usermgmt-webapp-lb-service    LoadBalancer   10.80.10.88   35.223.45.209   80:32279/TCP   22m   app=usermgmt-webapp    app=usermgmt-webapp
+usermgmt-webapp2-lb-service   LoadBalancer   10.80.2.238   34.28.54.202    80:30105/TCP   15m   app=usermgmt-webapp2   app=usermgmt-webapp2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ## this record already exists
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ # 102 abhishek Abhishek Sinha abhishek@gmail.com ssn-abhishek
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get nodes -o --show-labels
+error: unable to match a printer suitable for the output format "--show-labels", allowed formats are: custom-columns,custom-columns-file,go-template,go-template-file,json,jsonpath,jsonpath-as-json,jsonpath-file,name,template,templatefile,wide,yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get nodes -o wide --show-labels
+NAME                                                  STATUS   ROLES    AGE   VERSION           INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                             KERNEL-VERSION   CONTAINER-RUNTIME    LABELS
+gke-private-standard-22a-default-pool-76d79b51-6f20   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.51   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-small,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-balanced,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=cos,cloud.google.com/gke-provisioning=standard,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-b,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-private-standard-22a-default-pool-76d79b51-6f20,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-small,topology.gke.io/zone=us-central1-b,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-b
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.49   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-small,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-balanced,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=cos,cloud.google.com/gke-provisioning=standard,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-a,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-private-standard-22a-default-pool-b8a9f9fd-1hff,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-small,topology.gke.io/zone=us-central1-a,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-a
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.50   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-small,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-balanced,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=cos,cloud.google.com/gke-provisioning=standard,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-c,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-private-standard-22a-default-pool-f62b7b3f-4qbg,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-small,topology.gke.io/zone=us-central1-c,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-c
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl label nodes gke-private-standard-22a-default-pool-f62b7b3f-4qbg nodetype=db
+node/gke-private-standard-22a-default-pool-f62b7b3f-4qbg labeled
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get nodes -o wide --show-labels
+NAME                                                  STATUS   ROLES    AGE   VERSION           INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                             KERNEL-VERSION   CONTAINER-RUNTIME    LABELS
+gke-private-standard-22a-default-pool-76d79b51-6f20   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.51   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-small,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-balanced,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=cos,cloud.google.com/gke-provisioning=standard,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-b,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-private-standard-22a-default-pool-76d79b51-6f20,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-small,topology.gke.io/zone=us-central1-b,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-b
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.49   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-small,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-balanced,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=cos,cloud.google.com/gke-provisioning=standard,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-a,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-private-standard-22a-default-pool-b8a9f9fd-1hff,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-small,topology.gke.io/zone=us-central1-a,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-a
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg   Ready    <none>   18d   v1.27.3-gke.100   10.128.0.50   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-small,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-balanced,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=cos,cloud.google.com/gke-provisioning=standard,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-c,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-private-standard-22a-default-pool-f62b7b3f-4qbg,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-small,nodetype=db,topology.gke.io/zone=us-central1-c,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-c
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl get deploy
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+mysql              0/0     0            0           27m
+mysql2             1/1     1            1           20m
+usermgmt-webapp    0/0     0            0           27m
+usermgmt-webapp2   1/1     1            1           20m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl scale deploy mysql2 --replica 0
+error: unknown flag: --replica
+See 'kubectl scale --help' for usage.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl scale deploy mysql2 --replicas 0
+deployment.apps/mysql2 scaled
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl scale deploy usermgmt-webapp2 --replicas 0
+deployment.apps/usermgmt-webapp2 scaled
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls
+01-kube-manifests  02-Use-Cloned-Volume-kube-manifests  03-With-NodeSelectors  README.md
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls 03-With-NodeSelectors/
+01-kube-manifests  02-Use-Cloned-Volume-kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls 03-With-NodeSelectors/01-kube-manifests/
+01-persistent-volume-claim.yaml  02-UserManagement-ConfigMap.yaml  03-mysql-deployment.yaml  04-mysql-clusterip-service.yaml  05-UserMgmtWebApp-Deployment.yaml  06-UserMgmtWebApp-LoadBalancer-Service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls 03-With-NodeSelectors/02-Use-Cloned-Volume-kube-manifests/
+01-podpvc-clone.yaml  02-UserManagement-ConfigMap.yaml  03-mysql-deployment.yaml  04-mysql-clusterip-service.yaml  05-UserMgmtWebApp-Deployment.yaml  06-UserMgmtWebApp-LoadBalancer-Service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls 03-With-NodeSelectors/01-kube-manifests/04-mysql-clusterip-service.yaml
+03-With-NodeSelectors/01-kube-manifests/04-mysql-clusterip-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ cat 03-With-NodeSelectors/01-kube-manifests/04-mysql-clusterip-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+  clusterIP: None # This means we are going to use Pod IP    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls
+01-kube-manifests  02-Use-Cloned-Volume-kube-manifests  03-With-NodeSelectors  README.md
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl delete -f 01-kube-manifests
+persistentvolumeclaim "mysql-pv-claim" deleted
+configmap "usermanagement-dbcreation-script" deleted
+deployment.apps "mysql" deleted
+service "mysql" deleted
+deployment.apps "usermgmt-webapp" deleted
+service "usermgmt-webapp-lb-service" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl delete -f 02-kube-manifests
+error: the path "02-kube-manifests" does not exist
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ kubectl delete -f 02-Use-Cloned-Volume-kube-manifests/
+persistentvolumeclaim "podpvc-clone" deleted
+configmap "usermanagement-dbcreation-script2" deleted
+deployment.apps "mysql2" deleted
+service "mysql2" deleted
+deployment.apps "usermgmt-webapp2" deleted
+service "usermgmt-webapp2-lb-service" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$
