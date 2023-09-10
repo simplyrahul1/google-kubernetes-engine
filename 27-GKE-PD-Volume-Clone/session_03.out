@@ -1,0 +1,162 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github$ cd 27-GKE-PD-Volume-Clone/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ ls
+01-kube-manifests  02-Use-Cloned-Volume-kube-manifests  03-With-NodeSelectors  README.md  session.out
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone$ cd 03-With-NodeSelectors/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ ls
+01-kube-manifests  02-Use-Cloned-Volume-kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ ls 01-kube-manifests/
+01-persistent-volume-claim.yaml  02-UserManagement-ConfigMap.yaml  03-mysql-deployment.yaml  04-mysql-clusterip-service.yaml  05-UserMgmtWebApp-Deployment.yaml  06-UserMgmtWebApp-LoadBalancer-Service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ cat 01-kube-manifests/01-persistent-volume-claim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard-rwo
+  resources:
+    requests:
+      storage: 4Gi
+
+# NEED FOR PVC
+# 1. Dynamic volume provisioning allows storage volumes to be created
+# on-demand.
+
+# 2. Without dynamic provisioning, cluster administrators have to manually
+# make calls to their cloud or storage provider to create new storage
+# volumes, and then create PersistentVolume objects to represent them in k8s
+
+# 3. The dynamic provisioning feature eliminates the need for cluster
+# administrators to pre-provision storage. Instead, it automatically
+# provisions storage when it is requested by users.
+
+# 4. PVC: Users request dynamically provisioned storage by including
+# a storage class in their PersistentVolumeClaim
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ cat 01-kube-manifests/04-mysql-clusterip-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+  clusterIP: None # This means we are going to use Pod IP    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ ls
+01-kube-manifests  02-Use-Cloned-Volume-kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl apply -f 01-kube-manifests/
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   19d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   19d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   19d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-7bb0955f-cb9f-451e-9d55-7ee0e8c69551   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            14s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-7bb0955f-cb9f-451e-9d55-7ee0e8c69551   4Gi        RWO            standard-rwo   26s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get deploy -o wide --show-labels
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS        IMAGES                                             SELECTOR              LABELS
+mysql             1/1     1            1           44s   mysql             mysql:8.0                                          app=mysql             <none>
+usermgmt-webapp   1/1     1            1           43s   usermgmt-webapp   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp   app=usermgmt-webapp
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get pods -o wide --show-labels
+NAME                               READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+mysql-6549cdb4d8-z52gm             1/1     Running   0          77s   10.76.1.59   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql,pod-template-hash=6549cdb4d8
+usermgmt-webapp-77f5f9cf7d-k7h48   1/1     Running   0          76s   10.76.1.58   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp,pod-template-hash=77f5f9cf7d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get svc -o wide --show-labels
+NAME                         TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE   SELECTOR              LABELS
+kubernetes                   ClusterIP      10.80.0.1      <none>           443/TCP        19d   <none>                component=apiserver,provider=kubernetes
+mysql                        ClusterIP      None           <none>           3306/TCP       88s   app=mysql             <none>
+usermgmt-webapp-lb-service   LoadBalancer   10.80.14.159   35.224.171.192   80:30065/TCP   87s   app=usermgmt-webapp   app=usermgmt-webapp
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl scale deploy usermgmt-webapp --replicas 0
+deployment.apps/usermgmt-webapp scaled
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl scale deploy mysql --replicas 0
+deployment.apps/mysql scaled
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl apply -f 02-Use-Cloned-Volume-kube-manifests/
+persistentvolumeclaim/podpvc-clone created
+configmap/usermanagement-dbcreation-script2 created
+deployment.apps/mysql2 created
+service/mysql2 created
+deployment.apps/usermgmt-webapp2 created
+service/usermgmt-webapp2-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   19d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   19d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   19d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-5d7d72ec-5a5f-4049-a93a-5054819d1d70   4Gi        RWO            Delete           Bound    default/podpvc-clone     standard-rwo            28s
+pvc-7bb0955f-cb9f-451e-9d55-7ee0e8c69551   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            5m54s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get pvc -o wide --show-labels
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE     VOLUMEMODE   LABELS
+mysql-pv-claim   Bound    pvc-7bb0955f-cb9f-451e-9d55-7ee0e8c69551   4Gi        RWO            standard-rwo   6m15s   Filesystem   <none>
+podpvc-clone     Bound    pvc-5d7d72ec-5a5f-4049-a93a-5054819d1d70   4Gi        RWO            standard-rwo   65s     Filesystem   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get deploy -o wide --show-labels
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS         IMAGES                                             SELECTOR               LABELS
+mysql              0/0     0            0           6m24s   mysql              mysql:8.0                                          app=mysql              <none>
+mysql2             1/1     1            1           74s     mysql2             mysql:8.0                                          app=mysql2             <none>
+usermgmt-webapp    0/0     0            0           6m23s   usermgmt-webapp    stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp    app=usermgmt-webapp
+usermgmt-webapp2   1/1     1            1           73s     usermgmt-webapp2   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp2   app=usermgmt-webapp2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get pods -o wide --show-labels
+NAME                               READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+mysql2-7fcb9fc8fd-8shnp            1/1     Running   0          88s   10.76.1.61   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=mysql2,pod-template-hash=7fcb9fc8fd
+usermgmt-webapp2-bc8dc9d76-vjvq5   1/1     Running   0          87s   10.76.1.60   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=usermgmt-webapp2,pod-template-hash=bc8dc9d76
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl get svc -o wide --show-labels
+NAME                          TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE     SELECTOR               LABELS
+kubernetes                    ClusterIP      10.80.0.1      <none>           443/TCP        19d     <none>                 component=apiserver,provider=kubernetes
+mysql                         ClusterIP      None           <none>           3306/TCP       6m51s   app=mysql              <none>
+mysql2                        ClusterIP      None           <none>           3306/TCP       100s    app=mysql2             <none>
+usermgmt-webapp-lb-service    LoadBalancer   10.80.14.159   35.224.171.192   80:30065/TCP   6m50s   app=usermgmt-webapp    app=usermgmt-webapp
+usermgmt-webapp2-lb-service   LoadBalancer   10.80.11.55    34.172.96.198    80:31924/TCP   99s     app=usermgmt-webapp2   app=usermgmt-webapp2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl describe svc mysql2
+Name:              mysql2
+Namespace:         default
+Labels:            <none>
+Annotations:       cloud.google.com/neg: {"ingress":true}
+Selector:          app=mysql2
+Type:              ClusterIP
+IP Family Policy:  SingleStack
+IP Families:       IPv4
+IP:                None
+IPs:               None
+Port:              <unset>  3306/TCP
+TargetPort:        3306/TCP
+Endpoints:         10.76.1.61:3306
+Session Affinity:  None
+Events:            <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ ls
+01-kube-manifests  02-Use-Cloned-Volume-kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl delete -f 01-kube-manifests/
+persistentvolumeclaim "mysql-pv-claim" deleted
+configmap "usermanagement-dbcreation-script" deleted
+deployment.apps "mysql" deleted
+service "mysql" deleted
+deployment.apps "usermgmt-webapp" deleted
+service "usermgmt-webapp-lb-service" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/27-GKE-PD-Volume-Clone/03-With-NodeSelectors$ kubectl delete -f 02-Use-Cloned-Volume-kube-manifests/
+persistentvolumeclaim "podpvc-clone" deleted
+configmap "usermanagement-dbcreation-script2" deleted
+deployment.apps "mysql2" deleted
+service "mysql2" deleted
+deployment.apps "usermgmt-webapp2" deleted
+service "usermgmt-webapp2-lb-service" deleted
+
