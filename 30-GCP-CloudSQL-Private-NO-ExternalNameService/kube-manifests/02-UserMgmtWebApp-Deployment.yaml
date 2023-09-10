@@ -18,7 +18,7 @@ spec:
         - name: init-db
           image: busybox:1.31
           #command: ['sh', '-c', 'echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql-externalname-service 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";']      
-          command: ['sh', '-c', 'echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z 10.80.0.3 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";']                
+          command: ['sh', '-c', 'echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z  10.116.0.3 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";']                
       containers:
         - name: usermgmt-webapp
           image: stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
@@ -28,7 +28,7 @@ spec:
           env:
             - name: DB_HOSTNAME
               #value: "mysql-externalname-service"            
-              value: 10.80.0.3
+              value: 10.116.0.3
             - name: DB_PORT
               value: "3306"            
             - name: DB_NAME
