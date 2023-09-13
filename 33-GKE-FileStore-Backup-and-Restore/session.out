@@ -1,0 +1,326 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ ls
+01-myapp1-kube-manifests  02-volume-backup-kube-manifests  03-volume-restore-myapp2-kube-manifests  README.md
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ ls 01-myapp1-kube-manifests/
+01-filestore-pvc.yaml  02-write-to-filestore-pod.yaml  03-myapp1-deployment.yaml  04-loadBalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ ls 02-volume-backup-kube-manifests/
+01-VolumeSnapshotClass.yaml  02-VolumeSnapshot.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ ls 03-volume-restore-myapp2-kube-manifests/
+01-filestore-pvc.yaml  02-myapp2-deployment.yaml  03-myapp2-loadBalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   22d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl apply -f 01-myapp1-kube-manifests/
+persistentvolumeclaim/gke-filestore-pvc created
+pod/filestore-writer-app created
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   22d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   28h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get pvc
+NAME                STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+gke-filestore-pvc   Pending                                      standard-rwx   46s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ watch kubectl get pvc
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get pvc
+NAME                STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+gke-filestore-pvc   Bound    pvc-dd97db9f-0a25-4827-b29d-4e826125a6b0   1Ti        RWX            standard-rwx   19m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                       STORAGECLASS   REASON   AGE
+pvc-dd97db9f-0a25-4827-b29d-4e826125a6b0   1Ti        RWX            Delete           Bound    default/gke-filestore-pvc   standard-rwx            18m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   2/2     2            2           20m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get pods
+NAME                                READY   STATUS    RESTARTS   AGE
+filestore-writer-app                1/1     Running   0          21m
+myapp1-deployment-6599f7bfb-czvfp   1/1     Running   0          21m
+myapp1-deployment-6599f7bfb-pqnmz   1/1     Running   0          21m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get pods -o --show-labels
+error: unable to match a printer suitable for the output format "--show-labels", allowed formats are: custom-columns,custom-columns-file,go-template,go-template-file,json,jsonpath,jsonpath-as-json,jsonpath-file,name,template,templatefile,wide,yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get pods -o wide --show-labels
+NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+filestore-writer-app                1/1     Running   0          27m   10.76.1.93   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            <none>
+myapp1-deployment-6599f7bfb-czvfp   1/1     Running   0          27m   10.76.1.92   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=6599f7bfb
+myapp1-deployment-6599f7bfb-pqnmz   1/1     Running   0          27m   10.76.1.94   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=6599f7bfb
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get svc -o wide --show-labels
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE   SELECTOR     LABELS
+kubernetes          ClusterIP      10.80.0.1     <none>          443/TCP        22d   <none>       component=apiserver,provider=kubernetes
+myapp1-lb-service   LoadBalancer   10.80.9.202   34.70.179.212   80:32730/TCP   27m   app=myapp1   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+(failed reverse-i-search)`curl': wget https://github.com/tejadata/spark/raw/master/puckel_^Cstomized.zip
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ history | grep curl
+  131  history | grep curl
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://35.238.146.152"
+^Csimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.70.179.212"
+Error from server (AlreadyExists): pods "tempcurlpod" already exists
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.70.179.212"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.70.179.212/filestore/myapp1.txt | tail -10 "
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:56:51 UTC 2023
+pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ ls
+01-myapp1-kube-manifests  02-volume-backup-kube-manifests  03-volume-restore-myapp2-kube-manifests  README.md
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ ls 02-volume-backup-kube-manifests/
+01-VolumeSnapshotClass.yaml  02-VolumeSnapshot.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ cat 02-volume-backup-kube-manifests/01-VolumeSnapshotClass.yaml
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: csi-gcp-filestore-backup-snap-class
+driver: filestore.csi.storage.gke.io
+parameters:
+  type: backup
+deletionPolicy: Deletesimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ cat 02-volume-backup-kube-manifests/02-VolumeSnapshot.yaml
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: myapp1-volume-snapshot
+spec:
+  volumeSnapshotClassName: csi-gcp-filestore-backup-snap-class
+  source:
+    persistentVolumeClaimName: gke-filestore-pvcsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl apply -f 02-volume-backup-kube-manifests/
+volumesnapshotclass.snapshot.storage.k8s.io/csi-gcp-filestore-backup-snap-class created
+volumesnapshot.snapshot.storage.k8s.io/myapp1-volume-snapshot created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   22d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   29h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get snapshot
+error: the server doesn't have a resource type "snapshot"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get VolumeSnapshotClass
+NAME                                  DRIVER                         DELETIONPOLICY   AGE
+csi-gcp-filestore-backup-snap-class   filestore.csi.storage.gke.io   Delete           2m16s
+my-snapshotclass                      pd.csi.storage.gke.io          Delete           14d
+my-snapshotclass-use2                 pd.csi.storage.gke.io          Delete           14d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get VolumeSnapshotClass csi-gcp-filestore-backup-snap-class
+NAME                                  DRIVER                         DELETIONPOLICY   AGE
+csi-gcp-filestore-backup-snap-class   filestore.csi.storage.gke.io   Delete           2m47s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl sescribe VolumeSnapshotClass csi-gcp-filestore-backup-snap-class
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl describe VolumeSnapshotClass csi-gcp-filestore-backup-snap-class
+Name:             csi-gcp-filestore-backup-snap-class
+Namespace:
+Labels:           <none>
+Annotations:      <none>
+API Version:      snapshot.storage.k8s.io/v1
+Deletion Policy:  Delete
+Driver:           filestore.csi.storage.gke.io
+Kind:             VolumeSnapshotClass
+Metadata:
+  Creation Timestamp:  2023-09-13T03:58:02Z
+  Generation:          1
+  Resource Version:    23938929
+  UID:                 db7d5cd8-3095-404d-be8f-73777f70fdbd
+Parameters:
+  Type:  backup
+Events:  <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get VolumeSnapshot
+NAME                     READYTOUSE   SOURCEPVC           SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS                         SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+my-snapshot1             true         mysql-pv-claim                              4Gi           my-snapshotclass                      snapcontent-fd524560-5eab-4404-b0f1-cf2517043422   14d            14d
+my-snapshot1-use2        false        mysql-pv-claim                                            my-snapshotclass-use2                 snapcontent-2042c084-a742-4711-aa61-a4d352fb6859                  14d
+myapp1-volume-snapshot   true         gke-filestore-pvc                           1Ti           csi-gcp-filestore-backup-snap-class   snapcontent-96dc3a94-cf58-46fa-99e4-b868c207787e   3m24s          3m25s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get VolumeSnapshot myapp1-volume-snapshot
+NAME                     READYTOUSE   SOURCEPVC           SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS                         SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+myapp1-volume-snapshot   true         gke-filestore-pvc                           1Ti           csi-gcp-filestore-backup-snap-class   snapcontent-96dc3a94-cf58-46fa-99e4-b868c207787e   3m51s          3m52s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl describe VolumeSnapshot myapp1-volume-snapshot
+Name:         myapp1-volume-snapshot
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  snapshot.storage.k8s.io/v1
+Kind:         VolumeSnapshot
+Metadata:
+  Creation Timestamp:  2023-09-13T03:58:02Z
+  Finalizers:
+    snapshot.storage.kubernetes.io/volumesnapshot-as-source-protection
+    snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+  Generation:        1
+  Resource Version:  23939444
+  UID:               96dc3a94-cf58-46fa-99e4-b868c207787e
+Spec:
+  Source:
+    Persistent Volume Claim Name:  gke-filestore-pvc
+  Volume Snapshot Class Name:      csi-gcp-filestore-backup-snap-class
+Status:
+  Bound Volume Snapshot Content Name:  snapcontent-96dc3a94-cf58-46fa-99e4-b868c207787e
+  Creation Time:                       2023-09-13T03:58:03Z
+  Ready To Use:                        true
+  Restore Size:                        1Ti
+Events:
+  Type    Reason            Age    From                 Message
+  ----    ------            ----   ----                 -------
+  Normal  CreatingSnapshot  4m11s  snapshot-controller  Waiting for a snapshot default/myapp1-volume-snapshot to be created by the CSI driver.
+  Normal  SnapshotCreated   3m35s  snapshot-controller  Snapshot default/myapp1-volume-snapshot was successfully created by the CSI driver.
+  Normal  SnapshotReady     3m35s  snapshot-controller  Snapshot default/myapp1-volume-snapshot is ready to use.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ ls 03-volume-restore-myapp2-kube-manifests/
+01-filestore-pvc.yaml  02-myapp2-deployment.yaml  03-myapp2-loadBalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ cat 03-volume-restore-myapp2-kube-manifests/01-filestore-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: restored-filestore-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: standard-rwx
+  resources:
+    requests:
+      storage: 1Ti
+  dataSource:
+    kind: VolumeSnapshot
+    name: myapp1-volume-snapshot
+    apiGroup: snapshot.storage.k8s.io      simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ cat 03-volume-restore-myapp2-kube-manifests/02-myapp2-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: #Dictionary
+  name: myapp2-deployment
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp2
+  template:
+    metadata: # Dictionary
+      name: myapp2-pod
+      labels: # Dictionary
+        app: myapp2  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp2-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: /usr/share/nginx/html/filestore
+      volumes:
+        - name: persistent-storage
+          persistentVolumeClaim:
+            claimName: restored-filestore-pvc
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ cat 03-volume-restore-myapp2-kube-manifests/03-myapp2-loadBalancer-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp2-lb-service
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp2
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl apply -f 03-volume-restore-myapp2-kube-manifests/
+persistentvolumeclaim/restored-filestore-pvc created
+deployment.apps/myapp2-deployment created
+service/myapp2-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get pvc
+NAME                     STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+gke-filestore-pvc        Bound    pvc-dd97db9f-0a25-4827-b29d-4e826125a6b0   1Ti        RWX            standard-rwx   46m
+restored-filestore-pvc   Bound    pvc-bfb28f34-6170-46ca-9e75-58efa1631f7c   1Ti        RWX            standard-rwx   9m34s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get deployment
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   2/2     2            2           47m
+myapp2-deployment   2/2     2            2           9m55s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get pods
+NAME                                READY   STATUS    RESTARTS   AGE
+filestore-writer-app                1/1     Running   0          47m
+myapp1-deployment-6599f7bfb-czvfp   1/1     Running   0          47m
+myapp1-deployment-6599f7bfb-pqnmz   1/1     Running   0          47m
+myapp2-deployment-b9f47d794-5hxwh   1/1     Running   0          10m
+myapp2-deployment-b9f47d794-dbwsc   1/1     Running   0          10m
+tempcurlpod                         0/1     Error     0          17m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl delete pods tempcurlpod
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get svc
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1     <none>           443/TCP        22d
+myapp1-lb-service   LoadBalancer   10.80.9.202   34.70.179.212    80:32730/TCP   47m
+myapp2-lb-service   LoadBalancer   10.80.1.173   104.197.90.149   80:32617/TCP   10m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.70.179.212/filestore/myapp1.txt | tail -10 "
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:13:48 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:13:53 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:13:58 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:14:03 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:14:08 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:14:13 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:14:18 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:14:23 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:14:28 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 04:14:34 UTC 2023
+pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://104.197.90.149/filestore/myapp1.
+txt | tail -10 "
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:57:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:57:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:57:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:57:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:57:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:57:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:57:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:57:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:58:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 03:58:06 UTC 2023
+pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ ls
+01-myapp1-kube-manifests  02-volume-backup-kube-manifests  03-volume-restore-myapp2-kube-manifests  README.md
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl delete -f 01-myapp1-kube-manifests -f 02-volume-backup-kube-manifests -f 03-volume-restore-myapp2-kube-manifests
+persistentvolumeclaim "gke-filestore-pvc" deleted
+pod "filestore-writer-app" deleted
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+volumesnapshotclass.snapshot.storage.k8s.io "csi-gcp-filestore-backup-snap-class" deleted
+volumesnapshot.snapshot.storage.k8s.io "myapp1-volume-snapshot" deleted
+persistentvolumeclaim "restored-filestore-pvc" deleted
+deployment.apps "myapp2-deployment" deleted
+service "myapp2-lb-service" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl get VolumeSnapshot
+NAME                READYTOUSE   SOURCEPVC        SOURCESNAPSHOTCONTENT   RESTORESIZE   SNAPSHOTCLASS           SNAPSHOTCONTENT                                    CREATIONTIME   AGE
+my-snapshot1        true         mysql-pv-claim                           4Gi           my-snapshotclass        snapcontent-fd524560-5eab-4404-b0f1-cf2517043422   14d            14d
+my-snapshot1-use2   false        mysql-pv-claim                                         my-snapshotclass-use2   snapcontent-2042c084-a742-4711-aa61-a4d352fb6859                  14d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl delete VolumeSnapshot my-snapshot1
+volumesnapshot.snapshot.storage.k8s.io "my-snapshot1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$ kubectl delete VolumeSnapshot my-snapshot1-use2
+volumesnapshot.snapshot.storage.k8s.io "my-snapshot1-use2" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/33-GKE-FileStore-Backup-and-Restore$
