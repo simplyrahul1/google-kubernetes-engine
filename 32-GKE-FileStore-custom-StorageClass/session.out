@@ -1,0 +1,440 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get nodes
+NAME                                                  STATUS   ROLES    AGE   VERSION
+gke-private-standard-22a-default-pool-76d79b51-6f20   Ready    <none>   22d   v1.27.3-gke.100
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff   Ready    <none>   22d   v1.27.3-gke.100
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg   Ready    <none>   22d   v1.27.3-gke.100
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl -n kube-system get pods -o wide --show-labels | grep file
+filestore-node-8nsrb                                       3/3     Running   0            26h     10.128.0.49   gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            controller-revision-hash=7975d8f94,k8s-app=gcp-filestore-csi-driver,pod-template-generation=2
+filestore-node-9mpf8                                       3/3     Running   0            26h     10.128.0.51   gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            controller-revision-hash=7975d8f94,k8s-app=gcp-filestore-csi-driver,pod-template-generation=2
+filestore-node-pp7ww                                       3/3     Running   0            26h     10.128.0.50   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            controller-revision-hash=7975d8f94,k8s-app=gcp-filestore-csi-driver,pod-template-generation=2
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   22d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   26h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get sc | grep rwx
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   26h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl describe sc standard-rwx
+Name:                  standard-rwx
+IsDefaultClass:        No
+Annotations:           components.gke.io/component-name=filestorecsi,components.gke.io/component-version=0.10.7,components.gke.io/layer=addon
+Provisioner:           filestore.csi.storage.gke.io
+Parameters:            tier=standard
+AllowVolumeExpansion:  True
+MountOptions:          <none>
+ReclaimPolicy:         Delete
+VolumeBindingMode:     WaitForFirstConsumer
+Events:                <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ ls kube-manifests/
+00-filestore-storage-class.yaml  01-filestore-pvc.yaml  02-write-to-filestore-pod.yaml  03-myapp1-deployment.yaml  04-loadBalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl apply -f kube-manifests/00-filestore-storage-class.yaml
+storageclass.storage.k8s.io/filestore-storage-class created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl describe sc standard-rwx
+Name:                  standard-rwx
+IsDefaultClass:        No
+Annotations:           components.gke.io/component-name=filestorecsi,components.gke.io/component-version=0.10.7,components.gke.io/layer=addon
+Provisioner:           filestore.csi.storage.gke.io
+Parameters:            tier=standard
+AllowVolumeExpansion:  True
+MountOptions:          <none>
+ReclaimPolicy:         Delete
+VolumeBindingMode:     WaitForFirstConsumer
+Events:                <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get sc | grep rwx
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   26h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get sc | grep filestore
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+filestore-storage-class     filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   49s
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   26h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl describe sc filestore-storage-class
+Name:            filestore-storage-class
+IsDefaultClass:  No
+Annotations:     kubectl.kubernetes.io/last-applied-configuration={"allowVolumeExpansion":true,"apiVersion":"storage.k8s.io/v1","kind":"StorageClass","metadata":{"annotations":{},"name":"filestore-storage-class"},"parameters":{"network":"default","tier":"standard"},"provisioner":"filestore.csi.storage.gke.io","volumeBindingMode":"WaitForFirstConsumer"}
+
+Provisioner:           filestore.csi.storage.gke.io
+Parameters:            network=default,tier=standard
+AllowVolumeExpansion:  True
+MountOptions:          <none>
+ReclaimPolicy:         Delete
+VolumeBindingMode:     WaitForFirstConsumer
+Events:                <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl apply -f kube-manifests/
+storageclass.storage.k8s.io/filestore-storage-class unchanged
+persistentvolumeclaim/gke-filestore-pvc created
+pod/filestore-writer-app created
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+filestore-storage-class     filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   2m27s
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   22d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   26h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl describe sc filestore-storage-class
+Name:            filestore-storage-class
+IsDefaultClass:  No
+Annotations:     kubectl.kubernetes.io/last-applied-configuration={"allowVolumeExpansion":true,"apiVersion":"storage.k8s.io/v1","kind":"StorageClass","metadata":{"annotations":{},"name":"filestore-storage-class"},"parameters":{"network":"default","tier":"standard"},"provisioner":"filestore.csi.storage.gke.io","volumeBindingMode":"WaitForFirstConsumer"}
+
+Provisioner:           filestore.csi.storage.gke.io
+Parameters:            network=default,tier=standard
+AllowVolumeExpansion:  True
+MountOptions:          <none>
+ReclaimPolicy:         Delete
+VolumeBindingMode:     WaitForFirstConsumer
+Events:                <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pv
+No resources found
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pvc
+NAME                STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS              AGE
+gke-filestore-pvc   Pending                                      filestore-storage-class   103s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pv
+No resources found
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   0/2     2            0           2m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pods
+NAME                                READY   STATUS    RESTARTS   AGE
+filestore-writer-app                0/1     Pending   0          2m12s
+myapp1-deployment-6599f7bfb-r7szl   0/1     Pending   0          2m12s
+myapp1-deployment-6599f7bfb-xhml6   0/1     Pending   0          2m12s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl describe pods filestore-writer-app
+Name:             filestore-writer-app
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-f62b7b3f-4qbg/10.128.0.50
+Start Time:       Wed, 13 Sep 2023 09:19:19 +0800
+Labels:           <none>
+Annotations:      <none>
+Status:           Running
+IP:               10.76.1.87
+IPs:
+  IP:  10.76.1.87
+Containers:
+  app:
+    Container ID:  containerd://ee11aad26d11fdbc761697d9258021e586ab2caa36e42e9d80cbb6c311ef45c0
+    Image:         centos
+    Image ID:      docker.io/library/centos@sha256:a27fd8080b517143cbbbab9dfb7c8571c40d67d534bbdee55bd6c473f432b177
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/sh
+    Args:
+      -c
+      while true; do echo GCP Cloud FileStore used as PV in GKE $(date -u) >> /data/myapp1.txt; sleep 5; done
+    State:          Running
+      Started:      Wed, 13 Sep 2023 09:19:24 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /data from persistent-storage (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-sb6f8 (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  persistent-storage:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  gke-filestore-pvc
+    ReadOnly:   false
+  kube-api-access-sb6f8:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  24s   default-scheduler  Successfully assigned default/filestore-writer-app to gke-private-standard-22a-default-pool-f62b7b3f-4qbg
+  Normal  Pulling    19s   kubelet            Pulling image "centos"
+  Normal  Pulled     19s   kubelet            Successfully pulled image "centos" in 185.794525ms (185.825805ms including waiting)
+  Normal  Created    19s   kubelet            Created container app
+  Normal  Started    19s   kubelet            Started container app
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pods
+NAME                                READY   STATUS    RESTARTS   AGE
+filestore-writer-app                1/1     Running   0          3m22s
+myapp1-deployment-6599f7bfb-r7szl   1/1     Running   0          3m22s
+myapp1-deployment-6599f7bfb-xhml6   1/1     Running   0          3m22s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                       STORAGECLASS              REASON   AGE
+pvc-36f7b861-9eeb-44c4-bb4e-f811ab2aadb3   1Ti        RWX            Delete           Bound    default/gke-filestore-pvc   filestore-storage-class            74s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pvc
+NAME                STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS              AGE
+gke-filestore-pvc   Bound    pvc-36f7b861-9eeb-44c4-bb4e-f811ab2aadb3   1Ti        RWX            filestore-storage-class   3m40s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get  svc
+NAME                TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1      <none>           443/TCP        22d
+myapp1-lb-service   LoadBalancer   10.80.11.110   35.238.146.152   80:30250/TCP   3m48s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl describe pvc gke-filestore-pvc
+Name:          gke-filestore-pvc
+Namespace:     default
+StorageClass:  filestore-storage-class
+Status:        Bound
+Volume:        pvc-36f7b861-9eeb-44c4-bb4e-f811ab2aadb3
+Labels:        <none>
+Annotations:   pv.kubernetes.io/bind-completed: yes
+               pv.kubernetes.io/bound-by-controller: yes
+               volume.beta.kubernetes.io/storage-provisioner: filestore.csi.storage.gke.io
+               volume.kubernetes.io/selected-node: gke-private-standard-22a-default-pool-f62b7b3f-4qbg
+               volume.kubernetes.io/storage-provisioner: filestore.csi.storage.gke.io
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:      1Ti
+Access Modes:  RWX
+VolumeMode:    Filesystem
+Used By:       filestore-writer-app
+               myapp1-deployment-6599f7bfb-r7szl
+               myapp1-deployment-6599f7bfb-xhml6
+Events:
+  Type    Reason                 Age                    From                                                                                                     Message
+  ----    ------                 ----                   ----                                                                                                     -------
+  Normal  WaitForFirstConsumer   4m26s                  persistentvolume-controller                                                                              waiting for first consumer to be created before binding
+  Normal  Provisioning           4m25s                  filestore.csi.storage.gke.io_gke-98f1b91aaad34b129334-077f-a036-vm_54417112-cb4f-4555-a48e-4fff7c8d5bf8  External provisioner is provisioning volume for claim "default/gke-filestore-pvc"
+  Normal  ExternalProvisioning   2m5s (x11 over 4m25s)  persistentvolume-controller                                                                              waiting for a volume to be created, either by external provisioner "filestore.csi.storage.gke.io" or manually created by system administrator
+  Normal  ProvisioningSucceeded  2m5s                   filestore.csi.storage.gke.io_gke-98f1b91aaad34b129334-077f-a036-vm_54417112-cb4f-4555-a48e-4fff7c8d5bf8  Successfully provisioned volume pvc-36f7b861-9eeb-44c4-bb4e-f811ab2aadb3
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl describe pv pvc-36f7b861-9eeb-44c4-bb4e-f811ab2aadb3
+Name:            pvc-36f7b861-9eeb-44c4-bb4e-f811ab2aadb3
+Labels:          <none>
+Annotations:     pv.kubernetes.io/provisioned-by: filestore.csi.storage.gke.io
+                 volume.kubernetes.io/provisioner-deletion-secret-name:
+                 volume.kubernetes.io/provisioner-deletion-secret-namespace:
+Finalizers:      [kubernetes.io/pv-protection]
+StorageClass:    filestore-storage-class
+Status:          Bound
+Claim:           default/gke-filestore-pvc
+Reclaim Policy:  Delete
+Access Modes:    RWX
+VolumeMode:      Filesystem
+Capacity:        1Ti
+Node Affinity:   <none>
+Message:
+Source:
+    Type:              CSI (a Container Storage Interface (CSI) volume source)
+    Driver:            filestore.csi.storage.gke.io
+    FSType:
+    VolumeHandle:      modeInstance/us-central1-c/pvc-36f7b861-9eeb-44c4-bb4e-f811ab2aadb3/vol1
+    ReadOnly:          false
+    VolumeAttributes:      ip=10.203.239.146
+                           storage.kubernetes.io/csiProvisionerIdentity=1694560192602-927-filestore.csi.storage.gke.io
+                           volume=vol1
+Events:                <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get svc
+NAME                TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1      <none>           443/TCP        22d
+myapp1-lb-service   LoadBalancer   10.80.11.110   35.238.146.152   80:30250/TCP   5m20s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+filestore-storage-class     filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   7m40s
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   22d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   22d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   22d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   26h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.11.110"
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpod, falling back to streaming logs: unable to upgrade connection: container tempcurlpod not found in pod tempcurlpod_default
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.11.110/filestore/myapp1.txt"
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:19:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:19:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:19:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:19:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:19:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:19:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:19:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:20:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:21:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:22:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:23:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:23:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:23:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:23:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:23:20 UTC 2023
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ ^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get svc
+NAME                TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1      <none>           443/TCP        22d
+myapp1-lb-service   LoadBalancer   10.80.11.110   35.238.146.152   80:30250/TCP   6m37s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://35.238.146.152"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pocs
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl get pods
+NAME                                READY   STATUS    RESTARTS   AGE
+filestore-writer-app                1/1     Running   0          8m2s
+myapp1-deployment-6599f7bfb-r7szl   1/1     Running   0          8m2s
+myapp1-deployment-6599f7bfb-xhml6   1/1     Running   0          8m2s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl exec -it filestore-writer-app -- sh
+sh-4.4# df
+Filesystem            1K-blocks    Used  Available Use% Mounted on
+overlay                16266500 5948760   10301356  37% /
+tmpfs                     65536       0      65536   0% /dev
+10.203.239.146:/vol1 1055763456       0 1002059776   0% /data
+/dev/sda1              16266500 5948760   10301356  37% /etc/hosts
+shm                       65536       0      65536   0% /dev/shm
+tmpfs                   1401264      12    1401252   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs                   1013976       0    1013976   0% /proc/acpi
+tmpfs                   1013976       0    1013976   0% /proc/scsi
+tmpfs                   1013976       0    1013976   0% /sys/firmware
+sh-4.4# df -h /data
+Filesystem            Size  Used Avail Use% Mounted on
+10.203.239.146:/vol1 1007G     0  956G   0% /data
+sh-4.4# ls /data/
+lost+found  myapp1.txt
+sh-4.4# tail -f /data/myapp1.txt
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:51 UTC 2023
+--
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:25:56 UTC 2023
+^C
+sh-4.4# exit
+exit
+command terminated with exit code 130
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl exec -it myapp1-deployment-6599f7bfb-xhml6 -- sh
+# df
+Filesystem            1K-blocks    Used  Available Use% Mounted on
+overlay                16266500 5948868   10301248  37% /
+tmpfs                     65536       0      65536   0% /dev
+/dev/sda1              16266500 5948868   10301248  37% /etc/hosts
+shm                       65536       0      65536   0% /dev/shm
+10.203.239.146:/vol1 1055763456       0 1002059776   0% /usr/share/nginx/html/filestore
+tmpfs                   1401264      12    1401252   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs                   1013976       0    1013976   0% /proc/acpi
+tmpfs                   1013976       0    1013976   0% /proc/scsi
+tmpfs                   1013976       0    1013976   0% /sys/firmware
+# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+overlay                16G  5.7G  9.9G  37% /
+tmpfs                  64M     0   64M   0% /dev
+/dev/sda1              16G  5.7G  9.9G  37% /etc/hosts
+shm                    64M     0   64M   0% /dev/shm
+10.203.239.146:/vol1 1007G     0  956G   0% /usr/share/nginx/html/filestore
+tmpfs                 1.4G   12K  1.4G   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs                 991M     0  991M   0% /proc/acpi
+tmpfs                 991M     0  991M   0% /proc/scsi
+tmpfs                 991M     0  991M   0% /sys/firmware
+# df -h /usr/share/nginx/html/filestore
+Filesystem            Size  Used Avail Use% Mounted on
+10.203.239.146:/vol1 1007G     0  956G   0% /usr/share/nginx/html/filestore
+# cd /usr/share/nginx/html/filestore
+# ls
+lost+found  myapp1.txt
+# tail -f myapp1.txt
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:26:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:26:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:26:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:27:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:27:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:27:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:27:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:27:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:27:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:27:31 UTC 2023
+--
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 01:27:36 UTC 2023
+^C
+# exit
+command terminated with exit code 130
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/32-GKE-FileStore-custom-StorageClass$ kubectl delete -f kube-manifests/
+storageclass.storage.k8s.io "filestore-storage-class" deleted
+persistentvolumeclaim "gke-filestore-pvc" deleted
+pod "filestore-writer-app" deleted
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+
