@@ -1,0 +1,1130 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/30-GCP-CloudSQL-Private-NO-ExternalNameService$ cd ../31-GKE-FileStore-default-StorageClass/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ ls kube-manifests/
+01-filestore-pvc.yaml  02-write-to-filestore-pod.yaml  03-myapp1-deployment.yaml  04-loadBalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get ds
+No resources found in default namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get ns
+NAME                       STATUS   AGE
+default                    Active   19d
+gke-managed-filestorecsi   Active   19d
+gmp-public                 Active   19d
+gmp-system                 Active   19d
+kube-node-lease            Active   19d
+kube-public                Active   19d
+kube-system                Active   19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get ns -n kube-system
+NAME                       STATUS   AGE
+default                    Active   19d
+gke-managed-filestorecsi   Active   19d
+gmp-public                 Active   19d
+gmp-system                 Active   19d
+kube-node-lease            Active   19d
+kube-public                Active   19d
+kube-system                Active   19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get ds -n kube-system
+NAME                                     DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR                                                             AGE
+anetd                                    3         3         3       3            3           kubernetes.io/os=linux                                                    19d
+anetd-win                                0         0         0       0            0           kubernetes.io/os=windows                                                  19d
+filestore-node                           3         3         3       3            3           kubernetes.io/os=linux                                                    19d
+fluentbit-gke                            3         3         3       3            3           kubernetes.io/os=linux                                                    19d
+fluentbit-gke-256pd                      0         0         0       0            0           kubernetes.io/os=linux                                                    19d
+fluentbit-gke-max                        0         0         0       0            0           kubernetes.io/os=linux                                                    19d
+gke-metadata-server                      3         3         3       3            3           beta.kubernetes.io/os=linux,iam.gke.io/gke-metadata-server-enabled=true   19d
+gke-metrics-agent                        3         3         3       3            3           <none>                                                                    19d
+gke-metrics-agent-scaling-10             0         0         0       0            0           <none>                                                                    19d
+gke-metrics-agent-scaling-100            0         0         0       0            0           <none>                                                                    19d
+gke-metrics-agent-scaling-20             0         0         0       0            0           <none>                                                                    19d
+gke-metrics-agent-scaling-200            0         0         0       0            0           <none>                                                                    19d
+gke-metrics-agent-scaling-50             0         0         0       0            0           <none>                                                                    19d
+gke-metrics-agent-scaling-500            0         0         0       0            0           <none>                                                                    19d
+gke-metrics-agent-windows                0         0         0       0            0           kubernetes.io/os=windows                                                  19d
+kube-proxy                               0         0         0       0            0           kubernetes.io/os=linux,node.kubernetes.io/kube-proxy-ds-ready=true        19d
+metadata-proxy-v0.1                      0         0         0       0            0           cloud.google.com/metadata-proxy-ready=true,kubernetes.io/os=linux         19d
+nccl-fastsocket-installer                0         0         0       0            0           <none>                                                                    19d
+netd                                     3         3         3       3            3           cloud.google.com/gke-netd-ready=true,kubernetes.io/os=linux               19d
+nvidia-gpu-device-plugin-large-cos       0         0         0       0            0           <none>                                                                    19d
+nvidia-gpu-device-plugin-large-ubuntu    0         0         0       0            0           <none>                                                                    19d
+nvidia-gpu-device-plugin-medium-cos      0         0         0       0            0           <none>                                                                    19d
+nvidia-gpu-device-plugin-medium-ubuntu   0         0         0       0            0           <none>                                                                    19d
+nvidia-gpu-device-plugin-small-cos       0         0         0       0            0           <none>                                                                    19d
+nvidia-gpu-device-plugin-small-ubuntu    0         0         0       0            0           <none>                                                                    19d
+pdcsi-node                               3         3         3       3            3           kubernetes.io/os=linux                                                    19d
+pdcsi-node-windows                       0         0         0       0            0           kubernetes.io/os=windows                                                  19d
+runsc-metric-server                      0         0         0       0            0           kubernetes.io/os=linux,sandbox.gke.io/runtime=gvisor                      19d
+tpu-device-plugin                        0         0         0       0            0           <none>                                                                    19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get ds -n kube-system | grep file
+filestore-node                           3         3         3       3            3           kubernetes.io/os=linux                                                    19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pods -n kube-system
+NAME                                                       READY   STATUS    RESTARTS        AGE
+anetd-mjmxp                                                1/1     Running   0               19d
+anetd-rdvmd                                                1/1     Running   0               19d
+anetd-xzz7q                                                1/1     Running   0               19d
+antrea-controller-horizontal-autoscaler-7b69d9bfd7-rthc4   1/1     Running   0               19d
+event-exporter-gke-7bf6c99dcb-j4m5f                        2/2     Running   0               19d
+filestore-node-64g62                                       3/3     Running   0               19d
+filestore-node-nv8tk                                       3/3     Running   0               19d
+filestore-node-sdj65                                       3/3     Running   0               19d
+fluentbit-gke-gbdn2                                        2/2     Running   0               19d
+fluentbit-gke-hvwlv                                        2/2     Running   0               19d
+fluentbit-gke-vxxcc                                        2/2     Running   0               19d
+gke-metadata-server-4hlb8                                  1/1     Running   0               2d18h
+gke-metadata-server-j5spp                                  1/1     Running   0               2d18h
+gke-metadata-server-qr2t2                                  1/1     Running   0               2d18h
+gke-metrics-agent-467vs                                    2/2     Running   1               19d
+gke-metrics-agent-82zrf                                    2/2     Running   0               19d
+gke-metrics-agent-vclp8                                    2/2     Running   0               19d
+konnectivity-agent-7fdff956d-cr25l                         1/1     Running   0               19d
+konnectivity-agent-7fdff956d-kqhm5                         1/1     Running   0               19d
+konnectivity-agent-7fdff956d-r7nf6                         1/1     Running   0               19d
+konnectivity-agent-autoscaler-5d9dbcc6d8-g8c6k             1/1     Running   0               19d
+kube-dns-5bfd847c64-qwvrg                                  4/4     Running   0               19d
+kube-dns-5bfd847c64-wj2mw                                  4/4     Running   8 (6d22h ago)   19d
+kube-dns-autoscaler-84b8db4dc7-n8764                       1/1     Running   0               19d
+l7-default-backend-d86c96845-9d54x                         1/1     Running   0               19d
+metrics-server-v0.5.2-6bf74b5d5f-jd94d                     2/2     Running   0               19d
+netd-7slpm                                                 1/1     Running   0               19d
+netd-gsfg7                                                 1/1     Running   0               19d
+netd-rnnqm                                                 1/1     Running   0               19d
+pdcsi-node-fvcv2                                           2/2     Running   0               19d
+pdcsi-node-j5cph                                           2/2     Running   0               19d
+pdcsi-node-z6tmb                                           2/2     Running   0               19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pods -n kube-system | grep file
+filestore-node-64g62                                       3/3     Running   0               19d
+filestore-node-nv8tk                                       3/3     Running   0               19d
+filestore-node-sdj65                                       3/3     Running   0               19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   19d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   19d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   19d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ ls kube-manifests/
+01-filestore-pvc.yaml  02-write-to-filestore-pod.yaml  03-myapp1-deployment.yaml  04-loadBalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ cat kube-manifests/01-filestore-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gke-filestore-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: standard-rwx
+  resources:
+    requests:
+      storage: 1Ti
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ cat kube-manifests/02-write-to-filestore-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: filestore-writer-app
+spec:
+  containers:
+    - name: app
+      image: centos
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do echo GCP Cloud FileStore used as PV in GKE $(date -u) >> /data/myapp1.txt; sleep 5; done"]
+      volumeMounts:
+        - name: persistent-storage
+          mountPath: /data
+  volumes:
+    - name: persistent-storage
+      persistentVolumeClaim:
+        claimName: gke-filestore-pvcsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ vim kube-manifests/02-write-to-filestore-pod.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ cat kube-manifests/02-write-to-filestore-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: filestore-writer-app
+spec:
+  containers:
+    - name: app
+      image: centos
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do echo GCP Cloud FileStore used as PV in GKE $(date -u) >> /data/myapp1.txt; sleep 5; done"]
+      volumeMounts:
+        - name: persistent-storage
+          mountPath: /data
+  volumes:
+    - name: persistent-storage
+      persistentVolumeClaim:
+        claimName: gke-filestore-pvc
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ cat kube-manifests/01-filestore-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gke-filestore-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: standard-rwx
+  resources:
+    requests:
+      storage: 1Ti
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ cat kube-manifests/02-write-to-filestore-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: filestore-writer-app
+spec:
+  containers:
+    - name: app
+      image: centos
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do echo GCP Cloud FileStore used as PV in GKE $(date -u) >> /data/myapp1.txt; sleep 5; done"]
+      volumeMounts:
+        - name: persistent-storage
+          mountPath: /data
+  volumes:
+    - name: persistent-storage
+      persistentVolumeClaim:
+        claimName: gke-filestore-pvc
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ cat kube-manifests/03-myapp1-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: /usr/share/nginx/html/filestore
+      volumes:
+        - name: persistent-storage
+          persistentVolumeClaim:
+            claimName: gke-filestore-pvc
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ cat kube-manifests/04-loadBalancer-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp1-lb-service
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp1
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl apply -f kube-manifests/
+persistentvolumeclaim/gke-filestore-pvc created
+pod/filestore-writer-app created
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   19d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   19d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   19d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   19d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pv
+No resources found
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pvc
+NAME                STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+gke-filestore-pvc   Pending                                      standard-rwx   26s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ wait kubectl get pvc
+-bash: wait: `kubectl': not a pid or valid job spec
+-bash: wait: `get': not a pid or valid job spec
+-bash: wait: `pvc': not a pid or valid job spec
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ watch kubectl get pvc
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl delete -f kube-manifests/
+persistentvolumeclaim "gke-filestore-pvc" deleted
+pod "filestore-writer-app" deleted
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl apply -f kube-manifests/
+persistentvolumeclaim/gke-filestore-pvc created
+pod/filestore-writer-app created
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get all
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/filestore-writer-app                1/1     Running   0          5m11s
+pod/myapp1-deployment-6599f7bfb-5f9h2   1/1     Running   0          5m11s
+pod/myapp1-deployment-6599f7bfb-nn6g4   1/1     Running   0          5m11s
+
+NAME                        TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE
+service/kubernetes          ClusterIP      10.80.0.1      <none>          443/TCP        21d
+service/myapp1-lb-service   LoadBalancer   10.80.11.207   34.71.245.160   80:32332/TCP   5m11s
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   2/2     2            2           5m12s
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-6599f7bfb   2         2         2       5m12s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   21d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   21d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   21d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   21d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   21d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   21d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   21d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   25h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pvc
+NAME                STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+gke-filestore-pvc   Bound    pvc-714b0033-19d5-4b09-95e1-209262030108   1Ti        RWX            standard-rwx   13m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                       STORAGECLASS   REASON   AGE
+pvc-714b0033-19d5-4b09-95e1-209262030108   1Ti        RWX            Delete           Bound    default/gke-filestore-pvc   standard-rwx            11m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pvc -o wide --show-labels
+NAME                STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE   VOLUMEMODE   LABELS
+gke-filestore-pvc   Bound    pvc-714b0033-19d5-4b09-95e1-209262030108   1Ti        RWX            standard-rwx   14m   Filesystem   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pv -o wide --show-labels
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                       STORAGECLASS   REASON   AGE   VOLUMEMODE   LABELS
+pvc-714b0033-19d5-4b09-95e1-209262030108   1Ti        RWX            Delete           Bound    default/gke-filestore-pvc   standard-rwx            12m   Filesystem   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get deploy -o wide --show-labels
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS         IMAGES                          SELECTOR     LABELS
+myapp1-deployment   2/2     2            2           16m   myapp1-container   stacksimplify/kubenginx:1.0.0   app=myapp1   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pods -o wide --show-labels
+NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+filestore-writer-app                1/1     Running   0          16m   10.76.1.78   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            <none>
+myapp1-deployment-6599f7bfb-5f9h2   1/1     Running   0          16m   10.76.1.79   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=6599f7bfb
+myapp1-deployment-6599f7bfb-nn6g4   1/1     Running   0          16m   10.76.1.80   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=6599f7bfb
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl describe pods filestore-writer-app
+Name:             filestore-writer-app
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-f62b7b3f-4qbg/10.128.0.50
+Start Time:       Wed, 13 Sep 2023 08:11:32 +0800
+Labels:           <none>
+Annotations:      <none>
+Status:           Running
+IP:               10.76.1.78
+IPs:
+  IP:  10.76.1.78
+Containers:
+  app:
+    Container ID:  containerd://6cc997caf2365c0be2b11268496cad071e7521dc46fd56eeb8487deb65f18a9c
+    Image:         centos
+    Image ID:      docker.io/library/centos@sha256:a27fd8080b517143cbbbab9dfb7c8571c40d67d534bbdee55bd6c473f432b177
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/sh
+    Args:
+      -c
+      while true; do echo GCP Cloud FileStore used as PV in GKE $(date -u) >> /data/myapp1.txt; sleep 5; done
+    State:          Running
+      Started:      Wed, 13 Sep 2023 08:11:38 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /data from persistent-storage (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-n49vv (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  persistent-storage:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  gke-filestore-pvc
+    ReadOnly:   false
+  kube-api-access-n49vv:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  15m   default-scheduler  Successfully assigned default/filestore-writer-app to gke-private-standard-22a-default-pool-f62b7b3f-4qbg
+  Normal  Pulling    15m   kubelet            Pulling image "centos"
+  Normal  Pulled     15m   kubelet            Successfully pulled image "centos" in 442.987997ms (443.052232ms including waiting)
+  Normal  Created    15m   kubelet            Created container app
+  Normal  Started    15m   kubelet            Started container app
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl describe pods myapp1-deployment-6599f7bfb-5f9h2
+Name:             myapp1-deployment-6599f7bfb-5f9h2
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-f62b7b3f-4qbg/10.128.0.50
+Start Time:       Wed, 13 Sep 2023 08:11:32 +0800
+Labels:           app=myapp1
+                  pod-template-hash=6599f7bfb
+Annotations:      <none>
+Status:           Running
+IP:               10.76.1.79
+IPs:
+  IP:           10.76.1.79
+Controlled By:  ReplicaSet/myapp1-deployment-6599f7bfb
+Containers:
+  myapp1-container:
+    Container ID:   containerd://0dcb33ef44047e253c88d432971751c7ebcac1dc6af66372327613f69159a971
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Wed, 13 Sep 2023 08:11:38 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /usr/share/nginx/html/filestore from persistent-storage (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-kbfkb (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  persistent-storage:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  gke-filestore-pvc
+    ReadOnly:   false
+  kube-api-access-kbfkb:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  15m   default-scheduler  Successfully assigned default/myapp1-deployment-6599f7bfb-5f9h2 to gke-private-standard-22a-default-pool-f62b7b3f-4qbg
+  Normal  Pulled     15m   kubelet            Container image "stacksimplify/kubenginx:1.0.0" already present on machine
+  Normal  Created    15m   kubelet            Created container myapp1-container
+  Normal  Started    15m   kubelet            Started container myapp1-container
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get svc -o wide --show-lables
+error: unknown flag: --show-lables
+See 'kubectl get --help' for usage.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get svc -o wide --show-labels
+NAME                TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE   SELECTOR     LABELS
+kubernetes          ClusterIP      10.80.0.1      <none>          443/TCP        22d   <none>       component=apiserver,provider=kubernetes
+myapp1-lb-service   LoadBalancer   10.80.11.207   34.71.245.160   80:32332/TCP   18m   app=myapp1   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ curl -s http://34.71.245.160
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ curl -s http://10.80.11.207
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl run mycurlpod --image=curlimages/curl -i --tty -- sh
+If you don't see a command prompt, try pressing enter.
+~ $
+~ $ curl -s http://10.80.11.207
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>~ $
+~ $ curl -s http://34.71.245.160
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>~ $ exit
+Session ended, resume using 'kubectl attach mycurlpod -c mycurlpod -i -t' command when the pod is running
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl run mycurlpod --image=curlimages/curl -i --tty -- sh -c "curl -s http://34.71.245.160"
+Error from server (AlreadyExists): pods "mycurlpod" already exists
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl run mycurlpod1 --image=curlimages/curl -i --tty -- sh -c "curl -s http://34.71.245.160"
+
+error: timed out waiting for the condition
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "nslookup myapp1-cip-serv
+e.defaul> ^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.71.245.160"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.11.207"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pods -o wide --show-labels
+NAME                                READY   STATUS             RESTARTS        AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+filestore-writer-app                1/1     Running            0               31m     10.76.1.78   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            <none>
+myapp1-deployment-6599f7bfb-5f9h2   1/1     Running            0               31m     10.76.1.79   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=6599f7bfb
+myapp1-deployment-6599f7bfb-nn6g4   1/1     Running            0               31m     10.76.1.80   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=6599f7bfb
+mycurlpod                           1/1     Running            1 (7m48s ago)   8m11s   10.76.1.81   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            run=mycurlpod
+mycurlpod1                          0/1     CrashLoopBackOff   6 (94s ago)     7m12s   10.76.1.82   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            run=mycurlpod1
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl delete pods mycurlpod
+pod "mycurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl delete pods mycurlpod1
+pod "mycurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl exec -it myapp1-deployment-6599f7bfb-5f9h2 -- /bin/sh
+# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+overlay                16G  5.7G  9.9G  37% /
+tmpfs                  64M     0   64M   0% /dev
+/dev/sda1              16G  5.7G  9.9G  37% /etc/hosts
+shm                    64M     0   64M   0% /dev/shm
+10.216.158.170:/vol1 1007G     0  956G   0% /usr/share/nginx/html/filestore
+tmpfs                 1.4G   12K  1.4G   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs                 991M     0  991M   0% /proc/acpi
+tmpfs                 991M     0  991M   0% /proc/scsi
+tmpfs                 991M     0  991M   0% /sys/firmware
+# ps -ef
+/bin/sh: 2: ps: not found
+# exit
+command terminated with exit code 127
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl exec -it filestore-writer-app -- /bin/sh
+sh-4.4# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+overlay                16G  5.7G  9.9G  37% /
+tmpfs                  64M     0   64M   0% /dev
+10.216.158.170:/vol1 1007G     0  956G   0% /data
+/dev/sda1              16G  5.7G  9.9G  37% /etc/hosts
+shm                    64M     0   64M   0% /dev/shm
+tmpfs                 1.4G   12K  1.4G   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs                 991M     0  991M   0% /proc/acpi
+tmpfs                 991M     0  991M   0% /proc/scsi
+tmpfs                 991M     0  991M   0% /sys/firmware
+sh-4.4# df -h /data
+Filesystem            Size  Used Avail Use% Mounted on
+10.216.158.170:/vol1 1007G     0  956G   0% /data
+sh-4.4# cd /data
+sh-4.4# ls
+lost+found  myapp1.txt
+sh-4.4# ls -ltr
+total 48
+drwx------ 2 root root 16384 Sep 13 00:10 lost+found
+-rw-r--r-- 1 root root 25259 Sep 13 00:43 myapp1.txt
+sh-4.4# tail -f myapp1.txt
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:30 UTC 2023
+--
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:40 UTC 2023
+^C
+sh-4.4# exit
+exit
+command terminated with exit code 130
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl exec -it myapp1-deployment-6599f7bfb-5f9h2 -- /bin/sh
+# d f-h
+/bin/sh: 1: d: not found
+# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+overlay                16G  5.7G  9.9G  37% /
+tmpfs                  64M     0   64M   0% /dev
+/dev/sda1              16G  5.7G  9.9G  37% /etc/hosts
+shm                    64M     0   64M   0% /dev/shm
+10.216.158.170:/vol1 1007G     0  956G   0% /usr/share/nginx/html/filestore
+tmpfs                 1.4G   12K  1.4G   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs                 991M     0  991M   0% /proc/acpi
+tmpfs                 991M     0  991M   0% /proc/scsi
+tmpfs                 991M     0  991M   0% /sys/firmware
+# cd /usr/share/nginx/html
+# cd filestore
+# ls
+lost+found  myapp1.txt
+# df -h .
+Filesystem            Size  Used Avail Use% Mounted on
+10.216.158.170:/vol1 1007G     0  956G   0% /usr/share/nginx/html/filestore
+# df -h /usr/share/nginx/html/filestore
+Filesystem            Size  Used Avail Use% Mounted on
+10.216.158.170:/vol1 1007G     0  956G   0% /usr/share/nginx/html/filestore
+# tail -f myapp1.txt
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:35 UTC 2023
+--GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:40 UTC 2023
+-
+---
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:55 UTC 2023
+^C
+# pwd
+/usr/share/nginx/html/filestore
+# cd ..
+# ls
+50x.html  filestore  index.html
+# cat index.html
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html># cat 50x.html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Error</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>An error occurred.</h1>
+<p>Sorry, the page you are looking for is currently unavailable.<br/>
+Please try again later.</p>
+<p>If you are the system administrator of this resource then you should check
+the error log for details.</p>
+<p><em>Faithfully yours, nginx.</em></p>
+</body>
+</html>
+# ls -ltr
+total 12
+-rw-r--r-- 1 root root  494 Apr 14  2020 50x.html
+-rw-r--r-- 1 root root  218 May 17  2020 index.html
+drwxr-xr-x 3 root root 4096 Sep 13 00:11 filestore
+# cd filestore
+# ls
+lost+found  myapp1.txt
+# tail -f myapp1.txt
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:55 UTC 2023
+---
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:05 UTC 2023
+^C
+# curl -s http://10.80.11.207
+/bin/sh: 18: curl: not found
+# exit
+command terminated with exit code 127
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl get pods -o wide --show-labels
+NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+filestore-writer-app                1/1     Running   0          38m   10.76.1.78   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            <none>
+myapp1-deployment-6599f7bfb-5f9h2   1/1     Running   0          38m   10.76.1.79   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=6599f7bfb
+myapp1-deployment-6599f7bfb-nn6g4   1/1     Running   0          38m   10.76.1.80   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=6599f7bfb
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.11.207/filestore/myapp1.txt"
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:11:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:11:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:11:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:11:54 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:11:59 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:34 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:54 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:12:59 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:34 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:54 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:13:59 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:34 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:54 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:14:59 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:34 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:15:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:16:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:17:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:18:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:19:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:20:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:21:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:22:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:23:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:24:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:25:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:26:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:27 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:32 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:37 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:42 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:47 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:52 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:27:57 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:02 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:07 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:12 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:17 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:22 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:27 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:32 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:37 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:42 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:47 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:52 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:28:57 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:02 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:07 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:12 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:17 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:22 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:27 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:32 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:37 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:42 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:47 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:52 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:29:57 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:02 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:07 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:12 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:17 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:22 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:27 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:32 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:37 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:42 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:47 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:52 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:30:57 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:02 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:07 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:12 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:17 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:22 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:27 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:32 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:37 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:42 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:47 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:52 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:31:57 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:02 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:07 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:12 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:17 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:22 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:27 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:32 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:37 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:42 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:47 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:53 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:32:58 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:03 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:08 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:13 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:18 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:23 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:28 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:33 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:38 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:43 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:48 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:53 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:33:58 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:03 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:08 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:13 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:18 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:23 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:28 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:33 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:38 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:43 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:48 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:53 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:34:58 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:03 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:08 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:13 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:18 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:23 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:28 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:33 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:38 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:43 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:48 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:53 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:35:58 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:03 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:08 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:13 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:18 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:23 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:28 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:33 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:38 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:43 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:48 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:53 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:36:58 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:03 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:08 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:13 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:18 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:23 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:28 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:33 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:38 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:43 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:48 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:53 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:37:58 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:34 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:54 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:38:59 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:34 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:54 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:39:59 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:34 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:54 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:40:59 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:34 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:39 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:44 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:49 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:54 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:41:59 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:04 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:09 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:14 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:19 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:24 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:29 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:42:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:43:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:44:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:45:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:35 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:40 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:45 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:50 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:46:55 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:00 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:05 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:10 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:15 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:20 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:25 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:30 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:46 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:51 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:47:56 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:01 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:06 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:11 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:16 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:21 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:26 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:31 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:36 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:41 UTC 2023
+GCP Cloud FileStore used as PV in GKE Wed Sep 13 00:48:46 UTC 2023
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ ^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$ kubectl delete -f kube-manifests/
+persistentvolumeclaim "gke-filestore-pvc" deleted
+pod "filestore-writer-app" deleted
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/31-GKE-FileStore-default-StorageClass$
