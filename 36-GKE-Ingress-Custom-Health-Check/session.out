@@ -1,0 +1,935 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ ls kube-manifests/
+01-Nginx-App1-Deployment-and-NodePortService.yaml  02-Nginx-App2-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  04-Ingress-Custom-Healthcheck.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-nginx-deployment
+  labels:
+    app: app1-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1-nginx
+  template:
+    metadata:
+      labels:
+        app: app1-nginx
+    spec:
+      containers:
+        - name: app1-nginx
+          image: stacksimplify/kube-nginxapp1:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app1/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nginx-nodeport-service
+  labels:
+    app: app1-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app1-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2-nginx-deployment
+  labels:
+    app: app2-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app2-nginx
+  template:
+    metadata:
+      labels:
+        app: app2-nginx
+    spec:
+      containers:
+        - name: app2-nginx
+          image: stacksimplify/kube-nginxapp2:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app2/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app2-nginx-nodeport-service
+  labels:
+    app: app2-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app2-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-nginx-deployment
+  labels:
+    app: app3-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app3-nginx
+  template:
+    metadata:
+      labels:
+        app: app3-nginx
+    spec:
+      containers:
+        - name: app3-nginx
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-nginx-nodeport-service
+  labels:
+    app: app3-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app3-nginx
+  ports:
+    - port: 80
+      targetPort: 80simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ ls kube-manifests/
+01-Nginx-App1-Deployment-and-NodePortService.yaml  02-Nginx-App2-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  04-Ingress-Custom-Healthcheck.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ cat kube-manifests/04-Ingress-Custom-Healthcheck.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-custom-healthcheck
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - http:
+        paths:
+          - path: /app1
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+          - path: /app2
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+#          - path: /
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: app3-nginx-nodeport-service
+#                port:
+#                  number: 80
+
+
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment created
+service/app1-nginx-nodeport-service created
+deployment.apps/app2-nginx-deployment created
+service/app2-nginx-nodeport-service created
+deployment.apps/app3-nginx-deployment created
+service/app3-nginx-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-custom-healthcheck created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           24s
+app2-nginx-deployment   1/1     1            1           23s
+app3-nginx-deployment   1/1     1            1           22s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods -o wide --show-labels
+NAME                                     READY   STATUS    RESTARTS   AGE   IP            NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+app1-nginx-deployment-544dfb8c8f-4f4gl   1/1     Running   0          38s   10.76.1.114   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app1-nginx,pod-template-hash=544dfb8c8f
+app2-nginx-deployment-7c46c8bb8c-fwgvj   1/1     Running   0          37s   10.76.1.115   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app2-nginx,pod-template-hash=7c46c8bb8c
+app3-nginx-deployment-5778df6d5f-lvqd8   1/1     Running   0          36s   10.76.1.116   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app3-nginx,pod-template-hash=5778df6d5f
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get svc -o wide --show-labels
+NAME                          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   SELECTOR         LABELS
+app1-nginx-nodeport-service   NodePort    10.80.12.126   <none>        80:31118/TCP   49s   app=app1-nginx   app=app1-nginx
+app2-nginx-nodeport-service   NodePort    10.80.7.148    <none>        80:32659/TCP   48s   app=app2-nginx   app=app2-nginx
+app3-nginx-nodeport-service   NodePort    10.80.2.158    <none>        80:30228/TCP   47s   app=app3-nginx   app=app3-nginx
+kubernetes                    ClusterIP   10.80.0.1      <none>        443/TCP        23d   <none>           component=apiserver,provider=kubernetes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get ingress -o wide --show-labels
+NAME                         CLASS    HOSTS   ADDRESS   PORTS   AGE   LABELS
+ingress-custom-healthcheck   <none>   *                 80      55s   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl describe ingress ingress-custom-healthcheck
+Name:             ingress-custom-healthcheck
+Labels:           <none>
+Namespace:        default
+Address:
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.1.116:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *
+              /app1   app1-nginx-nodeport-service:80 (10.76.1.114:80)
+              /app2   app2-nginx-nodeport-service:80 (10.76.1.115:80)
+Annotations:  kubernetes.io/ingress.class: gce
+Events:
+  Type    Reason  Age                From                     Message
+  ----    ------  ----               ----                     -------
+  Normal  Sync    84s (x2 over 84s)  loadbalancer-controller  Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ watch kubectl get ingress -o wide --show-labels
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get ingress -o wide --show-labels
+NAME                         CLASS    HOSTS   ADDRESS         PORTS   AGE   LABELS
+ingress-custom-healthcheck   <none>   *       34.117.198.11   80      29m   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ curl http://34.117.198.11/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.117.198/"
+pod "tempcurlpod" deleted
+pod default/tempcurlpod terminated (Error)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.117.198.11/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.117.198.11/app1/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.117.198.11/app2/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pos
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-4f4gl   1/1     Running   0          32m
+app2-nginx-deployment-7c46c8bb8c-fwgvj   1/1     Running   0          32m
+app3-nginx-deployment-5778df6d5f-lvqd8   1/1     Running   0          32m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl describe pods app1-nginx-deployment-544dfb8c8f-4f4gl
+Name:             app1-nginx-deployment-544dfb8c8f-4f4gl
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-f62b7b3f-4qbg/10.128.0.50
+Start Time:       Thu, 14 Sep 2023 20:14:04 +0800
+Labels:           app=app1-nginx
+                  pod-template-hash=544dfb8c8f
+Annotations:      <none>
+Status:           Running
+IP:               10.76.1.114
+IPs:
+  IP:           10.76.1.114
+Controlled By:  ReplicaSet/app1-nginx-deployment-544dfb8c8f
+Containers:
+  app1-nginx:
+    Container ID:   containerd://4fa00dafe57bec71ca66ebac0aa30a906070e8fed80de40cd15c3d3a3f86e687
+    Image:          stacksimplify/kube-nginxapp1:1.0.0
+    Image ID:       docker.io/stacksimplify/kube-nginxapp1@sha256:ead648280067b834e13c321aeeedcd54702459815c623ef9859aaabdc9a8f4b5
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Thu, 14 Sep 2023 20:14:07 +0800
+    Ready:          True
+    Restart Count:  0
+    Readiness:      http-get http://:80/app1/index.html delay=10s timeout=5s period=15s #success=1 #failure=3
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-dwb7d (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-dwb7d:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  32m   default-scheduler  Successfully assigned default/app1-nginx-deployment-544dfb8c8f-4f4gl to gke-private-standard-22a-default-pool-f62b7b3f-4qbg
+  Normal  Pulled     32m   kubelet            Container image "stacksimplify/kube-nginxapp1:1.0.0" already present on machine
+  Normal  Created    32m   kubelet            Created container app1-nginx
+  Normal  Started    32m   kubelet            Started container app1-nginx
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-nginx-deployment
+  labels:
+    app: app1-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1-nginx
+  template:
+    metadata:
+      labels:
+        app: app1-nginx
+    spec:
+      containers:
+        - name: app1-nginx
+          image: stacksimplify/kube-nginxapp1:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app1/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nginx-nodeport-service
+  labels:
+    app: app1-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app1-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Checcat kube-manifests/04-Ingress-Custom-Healthcheck.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-custom-healthcheck
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - http:
+        paths:
+          - path: /app1
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+          - path: /app2
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+#          - path: /
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: app3-nginx-nodeport-service
+#                port:
+#                  number: 80
+
+
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get ingress
+NAME                         CLASS    HOSTS   ADDRESS         PORTS   AGE
+ingress-custom-healthcheck   <none>   *       34.117.198.11   80      39m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl describe ingress ingress-custom-healthcheck
+Name:             ingress-custom-healthcheck
+Labels:           <none>
+Namespace:        default
+Address:          34.117.198.11
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.1.116:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *
+              /app1   app1-nginx-nodeport-service:80 (10.76.1.114:80)
+              /app2   app2-nginx-nodeport-service:80 (10.76.1.115:80)
+Annotations:  ingress.kubernetes.io/backends:
+                {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4
+              kubernetes.io/ingress.class: gce
+Events:
+  Type    Reason     Age                  From                     Message
+  ----    ------     ----                 ----                     -------
+  Normal  Sync       37m                  loadbalancer-controller  UrlMap "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4" created
+  Normal  Sync       37m                  loadbalancer-controller  TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4" created
+  Normal  Sync       37m                  loadbalancer-controller  ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4" created
+  Normal  IPChanged  37m                  loadbalancer-controller  IP is now 34.117.198.11
+  Normal  Sync       3m21s (x9 over 40m)  loadbalancer-controller  Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl logs -f ingress ingress-custom-healthcheck
+Error from server (NotFound): pods "ingress" not found
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get ns
+NAME                       STATUS   AGE
+default                    Active   23d
+gke-managed-filestorecsi   Active   23d
+gmp-public                 Active   23d
+gmp-system                 Active   23d
+kube-node-lease            Active   23d
+kube-public                Active   23d
+kube-system                Active   23d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods -n kube-system
+NAME                                                       READY   STATUS    RESTARTS      AGE
+anetd-mjmxp                                                1/1     Running   0             23d
+anetd-rdvmd                                                1/1     Running   0             23d
+anetd-xzz7q                                                1/1     Running   0             23d
+antrea-controller-horizontal-autoscaler-7b69d9bfd7-rthc4   1/1     Running   0             23d
+event-exporter-gke-7bf6c99dcb-j4m5f                        2/2     Running   0             23d
+filestore-node-8nsrb                                       3/3     Running   0             2d14h
+filestore-node-9mpf8                                       3/3     Running   0             2d14h
+filestore-node-pp7ww                                       3/3     Running   0             2d14h
+fluentbit-gke-gbdn2                                        2/2     Running   0             23d
+fluentbit-gke-hvwlv                                        2/2     Running   0             23d
+fluentbit-gke-vxxcc                                        2/2     Running   0             23d
+gke-metadata-server-4hlb8                                  1/1     Running   0             7d2h
+gke-metadata-server-j5spp                                  1/1     Running   0             7d2h
+gke-metadata-server-qr2t2                                  1/1     Running   0             7d2h
+gke-metrics-agent-6gxhx                                    2/2     Running   0             2d14h
+gke-metrics-agent-7w6rk                                    2/2     Running   0             2d14h
+gke-metrics-agent-sfd8t                                    2/2     Running   0             2d14h
+konnectivity-agent-7fdff956d-cr25l                         1/1     Running   0             23d
+konnectivity-agent-7fdff956d-kqhm5                         1/1     Running   0             23d
+konnectivity-agent-7fdff956d-r7nf6                         1/1     Running   0             23d
+konnectivity-agent-autoscaler-5d9dbcc6d8-g8c6k             1/1     Running   0             23d
+kube-dns-5bfd847c64-qwvrg                                  4/4     Running   0             23d
+kube-dns-5bfd847c64-wj2mw                                  4/4     Running   8 (11d ago)   23d
+kube-dns-autoscaler-84b8db4dc7-n8764                       1/1     Running   0             23d
+l7-default-backend-d86c96845-9d54x                         1/1     Running   0             23d
+metrics-server-v0.5.2-6bf74b5d5f-jd94d                     2/2     Running   0             23d
+netd-7slpm                                                 1/1     Running   0             23d
+netd-gsfg7                                                 1/1     Running   0             23d
+netd-rnnqm                                                 1/1     Running   0             23d
+pdcsi-node-56gck                                           2/2     Running   0             37h
+pdcsi-node-gg6ch                                           2/2     Running   0             37h
+pdcsi-node-kpbgj                                           2/2     Running   0             37h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
+No resources found in ingress-nginx namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods -n kube-public
+No resources found in kube-public namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods -n all
+No resources found in all namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods all
+Error from server (NotFound): pods "all" not found
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods -n kube-node-lease
+No resources found in kube-node-lease namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods -n gmp-system
+NAME                              READY   STATUS    RESTARTS       AGE
+alertmanager-0                    2/2     Running   0              23d
+collector-85bbm                   2/2     Running   0              23d
+collector-bxvc9                   2/2     Running   0              23d
+collector-w5lsb                   2/2     Running   8 (5d8h ago)   23d
+gmp-operator-6b5564b9d5-rbl6t     1/1     Running   0              37h
+rule-evaluator-6b9447587d-xh8fj   2/2     Running   2 (23d ago)    23d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl get pods -n gmp-public
+No resources found in gmp-public namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.117.198.11/app2/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/36-GKE-Ingress-Custom-Health-Check$
+
+# Ingress Logs
+# https://console.cloud.google.com/kubernetes/ingress/us-central1/private-standard-22aug2023-2/default/ingress-custom-healthcheck/logs?authuser=1&project=expanded-origin-395402
+
+2023-09-14 20:53:26.394 HKT
+GET200468 B206 msChrome 82 http://34.117.198.11/
+Open in Logs Explorer
+{
+httpRequest: {
+latency: "0.206302s"
+remoteIp: "118.194.250.22"
+requestMethod: "GET"
+requestSize: "370"
+requestUrl: "http://34.117.198.11/"
+responseSize: "468"
+serverIp: "10.76.1.116"
+status: 200
+userAgent: "Mozilla/5.0 (Windows NT 7_0; Win64; x64) AppleWebKit/558.39 (KHTML, like Gecko) Chrome/82.0.1537 Safari/537.36"
+}
+insertId: "tpa1q0fkxd94j"
+jsonPayload: {
+statusDetails: "response_sent_by_backend"
+cacheDecision: [
+0: "RESPONSE_HAS_ETAG"
+1: "RESPONSE_HAS_LAST_MODIFIED"
+2: "RESPONSE_HAS_CONTENT_TYPE"
+3: "CACHE_MODE_USE_ORIGIN_HEADERS"
+]
+remoteIp: "118.194.250.22"
+@type: "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry"
+backendTargetProjectNumber: "projects/353602304802"
+}
+logName: "projects/expanded-origin-395402/logs/requests"
+receiveTimestamp: "2023-09-14T12:53:27.835972436Z"
+resource: {
+labels: {
+forwarding_rule_name: "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+zone: "global"
+backend_service_name: "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6"
+project_id: "expanded-origin-395402"
+url_map_name: "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+target_proxy_name: "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+}
+type: "http_load_balancer"
+}
+severity: "INFO"
+spanId: "5028d3b80db8b58d"
+timestamp: "2023-09-14T12:53:26.394708Z"
+trace: "projects/expanded-origin-395402/traces/534b93b3631684fb64218b7c81b25867"
+}
+
+
+
+
+2023-09-14 21:02:33.659 HKT
+GET200404 B4 mscurl/8.3.0 http://34.117.198.11/app2/
+Open in Logs Explorer
+{
+httpRequest: {
+latency: "0.004309s"
+remoteIp: "35.208.248.222"
+requestMethod: "GET"
+requestSize: "81"
+requestUrl: "http://34.117.198.11/app2/"
+responseSize: "404"
+serverIp: "10.76.1.115"
+status: 200
+userAgent: "curl/8.3.0"
+}
+insertId: "17av3ise6ztdp"
+jsonPayload: {
+@type: "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry"
+cacheDecision: [
+0: "RESPONSE_HAS_ETAG"
+1: "RESPONSE_HAS_LAST_MODIFIED"
+2: "RESPONSE_HAS_CONTENT_TYPE"
+3: "CACHE_MODE_USE_ORIGIN_HEADERS"
+]
+backendTargetProjectNumber: "projects/353602304802"
+remoteIp: "35.208.248.222"
+statusDetails: "response_sent_by_backend"
+}
+logName: "projects/expanded-origin-395402/logs/requests"
+receiveTimestamp: "2023-09-14T13:02:34.515126845Z"
+resource: {
+labels: {
+forwarding_rule_name: "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+url_map_name: "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+project_id: "expanded-origin-395402"
+zone: "global"
+backend_service_name: "k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"
+target_proxy_name: "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+}
+type: "http_load_balancer"
+}
+severity: "INFO"
+spanId: "236c590ef33d7ba2"
+timestamp: "2023-09-14T13:02:33.659720Z"
+trace: "projects/expanded-origin-395402/traces/ccba6816b6233db8c0294f04669641d7"
+}
+
+
+2023-09-14 21:27:19.730 HKT
+GET404705 B106 msChrome 81 http://34.117.198.11/.env
+Open in Logs Explorer
+{
+httpRequest: {
+latency: "0.106295s"
+remoteIp: "54.36.115.221"
+requestMethod: "GET"
+requestSize: "231"
+requestUrl: "http://34.117.198.11/.env"
+responseSize: "705"
+serverIp: "10.76.1.116"
+status: 404
+userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36"
+}
+insertId: "1pw2ruof4jfsyv"
+jsonPayload: {
+cacheDecision: [2]
+backendTargetProjectNumber: "projects/353602304802"
+@type: "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry"
+statusDetails: "response_sent_by_backend"
+remoteIp: "54.36.115.221"
+}
+logName: "projects/expanded-origin-395402/logs/requests"
+receiveTimestamp: "2023-09-14T13:27:20.032251391Z"
+resource: {
+labels: {6}
+type: "http_load_balancer"
+}
+severity: "WARNING"
+spanId: "3d5d9a83d91dff30"
+timestamp: "2023-09-14T13:27:19.730181Z"
+trace: "projects/expanded-origin-395402/traces/a41a62140e4249287ffcf0f035c00478"
+}
+
+
+{
+  "insertId": "tpa1q0fkxd94j",
+  "jsonPayload": {
+    "remoteIp": "118.194.250.22",
+    "@type": "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry",
+    "cacheDecision": [
+      "RESPONSE_HAS_ETAG",
+      "RESPONSE_HAS_LAST_MODIFIED",
+      "RESPONSE_HAS_CONTENT_TYPE",
+      "CACHE_MODE_USE_ORIGIN_HEADERS"
+    ],
+    "statusDetails": "response_sent_by_backend",
+    "backendTargetProjectNumber": "projects/353602304802"
+  },
+  "httpRequest": {
+    "requestMethod": "GET",
+    "requestUrl": "http://34.117.198.11/",
+    "requestSize": "370",
+    "status": 200,
+    "responseSize": "468",
+    "userAgent": "Mozilla/5.0 (Windows NT 7_0; Win64; x64) AppleWebKit/558.39 (KHTML, like Gecko) Chrome/82.0.1537 Safari/537.36",
+    "remoteIp": "118.194.250.22",
+    "serverIp": "10.76.1.116",
+    "latency": "0.206302s"
+  },
+  "resource": {
+    "type": "http_load_balancer",
+    "labels": {
+      "backend_service_name": "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6",
+      "zone": "global",
+      "project_id": "expanded-origin-395402",
+      "url_map_name": "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+      "forwarding_rule_name": "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+      "target_proxy_name": "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+    }
+  },
+  "timestamp": "2023-09-14T12:53:26.394708Z",
+  "severity": "INFO",
+  "logName": "projects/expanded-origin-395402/logs/requests",
+  "trace": "projects/expanded-origin-395402/traces/534b93b3631684fb64218b7c81b25867",
+  "receiveTimestamp": "2023-09-14T12:53:27.835972436Z",
+  "spanId": "5028d3b80db8b58d"
+}
+
+
+
+
+
+
+
+
+
+
+
+WARNING 2023-09-14T12:53:26.807873Z [httpRequest.requestMethod: GET] [httpRequest.status: 404] [httpRequest.responseSize: 724 B] [httpRequest.latency: 209 ms] [httpRequest.userAgent: Chrome 69.0.1489] http://34.117.198.11/favicon.ico
+  {
+    "insertId": "qd6ghgf2ibgsd",
+    "jsonPayload": {
+      "backendTargetProjectNumber": "projects/353602304802",
+      "statusDetails": "response_sent_by_backend",
+      "cacheDecision": [
+        "RESPONSE_HAS_CONTENT_TYPE",
+        "CACHE_MODE_USE_ORIGIN_HEADERS"
+      ],
+      "@type": "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry",
+      "remoteIp": "118.194.250.22"
+    },
+    "httpRequest": {
+      "requestMethod": "GET",
+      "requestUrl": "http://34.117.198.11/favicon.ico",
+      "requestSize": "383",
+      "status": 404,
+      "responseSize": "724",
+      "userAgent": "Mozilla/5.0 (Windows NT 9_0_2; Win64; x64) AppleWebKit/566.35 (KHTML, like Gecko) Chrome/69.0.1489 Safari/537.36",
+      "remoteIp": "118.194.250.22",
+      "serverIp": "10.76.1.116",
+      "latency": "0.209209s"
+    },
+    "resource": {
+      "type": "http_load_balancer",
+      "labels": {
+        "zone": "global",
+        "project_id": "expanded-origin-395402",
+        "url_map_name": "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "backend_service_name": "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6",
+        "forwarding_rule_name": "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "target_proxy_name": "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+      }
+    },
+    "timestamp": "2023-09-14T12:53:26.807873Z",
+    "severity": "WARNING",
+    "logName": "projects/expanded-origin-395402/logs/requests",
+    "trace": "projects/expanded-origin-395402/traces/5971e94f09e91912e62f7847357116a3",
+    "receiveTimestamp": "2023-09-14T12:53:28.123870582Z",
+    "spanId": "63bea22d32134e4c"
+  }
+WARNING 2023-09-14T12:53:27.199120Z [httpRequest.requestMethod: GET] [httpRequest.status: 404] [httpRequest.responseSize: 724 B] [httpRequest.latency: 206 ms] [httpRequest.userAgent: Chrome 81.0.2979] http://34.117.198.11/robots.txt
+  {
+    "insertId": "19s5iw6eb7bmf",
+    "jsonPayload": {
+      "backendTargetProjectNumber": "projects/353602304802",
+      "cacheDecision": [
+        "RESPONSE_HAS_CONTENT_TYPE",
+        "CACHE_MODE_USE_ORIGIN_HEADERS"
+      ],
+      "@type": "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry",
+      "statusDetails": "response_sent_by_backend",
+      "remoteIp": "118.194.250.22"
+    },
+    "httpRequest": {
+      "requestMethod": "GET",
+      "requestUrl": "http://34.117.198.11/robots.txt",
+      "requestSize": "371",
+      "status": 404,
+      "responseSize": "724",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/595.54 (KHTML, like Gecko) Chrome/81.0.2979 Safari/537.36",
+      "remoteIp": "118.194.250.22",
+      "serverIp": "10.76.1.116",
+      "latency": "0.206943s"
+    },
+    "resource": {
+      "type": "http_load_balancer",
+      "labels": {
+        "target_proxy_name": "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "url_map_name": "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "zone": "global",
+        "forwarding_rule_name": "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "backend_service_name": "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6",
+        "project_id": "expanded-origin-395402"
+      }
+    },
+    "timestamp": "2023-09-14T12:53:27.199120Z",
+    "severity": "WARNING",
+    "logName": "projects/expanded-origin-395402/logs/requests",
+    "trace": "projects/expanded-origin-395402/traces/564085af2589dc2b1d0647ff9dd709b3",
+    "receiveTimestamp": "2023-09-14T12:53:28.168323963Z",
+    "spanId": "f81a72db34df5e82"
+  }
+WARNING 2023-09-14T12:53:27.202218Z [httpRequest.requestMethod: GET] [httpRequest.status: 404] [httpRequest.responseSize: 724 B] [httpRequest.latency: 212 ms] [httpRequest.userAgent: Chrome 97.0.1974] http://34.117.198.11/sitemap.xml
+  {
+    "insertId": "nbbidpe3fd7r",
+    "jsonPayload": {
+      "cacheDecision": [
+        "RESPONSE_HAS_CONTENT_TYPE",
+        "CACHE_MODE_USE_ORIGIN_HEADERS"
+      ],
+      "@type": "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry",
+      "remoteIp": "118.194.250.22",
+      "statusDetails": "response_sent_by_backend",
+      "backendTargetProjectNumber": "projects/353602304802"
+    },
+    "httpRequest": {
+      "requestMethod": "GET",
+      "requestUrl": "http://34.117.198.11/sitemap.xml",
+      "requestSize": "384",
+      "status": 404,
+      "responseSize": "724",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 9_0) AppleWebKit/544.44 (KHTML, like Gecko) Chrome/97.0.1974 Safari/537.36",
+      "remoteIp": "118.194.250.22",
+      "serverIp": "10.76.1.116",
+      "latency": "0.212680s"
+    },
+    "resource": {
+      "type": "http_load_balancer",
+      "labels": {
+        "project_id": "expanded-origin-395402",
+        "target_proxy_name": "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "backend_service_name": "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6",
+        "forwarding_rule_name": "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "url_map_name": "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "zone": "global"
+      }
+    },
+    "timestamp": "2023-09-14T12:53:27.202218Z",
+    "severity": "WARNING",
+    "logName": "projects/expanded-origin-395402/logs/requests",
+    "trace": "projects/expanded-origin-395402/traces/92ed30d97421273f08c037535bd230d1",
+    "receiveTimestamp": "2023-09-14T12:53:27.613385110Z",
+    "spanId": "539846ae862fae63"
+  }
+
+
+
+{
+  "insertId": "1p1o5mhe7ia09",
+  "jsonPayload": {
+    "remoteIp": "138.68.224.69",
+    "cacheDecision": [
+      "RESPONSE_HAS_CONTENT_TYPE",
+      "REQUEST_HAS_AUTHORIZATION",
+      "CACHE_MODE_USE_ORIGIN_HEADERS"
+    ],
+    "statusDetails": "response_sent_by_backend",
+    "backendTargetProjectNumber": "projects/353602304802",
+    "@type": "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry"
+  },
+  "httpRequest": {
+    "requestMethod": "GET",
+    "requestUrl": "http://34.117.198.11/manager/html",
+    "requestSize": "260",
+    "status": 404,
+    "responseSize": "724",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.9 Safari/537.36",
+    "remoteIp": "138.68.224.69",
+    "serverIp": "10.76.1.116",
+    "latency": "0.052437s"
+  },
+  "resource": {
+    "type": "http_load_balancer",
+    "labels": {
+      "backend_service_name": "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6",
+      "url_map_name": "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+      "forwarding_rule_name": "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+      "zone": "global",
+      "project_id": "expanded-origin-395402",
+      "target_proxy_name": "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+    }
+  },
+  "timestamp": "2023-09-14T14:06:53.328980Z",
+  "severity": "WARNING",
+  "logName": "projects/expanded-origin-395402/logs/requests",
+  "trace": "projects/expanded-origin-395402/traces/889adfb5be7e2cd7b2c225ebed0c5513",
+  "receiveTimestamp": "2023-09-14T14:06:54.428137520Z",
+  "spanId": "842cd883a70fe229"
+}a
+
+
+INFO 2023-09-14T14:15:14.575234Z [httpRequest.requestMethod: GET] [httpRequest.status: 200] [httpRequest.responseSize: 404 B] [httpRequest.latency: 3 ms] [httpRequest.userAgent: curl 8.3.0] http://34.117.198.11/app2/
+  {
+    "insertId": "17av3iseamne1",
+    "jsonPayload": {
+      "@type": "type.googleapis.com/google.cloud.loadbalancing.type.LoadBalancerLogEntry",
+      "backendTargetProjectNumber": "projects/353602304802",
+      "remoteIp": "35.208.248.222",
+      "cacheDecision": [
+        "RESPONSE_HAS_ETAG",
+        "RESPONSE_HAS_LAST_MODIFIED",
+        "RESPONSE_HAS_CONTENT_TYPE",
+        "CACHE_MODE_USE_ORIGIN_HEADERS"
+      ],
+      "statusDetails": "response_sent_by_backend"
+    },
+    "httpRequest": {
+      "requestMethod": "GET",
+      "requestUrl": "http://34.117.198.11/app2/",
+      "requestSize": "81",
+      "status": 200,
+      "responseSize": "404",
+      "userAgent": "curl/8.3.0",
+      "remoteIp": "35.208.248.222",
+      "serverIp": "10.76.1.115",
+      "latency": "0.003569s"
+    },
+    "resource": {
+      "type": "http_load_balancer",
+      "labels": {
+        "url_map_name": "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "zone": "global",
+        "forwarding_rule_name": "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4",
+        "project_id": "expanded-origin-395402",
+        "backend_service_name": "k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78",
+        "target_proxy_name": "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4"
+      }
+    },
+    "timestamp": "2023-09-14T14:15:14.575234Z",
+    "severity": "INFO",
+    "logName": "projects/expanded-origin-395402/logs/requests",
+    "trace": "projects/expanded-origin-395402/traces/3db88df7ae404ec350df71f96f0dfaf7",
+    "receiveTimestamp": "2023-09-14T14:15:15.917901264Z",
+    "spanId": "49e7588e3e6d1d14"
+  }
+
