@@ -1,0 +1,615 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ gcloud compute addresses list
+NAME                                       ADDRESS/RANGE   TYPE      PURPOSE      NETWORK  REGION       SUBNET  STATUS
+google-managed-private-service-connection  10.116.0.0/16   INTERNAL  VPC_PEERING  default                       RESERVED
+nat-auto-ip-5839377-9-1693086667609885     35.208.248.222  EXTERNAL  NAT_AUTO              us-central1          IN_USE
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ gcloud compute addresses create gke-ingress-extip1 --global
+Created [https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/addresses/gke-ingress-extip1].
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ gcloud compute addresses describe gke-ingress-extip1 --global
+address: 34.36.100.7
+addressType: EXTERNAL
+creationTimestamp: '2023-09-15T20:10:42.098-07:00'
+description: ''
+id: '503227057634320989'
+ipVersion: IPV4
+kind: compute#address
+labelFingerprint: 42WmSpB8rSM=
+name: gke-ingress-extip1
+networkTier: PREMIUM
+selfLink: https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/addresses/gke-ingress-extip1
+status: RESERVED
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ gcloud compute addresses list
+NAME                                       ADDRESS/RANGE   TYPE      PURPOSE      NETWORK  REGION       SUBNET  STATUS
+gke-ingress-extip1                         34.36.100.7     EXTERNAL                                             RESERVED
+google-managed-private-service-connection  10.116.0.0/16   INTERNAL  VPC_PEERING  default                       RESERVED
+nat-auto-ip-5839377-9-1693086667609885     35.208.248.222  EXTERNAL  NAT_AUTO              us-central1          IN_USE
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ # https://cloud.google.com/dns/docs/overview#supported_dns_record_types
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ # https://cloud.google.com/dns/docs/set-up-dns-records-domain-name
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ # In the Google Cloud console, go to the Cloud DNS page.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ #   # Click the zone where you want to add a record set. rahulsinha-info
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ #   # Click Add standard.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ #   # For Resource Record Type, to create an A record, select A. To create an AAAA record, select AAAA.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ #   # For IPv4 Address or IPv6 Address, enter the IP address that you want to use with this domain.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ #   # click Create]
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ # Resource record set 'sara.rahulsinha.info.' has been successfully created in zone 'rahulsinha-info'
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ vim dns-a.record
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ cat dns-a.record
+GET https://dns.googleapis.com/dns/v1beta2/projects/expanded-origin-395402/managedZones/rahulsinha-info/rrsets/sara.rahulsinha.info./A
+{
+  "name": "sara.rahulsinha.info.",
+  "rrdata": [
+    "34.36.100.7"
+  ],
+  "ttl": 300,
+  "type": "A"
+}
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ nslookup sara.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   sara.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ ls
+README.md  dns-a.record  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ ls kube-manifests/
+01-Nginx-App1-Deployment-and-NodePortService.yaml  02-Nginx-App2-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  04-Ingress-external-ip.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-nginx-deployment
+  labels:
+    app: app1-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1-nginx
+  template:
+    metadata:
+      labels:
+        app: app1-nginx
+    spec:
+      containers:
+        - name: app1-nginx
+          image: stacksimplify/kube-nginxapp1:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app1/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nginx-nodeport-service
+  labels:
+    app: app1-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app1-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2-nginx-deployment
+  labels:
+    app: app2-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app2-nginx
+  template:
+    metadata:
+      labels:
+        app: app2-nginx
+    spec:
+      containers:
+        - name: app2-nginx
+          image: stacksimplify/kube-nginxapp2:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app2/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app2-nginx-nodeport-service
+  labels:
+    app: app2-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app2-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ ls kube-manifests/
+01-Nginx-App1-Deployment-and-NodePortService.yaml  02-Nginx-App2-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  04-Ingress-external-ip.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-nginx-deployment
+  labels:
+    app: app3-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app3-nginx
+  template:
+    metadata:
+      labels:
+        app: app3-nginx
+    spec:
+      containers:
+        - name: app3-nginx
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-nginx-nodeport-service
+  labels:
+    app: app3-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app3-nginx
+  ports:
+    - port: 80
+      targetPort: 80simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ ls kube-manifests/
+01-Nginx-App1-Deployment-and-NodePortService.yaml  02-Nginx-App2-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  04-Ingress-external-ip.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ cat kube-manifests/04-Ingress-external-ip.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-external-ip
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - http:
+        paths:
+          - path: /app1
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+          - path: /app2
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   25d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment created
+service/app1-nginx-nodeport-service created
+deployment.apps/app2-nginx-deployment created
+service/app2-nginx-nodeport-service created
+deployment.apps/app3-nginx-deployment created
+service/app3-nginx-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-external-ip created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           20s
+app2-nginx-deployment   1/1     1            1           19s
+app3-nginx-deployment   1/1     1            1           18s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl get pods -o wide
+NAME                                     READY   STATUS    RESTARTS   AGE   IP            NODE                                                  NOMINATED NODE   READINESS GATES
+app1-nginx-deployment-544dfb8c8f-wffhr   1/1     Running   0          49s   10.76.1.123   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>
+app2-nginx-deployment-7c46c8bb8c-b5pm4   1/1     Running   0          48s   10.76.1.124   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>
+app3-nginx-deployment-5778df6d5f-b6rx7   1/1     Running   0          47s   10.76.1.125   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl get pods -o wide --show-labels
+NAME                                     READY   STATUS    RESTARTS   AGE   IP            NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+app1-nginx-deployment-544dfb8c8f-wffhr   1/1     Running   0          70s   10.76.1.123   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app1-nginx,pod-template-hash=544dfb8c8f
+app2-nginx-deployment-7c46c8bb8c-b5pm4   1/1     Running   0          69s   10.76.1.124   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app2-nginx,pod-template-hash=7c46c8bb8c
+app3-nginx-deployment-5778df6d5f-b6rx7   1/1     Running   0          68s   10.76.1.125   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app3-nginx,pod-template-hash=5778df6d5f
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl get svc -o wide --show-labels
+NAME                          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   SELECTOR         LABELS
+app1-nginx-nodeport-service   NodePort    10.80.5.112    <none>        80:30985/TCP   85s   app=app1-nginx   app=app1-nginx
+app2-nginx-nodeport-service   NodePort    10.80.14.235   <none>        80:32329/TCP   84s   app=app2-nginx   app=app2-nginx
+app3-nginx-nodeport-service   NodePort    10.80.6.108    <none>        80:31687/TCP   84s   app=app3-nginx   app=app3-nginx
+kubernetes                    ClusterIP   10.80.0.1      <none>        443/TCP        25d   <none>           component=apiserver,provider=kubernetes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl get ingress -o wide --show-labels
+NAME                  CLASS    HOSTS   ADDRESS   PORTS   AGE   LABELS
+ingress-external-ip   <none>   *                 80      2m    <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ watch kubectl get ingress -o wide --show-labels
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl get ingress -o wide --show-labels
+NAME                  CLASS    HOSTS   ADDRESS       PORTS   AGE   LABELS
+ingress-external-ip   <none>   *       34.36.100.7   80      28m   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.123/app1/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.123/app2/"
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.124/app1/"
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.124/app2/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.125/app1/"
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.125/app2/"
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpod, falling back to streaming logs: unable to upgrade connection: container tempcurlpod not found in pod tempcurlpod_default
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.125/app3/"
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.125/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.123/"
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.124/"
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.5.112/app1/"
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpod, falling back to streaming logs: unable to upgrade connection: container tempcurlpod not found in pod tempcurlpod_default
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.14.235/app2/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.6.108/"
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpod, falling back to streaming logs: unable to upgrade connection: container tempcurlpod not found in pod tempcurlpod_default
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://34.36.100.7/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://34.36.100.7/app1/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://34.36.100.7/app2/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://sara.rahulsinha.info/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://sara.rahulsinha.info/app1/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://sara.rahulsinha.info/app2/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://sara.rahulsinha.info/app1
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ cat kube-manifests/04-Ingress-external-ip.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-external-ip
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - http:
+        paths:
+          - path: /app1
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+          - path: /app2
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-nginx-deployment
+  labels:
+    app: app1-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1-nginx
+  template:
+    metadata:
+      labels:
+        app: app1-nginx
+    spec:
+      containers:
+        - name: app1-nginx
+          image: stacksimplify/kube-nginxapp1:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app1/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nginx-nodeport-service
+  labels:
+    app: app1-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app1-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://sara.rahulsinha.info/app1/index.html
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://sara.rahulsinha.info/app2/index.html
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://sara.rahulsinha.info/index.html
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ curl -s http://sara.rahulsinha.info/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ kubectl delete -f kube-manifests/
+deployment.apps "app1-nginx-deployment" deleted
+service "app1-nginx-nodeport-service" deleted
+deployment.apps "app2-nginx-deployment" deleted
+service "app2-nginx-nodeport-service" deleted
+deployment.apps "app3-nginx-deployment" deleted
+service "app3-nginx-nodeport-service" deleted
+ingress.networking.k8s.io "ingress-external-ip" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$ gcloud compute addresses list
+NAME                                       ADDRESS/RANGE   TYPE      PURPOSE      NETWORK  REGION       SUBNET  STATUS
+gke-ingress-extip1                         34.36.100.7     EXTERNAL                                             RESERVED
+google-managed-private-service-connection  10.116.0.0/16   INTERNAL  VPC_PEERING  default                       RESERVED
+nat-auto-ip-5839377-9-1693086667609885     35.208.248.222  EXTERNAL  NAT_AUTO              us-central1          IN_USE
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/38-GKE-Ingress-ExternalIP$

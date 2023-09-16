@@ -1,0 +1,9 @@
+GET https://dns.googleapis.com/dns/v1beta2/projects/expanded-origin-395402/managedZones/rahulsinha-info/rrsets/sara.rahulsinha.info./A
+{
+  "name": "sara.rahulsinha.info.",
+  "rrdata": [
+    "34.36.100.7"
+  ],
+  "ttl": 300,
+  "type": "A"
+}
