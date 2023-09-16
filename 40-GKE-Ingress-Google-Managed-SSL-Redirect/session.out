@@ -1,0 +1,891 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ ls kube-manifests/
+01-Nginx-App1-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  05-Managed-Certificate.yaml
+02-Nginx-App2-Deployment-and-NodePortService.yaml  04-Ingress-SSL.yaml                                06-frontendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-nginx-deployment
+  labels:
+    app: app1-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1-nginx
+  template:
+    metadata:
+      labels:
+        app: app1-nginx
+    spec:
+      containers:
+        - name: app1-nginx
+          image: stacksimplify/kube-nginxapp1:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app1/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nginx-nodeport-service
+  labels:
+    app: app1-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app1-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2-nginx-deployment
+  labels:
+    app: app2-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app2-nginx
+  template:
+    metadata:
+      labels:
+        app: app2-nginx
+    spec:
+      containers:
+        - name: app2-nginx
+          image: stacksimplify/kube-nginxapp2:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app2/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app2-nginx-nodeport-service
+  labels:
+    app: app2-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app2-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-nginx-deployment
+  labels:
+    app: app3-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app3-nginx
+  template:
+    metadata:
+      labels:
+        app: app3-nginx
+    spec:
+      containers:
+        - name: app3-nginx
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-nginx-nodeport-service
+  labels:
+    app: app3-nginx
+  annotations:
+spec:
+  type: NodePort
+  selector:
+    app: app3-nginx
+  ports:
+    - port: 80
+      targetPort: 80simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ ls kube-manifests/
+01-Nginx-App1-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  05-Managed-Certificate.yaml
+02-Nginx-App2-Deployment-and-NodePortService.yaml  04-Ingress-SSL.yaml                                06-frontendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ cat kube-manifests/04-Ingress-SSL.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-ssl
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+    # Google Managed SSL Certificates
+    networking.gke.io/managed-certificates: managed-cert-for-ingress
+    # SSL Redirect HTTP to HTTPS
+    networking.gke.io/v1beta1.FrontendConfig: "my-frontend-config"
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - http:
+        paths:
+          - path: /app1
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+          - path: /app2
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ cat kube-manifests/05-Managed-Certificate.yaml
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: managed-cert-for-ingress
+spec:
+  domains:
+    - demo1.kalyanreddydaida.comsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ cat kube-manifests/06-frontendconfig.yaml
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: my-frontend-config
+spec:
+  redirectToHttps:
+    enabled: true
+    #responseCodeName: RESPONSE_CODEsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment created
+service/app1-nginx-nodeport-service created
+deployment.apps/app2-nginx-deployment created
+service/app2-nginx-nodeport-service created
+deployment.apps/app3-nginx-deployment created
+service/app3-nginx-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-ssl created
+managedcertificate.networking.gke.io/managed-cert-for-ingress created
+frontendconfig.networking.gke.io/my-frontend-config created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           37s
+app2-nginx-deployment   1/1     1            1           36s
+app3-nginx-deployment   1/1     1            1           36s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get pods
+NAME                                     READY   STATUS             RESTARTS         AGE
+app1-nginx-deployment-544dfb8c8f-h96dv   1/1     Running            0                48s
+app2-nginx-deployment-7c46c8bb8c-vqhpx   1/1     Running            0                47s
+app3-nginx-deployment-5778df6d5f-8tjhg   1/1     Running            0                47s
+tempopensslpod                           0/1     CrashLoopBackOff   11 (3m30s ago)   34m
+tempopensslpod2                          0/1     CrashLoopBackOff   11 (2m23s ago)   34m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl delete pods tempopensslpod
+pod "tempopensslpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl delete pods tempopensslpod2
+pod "tempopensslpod2" deleted
+^[[A^[[Asimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-h96dv   1/1     Running   0          76s
+app2-nginx-deployment-7c46c8bb8c-vqhpx   1/1     Running   0          75s
+app3-nginx-deployment-5778df6d5f-8tjhg   1/1     Running   0          75s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get svc
+NAME                          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+app1-nginx-nodeport-service   NodePort    10.80.11.136   <none>        80:32289/TCP   83s
+app2-nginx-nodeport-service   NodePort    10.80.6.157    <none>        80:31464/TCP   82s
+app3-nginx-nodeport-service   NodePort    10.80.5.92     <none>        80:30465/TCP   81s
+kubernetes                    ClusterIP   10.80.0.1      <none>        443/TCP        25d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get ingress
+NAME          CLASS    HOSTS   ADDRESS   PORTS   AGE
+ingress-ssl   <none>   *                 80      93s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get managedcertificate
+NAME                       AGE    STATUS
+managed-cert-for-ingress   109s   Provisioning
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get frontendconfig
+NAME                 AGE
+my-frontend-config   2m3s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe frontendconfig my-frontend-config
+Name:         my-frontend-config
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1beta1
+Kind:         FrontendConfig
+Metadata:
+  Creation Timestamp:  2023-09-16T07:00:34Z
+  Generation:          1
+  Resource Version:    26745059
+  UID:                 6bfb8a6d-45bc-4cc2-87f3-9fad2d170ccd
+Spec:
+  Redirect To Https:
+    Enabled:  true
+Events:       <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe ingress ingress-ssl
+Name:             ingress-ssl
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.1.148:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *
+              /app1   app1-nginx-nodeport-service:80 (10.76.1.146:80)
+              /app2   app2-nginx-nodeport-service:80 (10.76.1.147:80)
+Annotations:  ingress.gcp.kubernetes.io/pre-shared-cert: mcrt-fe4a6d84-4272-4600-8d53-4069329ed6f8
+              ingress.kubernetes.io/backends:
+                {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/ssl-cert: mcrt-fe4a6d84-4272-4600-8d53-4069329ed6f8
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              kubernetes.io/ingress.class: gce
+              kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+              networking.gke.io/managed-certificates: managed-cert-for-ingress
+              networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type     Reason              Age                  From                            Message
+  ----     ------              ----                 ----                            -------
+  Warning  MissingCertificate  3m21s                managed-certificate-controller  ManagedCertificate default:managed-cert-for-ingress missing
+  Normal   Sync                63s                  loadbalancer-controller         UrlMap "k8s2-um-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                59s                  loadbalancer-controller         TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                43s                  loadbalancer-controller         ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   IPChanged           43s                  loadbalancer-controller         IP is now 34.36.100.7
+  Normal   Sync                32s                  loadbalancer-controller         TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                18s                  loadbalancer-controller         ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                16s (x7 over 3m21s)  loadbalancer-controller         Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe managedcertificate managed-cert-for-ingress
+Name:         managed-cert-for-ingress
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1
+Kind:         ManagedCertificate
+Metadata:
+  Creation Timestamp:  2023-09-16T07:00:34Z
+  Generation:          2
+  Resource Version:    26745184
+  UID:                 467ffc41-5edb-4cf1-a816-33c2c4ee68b0
+Spec:
+  Domains:
+    demo1.kalyanreddydaida.com
+Status:
+  Certificate Name:    mcrt-fe4a6d84-4272-4600-8d53-4069329ed6f8
+  Certificate Status:  Provisioning
+  Domain Status:
+    Domain:  demo1.kalyanreddydaida.com
+    Status:  Provisioning
+Events:
+  Type    Reason  Age    From                            Message
+  ----    ------  ----   ----                            -------
+  Normal  Create  3m52s  managed-certificate-controller  Create SslCertificate mcrt-fe4a6d84-4272-4600-8d53-4069329ed6f8
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ watch kubectl get managedcertificate
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ vim kube-manifests/05-Managed-Certificate.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl -f kube-manifests/04-Ingress-SSL.yaml -f kube-manifests/05-Managed-Certificate.yaml  -f kube-manifests/06-frontendconfig.yaml
+error: unknown shorthand flag: 'f' in -f
+See 'kubectl --help' for usage.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl -f kube-manifests/04-Ingress-SSL.yaml -f kube-manifests/05-Managed-Certificate.yaml  -f kube-manifests/06-frontendco
+nf^C.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl delete -f kube-manifests/04-Ingress-SSL.yaml -f kube-manifests/05-Managed-Certificate.yaml  -f kube-manifests/06-fro
+ntendconfig.yaml
+ingress.networking.k8s.io "ingress-ssl" deleted
+managedcertificate.networking.gke.io "managed-cert-for-ingress" deleted
+frontendconfig.networking.gke.io "my-frontend-config" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment unchanged
+service/app1-nginx-nodeport-service unchanged
+deployment.apps/app2-nginx-deployment unchanged
+service/app2-nginx-nodeport-service unchanged
+deployment.apps/app3-nginx-deployment unchanged
+service/app3-nginx-nodeport-service unchanged
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-ssl created
+managedcertificate.networking.gke.io/managed-cert-for-ingress created
+frontendconfig.networking.gke.io/my-frontend-config created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           14m
+app2-nginx-deployment   1/1     1            1           14m
+app3-nginx-deployment   1/1     1            1           14m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-h96dv   1/1     Running   0          14m
+app2-nginx-deployment-7c46c8bb8c-vqhpx   1/1     Running   0          14m
+app3-nginx-deployment-5778df6d5f-8tjhg   1/1     Running   0          14m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get pods -o wide --show-labels
+NAME                                     READY   STATUS    RESTARTS   AGE   IP            NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+app1-nginx-deployment-544dfb8c8f-h96dv   1/1     Running   0          14m   10.76.1.146   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app1-nginx,pod-template-hash=544dfb8c8f
+app2-nginx-deployment-7c46c8bb8c-vqhpx   1/1     Running   0          14m   10.76.1.147   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app2-nginx,pod-template-hash=7c46c8bb8c
+app3-nginx-deployment-5778df6d5f-8tjhg   1/1     Running   0          14m   10.76.1.148   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app3-nginx,pod-template-hash=5778df6d5f
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get svc -o wide --show-labels
+NAME                          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   SELECTOR         LABELS
+app1-nginx-nodeport-service   NodePort    10.80.11.136   <none>        80:32289/TCP   15m   app=app1-nginx   app=app1-nginx
+app2-nginx-nodeport-service   NodePort    10.80.6.157    <none>        80:31464/TCP   15m   app=app2-nginx   app=app2-nginx
+app3-nginx-nodeport-service   NodePort    10.80.5.92     <none>        80:30465/TCP   15m   app=app3-nginx   app=app3-nginx
+kubernetes                    ClusterIP   10.80.0.1      <none>        443/TCP        25d   <none>           component=apiserver,provider=kubernetes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get ingress -o wide --show-labels
+NAME          CLASS    HOSTS   ADDRESS   PORTS   AGE     LABELS
+ingress-ssl   <none>   *                 80      2m18s   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get managedcertificate -o wide --show-labels
+NAME                       AGE     STATUS         LABELS
+managed-cert-for-ingress   2m33s   Provisioning   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get frontendconfig -o wide --show-labels
+NAME                 AGE    LABELS
+my-frontend-config   3m2s   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe my-frontend-config
+error: the server doesn't have a resource type "my-frontend-config"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe frontendconfig my-frontend-config
+Name:         my-frontend-config
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1beta1
+Kind:         FrontendConfig
+Metadata:
+  Creation Timestamp:  2023-09-16T07:14:31Z
+  Generation:          1
+  Resource Version:    26753812
+  UID:                 a5a825b8-a6f2-4820-b51a-7478891acaa6
+Spec:
+  Redirect To Https:
+    Enabled:  true
+Events:       <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe managedcertificate managed-cert-for-ingress
+Name:         managed-cert-for-ingress
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1
+Kind:         ManagedCertificate
+Metadata:
+  Creation Timestamp:  2023-09-16T07:14:30Z
+  Generation:          2
+  Resource Version:    26753935
+  UID:                 99439113-ea18-44ca-a871-481c8a47d9d4
+Spec:
+  Domains:
+    sara.rahulsinha.info
+Status:
+  Certificate Name:    mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+  Certificate Status:  Provisioning
+  Domain Status:
+    Domain:  sara.rahulsinha.info
+    Status:  Provisioning
+Events:
+  Type    Reason  Age    From                            Message
+  ----    ------  ----   ----                            -------
+  Normal  Create  3m53s  managed-certificate-controller  Create SslCertificate mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe ingress ingress-ssl
+Name:             ingress-ssl
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.1.148:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *
+              /app1   app1-nginx-nodeport-service:80 (10.76.1.146:80)
+              /app2   app2-nginx-nodeport-service:80 (10.76.1.147:80)
+Annotations:  ingress.gcp.kubernetes.io/pre-shared-cert: mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+              ingress.kubernetes.io/backends:
+                {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/ssl-cert: mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              kubernetes.io/ingress.class: gce
+              kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+              networking.gke.io/managed-certificates: managed-cert-for-ingress
+              networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type     Reason              Age                  From                            Message
+  ----     ------              ----                 ----                            -------
+  Warning  MissingCertificate  4m39s                managed-certificate-controller  ManagedCertificate default:managed-cert-for-ingress missing
+  Normal   Sync                2m19s                loadbalancer-controller         UrlMap "k8s2-um-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                2m15s                loadbalancer-controller         TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                2m                   loadbalancer-controller         ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   IPChanged           2m                   loadbalancer-controller         IP is now 34.36.100.7
+  Normal   Sync                110s                 loadbalancer-controller         TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                96s                  loadbalancer-controller         ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                93s (x6 over 4m39s)  loadbalancer-controller         Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe ingress ingress-ssl
+Name:             ingress-ssl
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.1.148:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *
+              /app1   app1-nginx-nodeport-service:80 (10.76.1.146:80)
+              /app2   app2-nginx-nodeport-service:80 (10.76.1.147:80)
+Annotations:  ingress.gcp.kubernetes.io/pre-shared-cert: mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+              ingress.kubernetes.io/backends:
+                {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/ssl-cert: mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              kubernetes.io/ingress.class: gce
+              kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+              networking.gke.io/managed-certificates: managed-cert-for-ingress
+              networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type     Reason              Age                  From                            Message
+  ----     ------              ----                 ----                            -------
+  Warning  MissingCertificate  13m                  managed-certificate-controller  ManagedCertificate default:managed-cert-for-ingress missing
+  Normal   Sync                11m                  loadbalancer-controller         UrlMap "k8s2-um-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                11m                  loadbalancer-controller         TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                11m                  loadbalancer-controller         ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   IPChanged           11m                  loadbalancer-controller         IP is now 34.36.100.7
+  Normal   Sync                10m                  loadbalancer-controller         TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                10m                  loadbalancer-controller         ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                7m11s (x7 over 13m)  loadbalancer-controller         Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl get managedcertificate -o wide --show-labels
+NAME                       AGE   STATUS         LABELS
+managed-cert-for-ingress   13m   Provisioning   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe managedcertifiate managed-cert-for-ingress
+error: the server doesn't have a resource type "managedcertifiate"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe managedcertificate managed-cert-for-ingress
+Name:         managed-cert-for-ingress
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1
+Kind:         ManagedCertificate
+Metadata:
+  Creation Timestamp:  2023-09-16T07:14:30Z
+  Generation:          2
+  Resource Version:    26753935
+  UID:                 99439113-ea18-44ca-a871-481c8a47d9d4
+Spec:
+  Domains:
+    sara.rahulsinha.info
+Status:
+  Certificate Name:    mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+  Certificate Status:  Provisioning
+  Domain Status:
+    Domain:  sara.rahulsinha.info
+    Status:  Provisioning
+Events:
+  Type    Reason  Age   From                            Message
+  ----    ------  ----  ----                            -------
+  Normal  Create  14m   managed-certificate-controller  Create SslCertificate mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ watch kubectl get managedcertificate -o wide --show-labels
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe managedcertificate managed-cert-for-ingress
+Name:         managed-cert-for-ingress
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1
+Kind:         ManagedCertificate
+Metadata:
+  Creation Timestamp:  2023-09-16T07:14:30Z
+  Generation:          3
+  Resource Version:    26764078
+  UID:                 99439113-ea18-44ca-a871-481c8a47d9d4
+Spec:
+  Domains:
+    sara.rahulsinha.info
+Status:
+  Certificate Name:    mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+  Certificate Status:  Active
+  Domain Status:
+    Domain:     sara.rahulsinha.info
+    Status:     Active
+  Expire Time:  2023-12-14T23:14:33.000-08:00
+Events:
+  Type    Reason  Age   From                            Message
+  ----    ------  ----  ----                            -------
+  Normal  Create  24m   managed-certificate-controller  Create SslCertificate mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ kubectl describe ingress ingress-ssl
+Name:             ingress-ssl
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.1.148:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *
+              /app1   app1-nginx-nodeport-service:80 (10.76.1.146:80)
+              /app2   app2-nginx-nodeport-service:80 (10.76.1.147:80)
+Annotations:  ingress.gcp.kubernetes.io/pre-shared-cert: mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+              ingress.kubernetes.io/backends:
+                {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/ssl-cert: mcrt-2e6f421f-fa09-4945-b4fc-8b11fec4e2df
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-ssl-sb30u5g5
+              kubernetes.io/ingress.class: gce
+              kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+              networking.gke.io/managed-certificates: managed-cert-for-ingress
+              networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type     Reason              Age                 From                            Message
+  ----     ------              ----                ----                            -------
+  Warning  MissingCertificate  25m                 managed-certificate-controller  ManagedCertificate default:managed-cert-for-ingress missing
+  Normal   Sync                23m                 loadbalancer-controller         UrlMap "k8s2-um-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                23m                 loadbalancer-controller         TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                22m                 loadbalancer-controller         ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   IPChanged           22m                 loadbalancer-controller         IP is now 34.36.100.7
+  Normal   Sync                22m                 loadbalancer-controller         TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                22m                 loadbalancer-controller         ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-ssl-sb30u5g5" created
+  Normal   Sync                9m6s (x8 over 25m)  loadbalancer-controller         Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ echo | openssl s_client -showcerts -servername  sara.rahulsiha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            a0:b4:9d:f2:cb:c6:0e:65:09:ec:53:d9:f9:fe:37:80
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C = US, O = Google Trust Services LLC, CN = GTS CA 1D4
+        Validity
+            Not Before: Sep 16 06:24:42 2023 GMT
+            Not After : Dec 15 07:14:33 2023 GMT
+        Subject: CN = sara.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:a5:ec:1c:a3:ad:f8:05:6e:67:7a:57:1c:9c:d0:
+                    7b:09:ea:d9:de:5f:4e:ca:7a:35:29:db:c8:28:24:
+                    8b:1a:79:35:ec:7c:af:97:63:b4:5a:c3:3b:44:e7:
+                    2f:13:3a:a5:80:f1:90:ab:c4:62:87:ce:74:d0:48:
+                    59:95:1a:8e:4e:42:ef:87:56:ec:cd:1d:f3:71:71:
+                    0c:56:cd:59:eb:20:03:cd:2a:00:2e:d4:30:b4:02:
+                    47:a7:76:a9:fe:f3:dc:66:ba:7b:1e:3c:6d:1d:35:
+                    e9:15:3a:57:35:9f:a0:10:cf:35:b7:7d:ab:14:89:
+                    12:2f:5f:20:7e:e3:f7:9f:05:59:c1:cb:c2:70:aa:
+                    c1:16:27:1a:77:dc:3d:43:a3:40:b6:b3:b1:5d:16:
+                    5a:72:01:c5:e1:92:49:ce:a9:f8:63:a3:70:8c:68:
+                    07:7b:11:83:e8:b6:70:9b:00:fb:b6:df:81:c1:61:
+                    50:8d:64:2f:16:a9:28:2a:a1:4e:02:e8:5c:24:aa:
+                    71:e6:3f:9e:75:93:2f:67:de:51:7d:7c:0d:69:82:
+                    9c:24:31:97:d1:b5:0d:78:cd:0d:55:87:8a:15:34:
+                    cd:9d:ac:33:b8:a0:f7:7d:d3:fa:ad:46:b1:f6:8a:
+                    c1:49:c2:16:60:2e:f4:be:df:7d:69:4d:fb:f6:8f:
+                    10:65
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Key Usage: critical
+                Digital Signature, Key Encipherment
+            X509v3 Extended Key Usage:
+                TLS Web Server Authentication
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Subject Key Identifier:
+                79:DA:61:94:1A:68:39:8D:BC:39:C2:30:18:84:AB:87:74:7C:C2:DF
+            X509v3 Authority Key Identifier:
+                keyid:25:E2:18:0E:B2:57:91:94:2A:E5:D4:5D:86:90:83:DE:53:B3:B8:92
+
+            Authority Information Access:
+                OCSP - URI:http://ocsp.pki.goog/s/gts1d4/tSuPW6WfXdE
+                CA Issuers - URI:http://pki.goog/repo/certs/gts1d4.der
+
+            X509v3 Subject Alternative Name:
+                DNS:sara.rahulsinha.info
+            X509v3 Certificate Policies:
+                Policy: 2.23.140.1.2.1
+                Policy: 1.3.6.1.4.1.11129.2.5.3
+
+            X509v3 CRL Distribution Points:
+
+                Full Name:
+                  URI:http://crls.pki.goog/gts1d4/HdPV8cYYwCU.crl
+
+            CT Precertificate SCTs:
+                Signed Certificate Timestamp:
+                    Version   : v1 (0x0)
+                    Log ID    : 7A:32:8C:54:D8:B7:2D:B6:20:EA:38:E0:52:1E:E9:84:
+                                16:70:32:13:85:4D:3B:D2:2B:C1:3A:57:A3:52:EB:52
+                    Timestamp : Sep 16 07:24:42.867 2023 GMT
+                    Extensions: none
+                    Signature : ecdsa-with-SHA256
+                                30:44:02:20:45:83:93:C1:7A:A0:4A:2A:9B:D4:5C:81:
+                                86:A2:81:D5:BF:2D:69:D7:F4:D9:8C:B2:A1:12:DB:3B:
+                                52:EB:FC:6C:02:20:57:5E:92:C8:55:08:A4:9C:A4:49:
+                                E2:0E:76:79:D0:BA:74:66:DE:CD:AB:8D:B2:18:94:DB:
+                                E5:28:BB:F1:88:03
+                Signed Certificate Timestamp:
+                    Version   : v1 (0x0)
+                    Log ID    : AD:F7:BE:FA:7C:FF:10:C8:8B:9D:3D:9C:1E:3E:18:6A:
+                                B4:67:29:5D:CF:B1:0C:24:CA:85:86:34:EB:DC:82:8A
+                    Timestamp : Sep 16 07:24:42.868 2023 GMT
+                    Extensions: none
+                    Signature : ecdsa-with-SHA256
+                                30:45:02:20:13:6B:BE:44:B6:94:91:F3:8D:BA:93:B6:
+                                0C:48:EF:F1:00:2C:DF:F7:F9:12:3F:CF:DA:51:04:EB:
+                                2D:DF:28:2A:02:21:00:9D:6E:A7:EE:3B:33:33:F7:64:
+                                4E:35:75:15:FB:95:F0:B4:EB:5C:89:5B:1C:1B:60:C3:
+                                91:9D:8A:01:19:57:2A
+    Signature Algorithm: sha256WithRSAEncryption
+         7a:7d:31:f2:b5:dc:4f:94:dc:1e:18:33:d6:71:71:4f:1c:ee:
+         98:94:5e:17:18:76:aa:fe:5b:2b:1b:93:15:c9:61:33:9e:1b:
+         cf:01:64:a8:61:22:1a:01:2b:fe:95:86:f3:d4:40:60:22:cb:
+         76:73:32:5c:fb:e6:b2:65:b5:7e:b4:9c:bf:0f:3d:7d:cb:b6:
+         d3:9e:c8:9d:d6:8a:56:ae:26:71:ba:2d:57:c4:a4:dd:c7:8b:
+         ae:e9:81:ee:60:e6:0e:23:ae:5b:17:72:22:34:67:5f:b6:65:
+         9e:ac:a8:d8:26:c0:f7:41:88:b9:b6:08:b9:33:63:a1:a6:4d:
+         63:e9:e4:0c:61:9b:b9:dd:74:ff:31:66:22:bc:f3:59:c3:80:
+         0f:54:e2:19:8c:f7:78:a7:2b:11:c8:59:be:30:c9:63:36:04:
+         62:1b:c8:d2:24:4a:29:5c:20:b8:ad:3f:2f:93:5e:f4:0a:08:
+         42:39:07:e4:83:a1:d2:42:85:42:11:2e:e4:d3:ee:dd:77:9b:
+         9b:7d:12:88:1d:28:c3:fa:22:17:02:df:25:05:94:94:25:2f:
+         c2:aa:19:65:dc:4e:e6:5f:a2:47:6e:37:f2:6b:f2:2e:8c:db:
+         6c:2f:0e:0d:c4:17:df:e5:e6:01:e8:2b:91:ee:f3:1c:77:be:
+         7b:76:20:96
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -v https://sara.rahulsinha.info/
+*   Trying 34.36.100.7:443...
+* TCP_NODELAY set
+* Connected to sara.rahulsinha.info (34.36.100.7) port 443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /etc/ssl/certs/ca-certificates.crt
+  CApath: /etc/ssl/certs
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: CN=sara.rahulsinha.info
+*  start date: Sep 16 06:24:42 2023 GMT
+*  expire date: Dec 15 07:14:33 2023 GMT
+*  subjectAltName: host "sara.rahulsinha.info" matched cert's "sara.rahulsinha.info"
+*  issuer: C=US; O=Google Trust Services LLC; CN=GTS CA 1D4
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* Using Stream ID: 1 (easy handle 0x5618583d4860)
+> GET / HTTP/2
+> Host: sara.rahulsinha.info
+> user-agent: curl/7.68.0
+> accept: */*
+>
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Connection state changed (MAX_CONCURRENT_STREAMS == 100)!
+< HTTP/2 200
+< server: nginx/1.17.10
+< date: Sat, 16 Sep 2023 07:42:30 GMT
+< content-type: text/html
+< content-length: 218
+< last-modified: Sun, 17 May 2020 04:14:23 GMT
+< etag: "5ec0ba1f-da"
+< accept-ranges: bytes
+< via: 1.1 google
+< alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+* Connection #0 to host sara.rahulsinha.info left intact
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl https://sara.rahulsinha.info/app1/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl https://sara.rahulsinha.info/app2/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl https://sara.rahulsinha.info/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl http://sara.rahulsinha.info/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -s https://sara.rahulsinha.info/app2/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -s http://sara.rahulsinha.info/app2/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl http://sara.rahulsinha.info/app2/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -v http://sara.rahulsinha.info/app2/
+*   Trying 34.36.100.7:80...
+* TCP_NODELAY set
+* Connected to sara.rahulsinha.info (34.36.100.7) port 80 (#0)
+> GET /app2/ HTTP/1.1
+> Host: sara.rahulsinha.info
+> User-Agent: curl/7.68.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 301 Moved Permanently
+< Cache-Control: private
+< Location: https://sara.rahulsinha.info:443/app2/
+< Content-Length: 0
+< Date: Sat, 16 Sep 2023 07:43:29 GMT
+< Content-Type: text/html; charset=UTF-8
+<
+* Connection #0 to host sara.rahulsinha.info left intact
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -I http://sara.rahulsinha.info/app2/
+HTTP/1.1 301 Moved Permanently
+Cache-Control: private
+Location: https://sara.rahulsinha.info:443/app2/
+Content-Length: 0
+Date: Sat, 16 Sep 2023 07:44:46 GMT
+Content-Type: text/html; charset=UTF-8
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -I http://sara.rahulsinha.info/app1/
+HTTP/1.1 301 Moved Permanently
+Cache-Control: private
+Location: https://sara.rahulsinha.info:443/app1/
+Content-Length: 0
+Date: Sat, 16 Sep 2023 07:44:53 GMT
+Content-Type: text/html; charset=UTF-8
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -I http://sara.rahulsinha.info/
+HTTP/1.1 301 Moved Permanently
+Cache-Control: private
+Location: https://sara.rahulsinha.info:443/
+Content-Length: 0
+Date: Sat, 16 Sep 2023 07:44:56 GMT
+Content-Type: text/html; charset=UTF-8
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -I https://sara.rahulsinha.info/
+HTTP/2 200
+server: nginx/1.17.10
+date: Sat, 16 Sep 2023 07:45:03 GMT
+content-type: text/html
+content-length: 218
+last-modified: Sun, 17 May 2020 04:14:23 GMT
+etag: "5ec0ba1f-da"
+accept-ranges: bytes
+via: 1.1 google
+alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -I https://sara.rahulsinha.info/app1/
+HTTP/2 200
+server: nginx/1.17.10
+date: Sat, 16 Sep 2023 07:45:09 GMT
+content-type: text/html
+content-length: 173
+last-modified: Thu, 28 May 2020 05:01:35 GMT
+etag: "5ecf45af-ad"
+accept-ranges: bytes
+via: 1.1 google
+alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ curl -I https://sara.rahulsinha.info/app2/
+HTTP/2 200
+server: nginx/1.17.10
+date: Sat, 16 Sep 2023 07:45:11 GMT
+content-type: text/html
+content-length: 173
+last-modified: Thu, 28 May 2020 05:01:33 GMT
+etag: "5ecf45ad-ad"
+accept-ranges: bytes
+via: 1.1 google
+alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ for URL in "http://sara.rahulsinha.info/" ; do curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null ; done
+https://sara.rahulsinha.info:443/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ #for URL in "http://sara.rahulsinha.info/" ; do curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null ; done
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$ for URL in \
+> "http://sara.rahulsinha.info/" \
+> "http://sara.rahulsinha.info/app1/" \
+> "http://sara.rahulsinha.info/app2/" \
+> ; do curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null ; done
+https://sara.rahulsinha.info:443/
+https://sara.rahulsinha.info:443/app1/
+https://sara.rahulsinha.info:443/app2/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/40-GKE-Ingress-Google-Managed-SSL-Redirect$
