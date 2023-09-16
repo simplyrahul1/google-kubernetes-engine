@@ -4,4 +4,5 @@ metadata:
   name: managed-cert-for-ingress
 spec:
   domains:
-    - demo1.kalyanreddydaida.com
+    - sara.rahulsinha.info
+  # - demo1.kalyanreddydaida.com
