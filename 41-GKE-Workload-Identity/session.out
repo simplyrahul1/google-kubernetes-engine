@@ -1,0 +1,573 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ ls
+03-gke-service-account.txt  04-gke-add-iam-policy.txt  05-create-k8s-namespace-ksa.txt  06-associate-gcp-iam-sa-with-ksa.txt  07-annonate-ksa-with-gsa.txt  README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ cat 03-gke-service-account.txt
+### List Service Account
+
+gcloud iam service-accounts list
+
+        simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts list
+        DISPLAY NAME: App Engine default service account
+        EMAIL: expanded-origin-395402@appspot.gserviceaccount.com
+        DISABLED: False
+
+        DISPLAY NAME: Compute Engine default service account
+        EMAIL: 353602304802-compute@developer.gserviceaccount.com
+        DISABLED: False
+
+### Get the PROJECT_ID for your current project
+
+gcloud projects list
+
+        simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects list
+        PROJECT_ID: expanded-origin-395402
+        NAME: My First Project
+        PROJECT_NUMBER: 353602304802
+
+### Create GCP IAM Service Account
+
+gcloud iam service-accounts create GSA_NAME --project=GSA_PROJECT_ID
+
+        GSA_NAME       : Name of the new IAM Service Account.
+        GSA_PROJECT_ID : Project ID of the Google Cloud project for your IAM service account. (GSA_PROJECT==PROJECT_ID)
+
+        simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts create wid-gcpiam-sa --project=expanded-origin-395402
+        Created service account [wid-gcpiam-sa].
+
+### List Service Accounts
+
+gcloud iam service-accounts list
+
+        simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts list
+        DISPLAY NAME:
+        EMAIL: wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+        DISABLED: False
+
+        DISPLAY NAME: App Engine default service account
+        EMAIL: expanded-origin-395402@appspot.gserviceaccount.com
+        DISABLED: False
+
+        DISPLAY NAME: Compute Engine default service account
+        EMAIL: 353602304802-compute@developer.gserviceaccount.com
+        DISABLED: False
+        simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud iam service-accounts list
+DISPLAY NAME                            EMAIL                                                         DISABLED
+                                        wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com  False
+App Engine default service account      expanded-origin-395402@appspot.gserviceaccount.com            False
+Compute Engine default service account  353602304802-compute@developer.gserviceaccount.com            False
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ cat 04-gke-add-iam-policy.txt
+# Goal :  We are giving "roles/compute.viewer" permissions to IAM Service Account.
+
+        From Kubernetes Pod, we are going to list the compute instances.
+        With the help of the Google IAM Service account and Kubernetes Service Account, access for Kubernetes Pod from GKE cluster should be successful for listing the google computing instances.
+
+# Add IAM Roles to GCP IAM Service Account
+gcloud projects \
+    add-iam-policy-binding PROJECT_ID \
+    --member "serviceAccount:GSA_NAME@GSA_PROJECT_ID.iam.gserviceaccount.com" \
+    --role "ROLE_NAME"
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role ${ROLE_NAME}
+
+        PROJECT_ID           : Google Cloud project ID.
+        GSA_EMAIL            : ${GSA_NAME}@${GSA_PROJECT_ID}.iam.gserviceaccount.com
+          GSA_NAME           : Name of your IAM service account.
+          GSA_PROJECT_ID     : Project ID of the Google Cloud project of your IAM service account. (GSA_PROJECT_ID==PROJECT_ID)
+        ROLE_NAME            : The IAM role to assign to your service account, like roles/spanner.viewer.
+
+    PROJECT_ID='expanded-origin-395402'
+        GSA_EMAIL='wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com'
+          GSA_NAME       : wid-gcpiam-sa
+          GSA_PROJECT_ID : expanded-origin-395402
+        ROLE_NAME='roles/compute.viewer'
+
+
+--
+
+### List Service Accounts
+
+gcloud iam service-accounts list
+
+        simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts list
+        DISPLAY NAME:
+        EMAIL: wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+        DISABLED: False
+
+        DISPLAY NAME: App Engine default service account
+        EMAIL: expanded-origin-395402@appspot.gserviceaccount.com
+        DISABLED: False
+
+        DISPLAY NAME: Compute Engine default service account
+        EMAIL: 353602304802-compute@developer.gserviceaccount.com
+        DISABLED: False
+
+### Add IAM Roles to GCP IAM Service Account
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role ${ROLE_NAME}
+
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ PROJECT_ID='expanded-origin-395402'
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ GSA_EMAIL='wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com'
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ ROLE_NAME='roles/compute.viewer'
+
+
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role ${ROLE_NAME}
+   Updated IAM policy for project [expanded-origin-395402].
+   bindings:
+   - members:
+     - serviceAccount:service-353602304802@compute-system.iam.gserviceaccount.com
+     role: roles/compute.serviceAgent
+   - members:
+     - serviceAccount:wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+     role: roles/compute.viewer
+   - members:
+     - serviceAccount:service-353602304802@container-engine-robot.iam.gserviceaccount.com
+     role: roles/container.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@containerregistry.iam.gserviceaccount.com
+     role: roles/containerregistry.ServiceAgent
+   - members:
+     - serviceAccount:353602304802-compute@developer.gserviceaccount.com
+     - serviceAccount:353602304802@cloudservices.gserviceaccount.com
+     - serviceAccount:expanded-origin-395402@appspot.gserviceaccount.com
+     role: roles/editor
+   - members:
+     - serviceAccount:service-353602304802@cloud-filer.iam.gserviceaccount.com
+     role: roles/file.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-firestore.iam.gserviceaccount.com
+     role: roles/firestore.serviceAgent
+   - members:
+     - user:simplyrahul.gke.udemy@gmail.com
+     role: roles/owner
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-pubsub.iam.gserviceaccount.com
+     role: roles/pubsub.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@service-networking.iam.gserviceaccount.com
+     role: roles/servicenetworking.serviceAgent
+   etag: BwYFhvRYPYQ=
+   version: 1
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ cat 05-create-k8s-namespace-ksa.txt
+# Create Kubernetes Namespace
+kubectl create namespace <NAMESPACE>
+
+   kubectl create namespace wid-kns
+
+# Create Service Account
+kubectl create serviceaccount <KSA_NAME>  --namespace <NAMESPACE>
+
+   kubectl create serviceaccount wid-ksa  --namespace wid-kns
+
+
+--
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ # Create Kubernetes Namespace
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl create namespace wid-kns
+namespace/wid-kns created
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ # Create Kubernetes Service Account
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl create serviceaccount wid-ksa --namespace wid-kns
+serviceaccount/wid-ksa created
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl get serviceaccount --namespace wid-kns
+NAME      SECRETS   AGE
+default   0         8m33s
+wid-ksa   0         3m17s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl get serviceaccount --namespace wid-kns -o wide
+NAME      SECRETS   AGE
+default   0         8m48s
+wid-ksa   0         3m32s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl describe serviceaccount wid-ksa --namespace wid-kns
+Name:                wid-ksa
+Namespace:           wid-kns
+Labels:              <none>
+Annotations:         <none>
+Image pull secrets:  <none>
+Mountable secrets:   <none>
+Tokens:              <none>
+Events:              <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ cat 06-associate-gcp-iam-sa-with-ksa.txt
+# Associate GCP IAM Service Account with Kubernetes Service Account
+
+   Allow the Kubernetes service account to impersonate the IAM service account by adding an IAM policy binding between the two service accounts.
+   This binding allows the Kubernetes service account to act as the IAM service account.
+
+
+# Associate GCP IAM Service Account with Kubernetes Service Account
+
+gcloud iam \
+    service-accounts add-iam-policy-binding ${GSA_EMAIL} \
+    --role ${ROLE_WID_USER} \
+    --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KSA_NAME}"
+
+        simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud projects list
+        PROJECT_ID              NAME              PROJECT_NUMBER
+        expanded-origin-395402  My First Project  353602304802
+
+        simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud iam service-accounts list
+        DISPLAY NAME                            EMAIL                                                         DISABLED
+                                                                                        wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com  False
+        App Engine default service account      expanded-origin-395402@appspot.gserviceaccount.com            False
+        Compute Engine default service account  353602304802-compute@developer.gserviceaccount.com            False
+
+
+    PROJECT_ID='expanded-origin-395402'
+    GSA_EMAIL='wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com'
+    ROLE_WID_USER='roles/iam.workloadIdentityUser'
+    NAMESPACE='wid-kns'
+    KSA_NAME='wid-ksa'
+
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud iam \
+      service-accounts add-iam-policy-binding ${GSA_EMAIL} \
+      --role ${ROLE_WID_USER} \
+      --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KSA_NAME}]"
+
+    Updated IAM policy for serviceAccount [wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com].
+    bindings:
+    - members:
+      - serviceAccount:expanded-origin-395402.svc.id.goog[wid-kns/wid-ksa]
+      role: roles/iam.workloadIdentityUser
+    etag: BwYFh7A_izw=
+    version: 1
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ cat 07-annonate-ksa-with-gsa.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud projects list
+PROJECT_ID              NAME              PROJECT_NUMBER
+expanded-origin-395402  My First Project  353602304802
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud iam service-accounts list
+DISPLAY NAME                            EMAIL                                                         DISABLED
+                                        wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com  False
+App Engine default service account      expanded-origin-395402@appspot.gserviceaccount.com            False
+Compute Engine default service account  353602304802-compute@developer.gserviceaccount.com            False
+
+
+  PROJECT_ID='expanded-origin-395402'
+  GSA_EMAIL='wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com'
+  ROLE_WID_USER='roles/iam.workloadIdentityUser'
+  NAMESPACE='wid-kns'
+  KSA_NAME='wid-ksa'
+
+
+# Annotate the Kubernetes service account with the email address of the IAM service account.
+
+kubectl annotate serviceaccount ${KSA_NAME} \
+    --namespace ${NAMESPACE} \
+    iam.gke.io/gcp-service-account=${GSA_EMAIL}
+
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl annotate serviceaccount ${KSA_NAME} \
+         --namespace ${NAMESPACE} \
+         iam.gke.io/gcp-service-account=${GSA_EMAIL}
+   serviceaccount/wid-ksa annotate
+
+# Describe Kubernetes Service Account
+kubectl describe sa wid-ksa -n wid-kns
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl describe serviceaccount wid-ksa -n wid-kns
+   Name:                wid-ksa
+   Namespace:           wid-kns
+   Labels:              <none>
+   Annotations:         iam.gke.io/gcp-service-account: wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+   Image pull secrets:  <none>
+   Mountable secrets:   <none>
+   Tokens:              <none>
+   Events:              <none>
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ ls
+03-gke-service-account.txt  04-gke-add-iam-policy.txt  05-create-k8s-namespace-ksa.txt  06-associate-gcp-iam-sa-with-ksa.txt  07-annonate-ksa-with-gsa.txt  README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ ls kube-manifests/
+01-wid-demo-pod-without-sa.yaml  02-wid-demo-pod-with-sa.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ cat kube-manifests/01-wid-demo-pod-without-sa.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wid-demo-without-sa
+  namespace: wid-kns
+spec:
+  containers:
+  - image: google/cloud-sdk:slim
+    name: wid-demo-without-sa
+    command: ["sleep","infinity"]
+  #serviceAccountName: wid-ksa
+  nodeSelector:
+    iam.gke.io/gke-metadata-server-enabled: "true"simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ cat kube-manifests/02-wid-demo-pod-with-sa.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wid-demo-with-sa
+  namespace: wid-kns
+spec:
+  containers:
+  - image: google/cloud-sdk:slim
+    name: wid-demo-with-sa
+    command: ["sleep","infinity"]
+  serviceAccountName: wid-ksa
+  nodeSelector:
+    iam.gke.io/gke-metadata-server-enabled: "true"simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl apply -f kube-manifests/
+pod/wid-demo-without-sa created
+pod/wid-demo-with-sa created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl get pods -o wide --show-labels
+No resources found in default namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl get pods -o wide --show-labels -n wid-kns
+NAME                  READY   STATUS    RESTARTS   AGE    IP            NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+wid-demo-with-sa      1/1     Running   0          103s   10.76.1.150   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            <none>
+wid-demo-without-sa   1/1     Running   0          103s   10.76.1.149   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl exec -it -n wid-kns wid-demo-with-sa -- /bin/bash
+root@wid-demo-with-sa:/# gcloud auth list
+                       Credentialed Accounts
+ACTIVE  ACCOUNT
+*       wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+
+To set the active account, run:
+    $ gcloud config set account `ACCOUNT`
+
+root@wid-demo-with-sa:/# gcloud config set wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+ERROR: (gcloud.config.set) argument VALUE: Must be specified.
+Usage: gcloud config set SECTION/PROPERTY VALUE [optional flags]
+  optional flags may be  --help | --installation
+
+For detailed information on this command and its flags, run:
+  gcloud config set --help
+root@wid-demo-with-sa:/# gcloud config set account "wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com"
+Updated property [core/account].
+root@wid-demo-with-sa:/#
+root@wid-demo-with-sa:/#
+root@wid-demo-with-sa:/# gcloud compute instances list
+NAME                                                 ZONE           MACHINE_TYPE  PREEMPTIBLE  INTERNAL_IP  EXTERNAL_IP  STATUS
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff  us-central1-a  e2-small                   10.128.0.49               RUNNING
+gke-private-standard-22a-default-pool-76d79b51-6f20  us-central1-b  e2-small                   10.128.0.51               RUNNING
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg  us-central1-c  e2-small                   10.128.0.50               RUNNING
+root@wid-demo-with-sa:/# exit
+exit
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl exec -it -n wid-kns wid-demo-without-sa -- /bin/bash
+root@wid-demo-without-sa:/# gcloud auth list
+          Credentialed Accounts
+ACTIVE  ACCOUNT
+*       expanded-origin-395402.svc.id.goog
+
+To set the active account, run:
+    $ gcloud config set account `ACCOUNT`
+
+root@wid-demo-without-sa:/# gcloud config set account "expanded-origin-395402.svc.id.goog"
+Updated property [core/account].
+root@wid-demo-without-sa:/# gcloud compute instances list
+ERROR: (gcloud.compute.instances.list) Some requests did not succeed:
+ - Required 'compute.instances.list' permission for 'projects/expanded-origin-395402'
+
+root@wid-demo-without-sa:/# exit
+exit
+command terminated with exit code 1
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl exec -it -n wid-kns wid-demo-with-sa -- /bin/bash
+root@wid-demo-with-sa:/# gcloud config set account "wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com"
+Updated property [core/account].
+root@wid-demo-with-sa:/# gcloud dns record-sets list --zone=rahulsinha-info
+ERROR: (gcloud.dns.record-sets.list) HTTPError 403: Forbidden
+root@wid-demo-with-sa:/# exit
+exit
+command terminated with exit code 1
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud projects list
+PROJECT_ID              NAME              PROJECT_NUMBER
+expanded-origin-395402  My First Project  353602304802
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud iam service-accounts list
+DISPLAY NAME                            EMAIL                                                         DISABLED
+                                        wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com  False
+App Engine default service account      expanded-origin-395402@appspot.gserviceaccount.com            False
+Compute Engine default service account  353602304802-compute@developer.gserviceaccount.com            False
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ ls
+03-gke-service-account.txt  04-gke-add-iam-policy.txt  05-create-k8s-namespace-ksa.txt  06-associate-gcp-iam-sa-with-ksa.txt  07-annonate-ksa-with-gsa.txt  README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ vim 06-associate-gcp-iam-sa-with-ksa.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ ls
+03-gke-service-account.txt  04-gke-add-iam-policy.txt  05-create-k8s-namespace-ksa.txt  06-associate-gcp-iam-sa-with-ksa.txt  07-annonate-ksa-with-gsa.txt  README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ vim 08-gke-add-iam-policy-dns_admin.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ ls
+03-gke-service-account.txt  05-create-k8s-namespace-ksa.txt       07-annonate-ksa-with-gsa.txt         README.md
+04-gke-add-iam-policy.txt   06-associate-gcp-iam-sa-with-ksa.txt  08-gke-add-iam-policy-dns_admin.txt  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ vim 03-gke-service-account.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ vim 08-gke-add-iam-policy-dns_admin.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ cat 08-gke-add-iam-policy-dns_admin.txt
+# Add IAM Roles to GCP IAM Service Account
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member "serviceAccount:${GSA_EMAIL}" \
+    --role ${DNS_ROLE_NAME}"
+
+   PROJECT_ID    : Google Cloud project ID. (GSA_PROJECT==PROJECT_ID)
+   GSA_EMAIL     :
+      GSA_NAME   : NAMEame of your IAM service account.
+      GSA_PROJECT: PROJECT_IDroject ID of the Google Cloud project of your IAM service account.
+   DNS_ROLE_NAME : The IAM role to assign to your service account, like roles/spanner.viewer.
+
+
+# List Project & IAM Service Account
+
+gcloud projects list
+gcloud iam service-accounts list
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud projects list
+   PROJECT_ID              NAME              PROJECT_NUMBER
+   expanded-origin-395402  My First Project  353602304802
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud iam service-accounts list
+   DISPLAY NAME                            EMAIL                                                         DISABLED
+                                           wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com  False
+   App Engine default service account      expanded-origin-395402@appspot.gserviceaccount.com            False
+   Compute Engine default service account  353602304802-compute@developer.gserviceaccount.com            False
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+
+
+# Set Environment Variables
+
+   PROJECT_ID='expanded-origin-395402'
+   GSA_EMAIL='wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com'
+   DNS_ROLE_NAME='roles/dns.admin'
+
+# Replace PROJECT_ID, GSA_NAME, GSA_PROJECT, ROLE_NAME
+
+gcloud projects \
+   add-iam-policy-binding ${PROJECT_ID} \
+   --member "serviceAccount:${GSA_EMAIL}" \
+   --role "${DNS_ROLE_NAME}"
+
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role "${DNS_ROLE_NAME}"
+   Updated IAM policy for project [expanded-origin-395402].
+   bindings:
+   - members:
+     - serviceAccount:service-353602304802@compute-system.iam.gserviceaccount.com
+     role: roles/compute.serviceAgent
+   - members:
+     - serviceAccount:wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+     role: roles/compute.viewer
+   - members:
+     - serviceAccount:service-353602304802@container-engine-robot.iam.gserviceaccount.com
+     role: roles/container.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@containerregistry.iam.gserviceaccount.com
+     role: roles/containerregistry.ServiceAgent
+   - members:
+     - serviceAccount:wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+     role: roles/dns.admin
+   - members:
+     - serviceAccount:353602304802-compute@developer.gserviceaccount.com
+     - serviceAccount:353602304802@cloudservices.gserviceaccount.com
+     - serviceAccount:expanded-origin-395402@appspot.gserviceaccount.com
+     role: roles/editor
+   - members:
+     - serviceAccount:service-353602304802@cloud-filer.iam.gserviceaccount.com
+     role: roles/file.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-firestore.iam.gserviceaccount.com
+     role: roles/firestore.serviceAgent
+   - members:
+     - user:simplyrahul.gke.udemy@gmail.com
+     role: roles/owner
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-pubsub.iam.gserviceaccount.com
+     role: roles/pubsub.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@service-networking.iam.gserviceaccount.com
+     role: roles/servicenetworking.serviceAgent
+   etag: BwYFirEF7qQ=
+   version: 1
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$
+
+
+### List all the roles assigned to the GCP Servie Account
+
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts describe ${GSA_EMAIL}
+email: wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+etag: MDEwMjE5MjA=
+name: projects/expanded-origin-395402/serviceAccounts/wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+oauth2ClientId: '117845228117791505389'
+projectId: expanded-origin-395402
+uniqueId: '117845228117791505389'
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects get-iam-policy ${PROJECT_ID}
+bindings:
+- members:
+  - serviceAccount:service-353602304802@compute-system.iam.gserviceaccount.com
+  role: roles/compute.serviceAgent
+- members:
+  - serviceAccount:wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+  role: roles/compute.viewer
+- members:
+  - serviceAccount:service-353602304802@container-engine-robot.iam.gserviceaccount.com
+  role: roles/container.serviceAgent
+- members:
+  - serviceAccount:service-353602304802@containerregistry.iam.gserviceaccount.com
+  role: roles/containerregistry.ServiceAgent
+- members:
+  - serviceAccount:wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+  role: roles/dns.admin
+- members:
+  - serviceAccount:353602304802-compute@developer.gserviceaccount.com
+  - serviceAccount:353602304802@cloudservices.gserviceaccount.com
+  - serviceAccount:expanded-origin-395402@appspot.gserviceaccount.com
+  role: roles/editor
+- members:
+  - serviceAccount:service-353602304802@cloud-filer.iam.gserviceaccount.com
+  role: roles/file.serviceAgent
+- members:
+  - serviceAccount:service-353602304802@gcp-sa-firestore.iam.gserviceaccount.com
+  role: roles/firestore.serviceAgent
+- members:
+  - user:simplyrahul.gke.udemy@gmail.com
+  role: roles/owner
+- members:
+  - serviceAccount:service-353602304802@gcp-sa-pubsub.iam.gserviceaccount.com
+  role: roles/pubsub.serviceAgent
+- members:
+  - serviceAccount:service-353602304802@service-networking.iam.gserviceaccount.com
+  role: roles/servicenetworking.serviceAgent
+etag: BwYFirEF7qQ=
+version: 1
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects get-iam-policy ${PROJECT_ID}  \
+   --flatten="bindings[].members" \
+   --format='table(bindings.role)' \
+   --filter="bindings.members:${GSA_EMAIL}"
+ROLE: roles/compute.viewer
+
+ROLE: roles/dns.admin
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ vim 08-gke-add-iam-policy-dns_admin.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl get pods -n wid-kns
+NAME                  READY   STATUS    RESTARTS   AGE
+wid-demo-with-sa      1/1     Running   0          35m
+wid-demo-without-sa   1/1     Running   0          35m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl exec -it -n wid-kns wid-demo-with-sa -- /bin/bash
+root@wid-demo-with-sa:/# # List Compute Instances from workload-identity-demo pod
+gcloud compute instances list
+NAME                                                 ZONE           MACHINE_TYPE  PREEMPTIBLE  INTERNAL_IP  EXTERNAL_IP  STATUS
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff  us-central1-a  e2-small                   10.128.0.49               RUNNING
+gke-private-standard-22a-default-pool-76d79b51-6f20  us-central1-b  e2-small                   10.128.0.51               RUNNING
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg  us-central1-c  e2-small                   10.128.0.50               RUNNING
+root@wid-demo-with-sa:/# gcloud compute instances list
+
+
+NAME                                                 ZONE           MACHINE_TYPE  PREEMPTIBLE  INTERNAL_IP  EXTERNAL_IP  STATUS
+gke-private-standard-22a-default-pool-b8a9f9fd-1hff  us-central1-a  e2-small                   10.128.0.49               RUNNING
+gke-private-standard-22a-default-pool-76d79b51-6f20  us-central1-b  e2-small                   10.128.0.51               RUNNING
+gke-private-standard-22a-default-pool-f62b7b3f-4qbg  us-central1-c  e2-small                   10.128.0.50               RUNNING
+root@wid-demo-with-sa:/#
+root@wid-demo-with-sa:/#
+root@wid-demo-with-sa:/# # List Cloud DNS Record Sets
+root@wid-demo-with-sa:/# gcloud dns record-sets list --zone=rahulsinha-info
+NAME                   TYPE  TTL    DATA
+rahulsinha.info.       NS    21600  ns-cloud-a1.googledomains.com.,ns-cloud-a2.googledomains.com.,ns-cloud-a3.googledomains.com.,ns-cloud-a4.googledomains.com.
+rahulsinha.info.       SOA   21600  ns-cloud-a1.googledomains.com. cloud-dns-hostmaster.google.com. 1 21600 3600 259200 300
+sara.rahulsinha.info.  A     300    34.36.100.7
+root@wid-demo-with-sa:/# exit
+exit
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl delete -f kube-manifests/
+pod "wid-demo-without-sa" deleted
+pod "wid-demo-with-sa" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$

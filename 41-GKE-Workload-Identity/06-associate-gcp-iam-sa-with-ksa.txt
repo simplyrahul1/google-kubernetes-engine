@@ -41,3 +41,17 @@ gcloud iam \
     etag: BwYFh7A_izw=
     version: 1
     simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
+
+
+# GET IAM Policy binding of a GSA
+
+gcloud iam service-accounts get-iam-policy <GSA_EMAIL>
+
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts get-iam-policy ${GSA_EMAIL}
+   bindings:
+   - members:
+     - serviceAccount:expanded-origin-395402.svc.id.goog[wid-kns/wid-ksa]
+     role: roles/iam.workloadIdentityUser
+   etag: BwYFh7A_izw=
+   version: 1
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
