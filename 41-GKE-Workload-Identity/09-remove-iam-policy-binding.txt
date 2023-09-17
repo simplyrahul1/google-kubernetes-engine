@@ -1,0 +1,107 @@
+### Remove roles assinged to GSA   
+
+# Get the current role assigned to GSA
+
+gcloud projects get-iam-policy ${PROJECT_ID}  \
+   --flatten="bindings[].members" \
+   --format='table(bindings.role)' \
+   --filter="bindings.members:${GSA_EMAIL}"
+   
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects get-iam-policy ${PROJECT_ID}  \
+   --flatten="bindings[].members" \
+   --format='table(bindings.role)' \
+   --filter="bindings.members:${GSA_EMAIL}"
+   ROLE: roles/compute.viewer
+
+   ROLE: roles/dns.admin
+
+
+# Remove the IAM role binding from GSA
+
+gcloud projects remove-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role ${ROLE_NAME}
+
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects remove-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role "roles/compute.viewer"
+   Updated IAM policy for project [expanded-origin-395402].
+   bindings:
+   - members:
+     - serviceAccount:service-353602304802@compute-system.iam.gserviceaccount.com
+     role: roles/compute.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@container-engine-robot.iam.gserviceaccount.com
+     role: roles/container.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@containerregistry.iam.gserviceaccount.com
+     role: roles/containerregistry.ServiceAgent
+   - members:
+     - serviceAccount:wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+     role: roles/dns.admin
+   - members:
+     - serviceAccount:353602304802-compute@developer.gserviceaccount.com
+     - serviceAccount:353602304802@cloudservices.gserviceaccount.com
+     - serviceAccount:expanded-origin-395402@appspot.gserviceaccount.com
+     role: roles/editor
+   - members:
+     - serviceAccount:service-353602304802@cloud-filer.iam.gserviceaccount.com
+     role: roles/file.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-firestore.iam.gserviceaccount.com
+     role: roles/firestore.serviceAgent
+   - members:
+     - user:simplyrahul.gke.udemy@gmail.com
+     role: roles/owner
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-pubsub.iam.gserviceaccount.com
+     role: roles/pubsub.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@service-networking.iam.gserviceaccount.com
+     role: roles/servicenetworking.serviceAgent
+   etag: BwYFixdUHXY=
+   version: 1
+   
+   
+   
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects remove-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role "roles/dns.admin"
+   Updated IAM policy for project [expanded-origin-395402].
+   bindings:
+   - members:
+     - serviceAccount:service-353602304802@compute-system.iam.gserviceaccount.com
+     role: roles/compute.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@container-engine-robot.iam.gserviceaccount.com
+     role: roles/container.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@containerregistry.iam.gserviceaccount.com
+     role: roles/containerregistry.ServiceAgent
+   - members:
+     - serviceAccount:353602304802-compute@developer.gserviceaccount.com
+     - serviceAccount:353602304802@cloudservices.gserviceaccount.com
+     - serviceAccount:expanded-origin-395402@appspot.gserviceaccount.com
+     role: roles/editor
+   - members:
+     - serviceAccount:service-353602304802@cloud-filer.iam.gserviceaccount.com
+     role: roles/file.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-firestore.iam.gserviceaccount.com
+     role: roles/firestore.serviceAgent
+   - members:
+     - user:simplyrahul.gke.udemy@gmail.com
+     role: roles/owner
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-pubsub.iam.gserviceaccount.com
+     role: roles/pubsub.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@service-networking.iam.gserviceaccount.com
+     role: roles/servicenetworking.serviceAgent
+   etag: BwYFixjQCiI=
+   version: 1
+   
+   
+# Again get the current role assigned to GSA   
+   
+gcloud projects get-iam-policy ${PROJECT_ID}  \
+   --flatten="bindings[].members" \
+   --format='table(bindings.role)' \
+   --filter="bindings.members:${GSA_EMAIL}"   
+   
+	simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects get-iam-policy ${PROJECT_ID}     --flatten="bindings[].members"    --format='table(bindings.role)'    --filter="bindings.members:${GSA_EMAIL}"
+	simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
