@@ -1,0 +1,92 @@
+# Goal :  We are giving "roles/compute.viewer" permissions to IAM Service Account.
+
+	From Kubernetes Pod, we are going to list the compute instances.
+	With the help of the Google IAM Service account and Kubernetes Service Account, access for Kubernetes Pod from GKE cluster should be successful for listing the google computing instances.
+	
+# Add IAM Roles to GCP IAM Service Account
+gcloud projects \
+    add-iam-policy-binding PROJECT_ID \
+    --member "serviceAccount:GSA_NAME@GSA_PROJECT_ID.iam.gserviceaccount.com" \
+    --role "ROLE_NAME"
+	
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role ${ROLE_NAME}
+	
+	PROJECT_ID           : Google Cloud project ID.
+	GSA_EMAIL            : ${GSA_NAME}@${GSA_PROJECT_ID}.iam.gserviceaccount.com
+	  GSA_NAME           : Name of your IAM service account.
+	  GSA_PROJECT_ID     : Project ID of the Google Cloud project of your IAM service account. (GSA_PROJECT_ID==PROJECT_ID)
+	ROLE_NAME            : The IAM role to assign to your service account, like roles/spanner.viewer.
+
+    PROJECT_ID='expanded-origin-395402'
+	GSA_EMAIL='wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com'
+	  GSA_NAME       : wid-gcpiam-sa
+	  GSA_PROJECT_ID : expanded-origin-395402
+	ROLE_NAME='roles/compute.viewer'
+	
+
+--
+
+### List Service Accounts
+
+gcloud iam service-accounts list
+
+	simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts list
+	DISPLAY NAME: 
+	EMAIL: wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+	DISABLED: False
+
+	DISPLAY NAME: App Engine default service account
+	EMAIL: expanded-origin-395402@appspot.gserviceaccount.com
+	DISABLED: False
+
+	DISPLAY NAME: Compute Engine default service account
+	EMAIL: 353602304802-compute@developer.gserviceaccount.com
+	DISABLED: False
+	
+### Add IAM Roles to GCP IAM Service Account
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role ${ROLE_NAME}
+	
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ PROJECT_ID='expanded-origin-395402'
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ GSA_EMAIL='wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com'
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ ROLE_NAME='roles/compute.viewer'
+   
+   
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${GSA_EMAIL}" --role ${ROLE_NAME}
+   Updated IAM policy for project [expanded-origin-395402].
+   bindings:
+   - members:
+     - serviceAccount:service-353602304802@compute-system.iam.gserviceaccount.com
+     role: roles/compute.serviceAgent
+   - members:
+     - serviceAccount:wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+     role: roles/compute.viewer
+   - members:
+     - serviceAccount:service-353602304802@container-engine-robot.iam.gserviceaccount.com
+     role: roles/container.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@containerregistry.iam.gserviceaccount.com
+     role: roles/containerregistry.ServiceAgent
+   - members:
+     - serviceAccount:353602304802-compute@developer.gserviceaccount.com
+     - serviceAccount:353602304802@cloudservices.gserviceaccount.com
+     - serviceAccount:expanded-origin-395402@appspot.gserviceaccount.com
+     role: roles/editor
+   - members:
+     - serviceAccount:service-353602304802@cloud-filer.iam.gserviceaccount.com
+     role: roles/file.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-firestore.iam.gserviceaccount.com
+     role: roles/firestore.serviceAgent
+   - members:
+     - user:simplyrahul.gke.udemy@gmail.com
+     role: roles/owner
+   - members:
+     - serviceAccount:service-353602304802@gcp-sa-pubsub.iam.gserviceaccount.com
+     role: roles/pubsub.serviceAgent
+   - members:
+     - serviceAccount:service-353602304802@service-networking.iam.gserviceaccount.com
+     role: roles/servicenetworking.serviceAgent
+   etag: BwYFhvRYPYQ=
+   version: 1
+   simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 

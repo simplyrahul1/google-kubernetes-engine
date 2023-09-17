@@ -1,0 +1,42 @@
+# Create Kubernetes Namespace
+kubectl create namespace <NAMESPACE>
+
+   kubectl create namespace wid-kns
+
+# Create Service Account
+kubectl create serviceaccount <KSA_NAME>  --namespace <NAMESPACE>
+
+   kubectl create serviceaccount wid-ksa  --namespace wid-kns
+
+
+--
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ # Create Kubernetes Namespace
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl create namespace wid-kns
+namespace/wid-kns created
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ # Create Kubernetes Service Account
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl create serviceaccount wid-ksa --namespace wid-kns
+serviceaccount/wid-ksa created
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl get serviceaccount --namespace wid-kns
+NAME      SECRETS   AGE
+default   0         8m33s
+wid-ksa   0         3m17s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl get serviceaccount --namespace wid-kns -o wide
+NAME      SECRETS   AGE
+default   0         8m48s
+wid-ksa   0         3m32s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ kubectl describe serviceaccount wid-ksa --namespace wid-kns
+Name:                wid-ksa
+Namespace:           wid-kns
+Labels:              <none>
+Annotations:         <none>
+Image pull secrets:  <none>
+Mountable secrets:   <none>
+Tokens:              <none>
+Events:              <none>

@@ -1,0 +1,43 @@
+# Associate GCP IAM Service Account with Kubernetes Service Account
+
+   Allow the Kubernetes service account to impersonate the IAM service account by adding an IAM policy binding between the two service accounts.
+   This binding allows the Kubernetes service account to act as the IAM service account.
+   
+   
+# Associate GCP IAM Service Account with Kubernetes Service Account
+
+gcloud iam \
+    service-accounts add-iam-policy-binding ${GSA_EMAIL} \
+    --role ${ROLE_WID_USER} \
+    --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KSA_NAME}"
+
+	simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud projects list
+	PROJECT_ID              NAME              PROJECT_NUMBER
+	expanded-origin-395402  My First Project  353602304802
+
+	simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud iam service-accounts list
+	DISPLAY NAME                            EMAIL                                                         DISABLED
+											wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com  False
+	App Engine default service account      expanded-origin-395402@appspot.gserviceaccount.com            False
+	Compute Engine default service account  353602304802-compute@developer.gserviceaccount.com            False
+
+
+    PROJECT_ID='expanded-origin-395402'
+    GSA_EMAIL='wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com'
+    ROLE_WID_USER='roles/iam.workloadIdentityUser'
+    NAMESPACE='wid-kns'
+    KSA_NAME='wid-ksa'
+
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$ gcloud iam \
+      service-accounts add-iam-policy-binding ${GSA_EMAIL} \
+      --role ${ROLE_WID_USER} \
+      --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KSA_NAME}]"
+
+    Updated IAM policy for serviceAccount [wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com].
+    bindings:
+    - members:
+      - serviceAccount:expanded-origin-395402.svc.id.goog[wid-kns/wid-ksa]
+      role: roles/iam.workloadIdentityUser
+    etag: BwYFh7A_izw=
+    version: 1
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/41-GKE-Workload-Identity$
