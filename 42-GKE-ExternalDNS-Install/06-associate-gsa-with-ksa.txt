@@ -1,0 +1,45 @@
+### Allow the Kubernetes service account to impersonate the IAM service account by adding an IAM policy binding between the two service accounts.
+
+This binding allows the Kubernetes service account to act as the IAM service account.
+
+### Associate GCP IAM Service Account with Kubernetes Service Account
+
+gcloud iam service-accounts add-iam-policy-binding ${GSA_EMAIL} \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KSA_NAME}]"
+
+
+### Set Environment Variables
+
+PROJECT_ID='expanded-origin-395402'
+GSA_EMAIL='external-dns-gsa@expanded-origin-395402.iam.gserviceaccount.com'
+NAMESPACE='external-dns-ns'
+KSA_NAME='external-dns-ksa'
+
+### Associate GSA with KSA
+
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts add-iam-policy-binding ${GSA_EMAIL} \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${NAMESPACE}/${KSA_NAME}]"
+Updated IAM policy for serviceAccount [external-dns-gsa@expanded-origin-395402.iam.gserviceaccount.com].
+bindings:
+- members:
+  - serviceAccount:expanded-origin-395402.svc.id.goog[external-dns-ns/external-dns-ksa]
+  role: roles/iam.workloadIdentityUser
+etag: BwYFoNscwBk=
+version: 1
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
+
+
+### GET GSA IAM Policy Binding
+
+gcloud iam service-accounts get-iam-policy ${GSA_EMAIL}
+
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts get-iam-policy ${GSA_EMAIL}
+bindings:
+- members:
+  - serviceAccount:expanded-origin-395402.svc.id.goog[external-dns-ns/external-dns-ksa]
+  role: roles/iam.workloadIdentityUser
+etag: BwYFoNscwBk=
+version: 1
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 

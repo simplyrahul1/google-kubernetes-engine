@@ -1,0 +1,60 @@
+### Add external-dns repo to Helm
+helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
+
+### Set environment variable
+
+KSA_NAME='external-dns-ksa'
+DOMAIN_FILTER='rahulsinha.info'
+NAMESPACE='external-dns-ns'
+
+### Install Helm Chart
+helm upgrade --install external-dns external-dns/external-dns \
+    --set provider=google \
+    --set policy=sync \
+    --set google-zone-visibility=public \
+    --set txt-owner-id=k8s \
+    --set serviceAccount.create=false \
+    --set serviceAccount.name=${KSA_NAME} \
+    --set domain-filter=${DOMAIN_FILTER} \
+    -n ${NAMESPACE}
+    
+# Optional Setting (Important Note: will make ExternalDNS see only the Cloud DNS zones matching provided domain, omit to process all available Cloud DNS zones)
+#--set domain-filter=kalyanreddydaida.com \
+
+---
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$ helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
+"external-dns" has been added to your repositories
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$ KSA_NAME='external-dns-ksa'
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$ DOMAIN_FILTER='rahulsinha.info'
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$ NAMESPACE='external-dns-ns'
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$ helm upgrade --install external-dns external-dns/external-dns \
+>     --set provider=google \
+>     --set policy=sync \
+>     --set google-zone-visibility=public \
+>     --set txt-owner-id=k8s \
+>     --set serviceAccount.create=false \
+>     --set serviceAccount.name=${KSA_NAME} \
+>     --set domain-filter=${DOMAIN_FILTER} \
+>     -n ${NAMESPACE}
+Release "external-dns" does not exist. Installing it now.
+NAME: external-dns
+LAST DEPLOYED: Tue Sep 19 05:58:44 2023
+NAMESPACE: external-dns-ns
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+***********************************************************************
+* External DNS                                                        *
+***********************************************************************
+  Chart version: 1.13.1
+  App version:   0.13.6
+  Image tag:     registry.k8s.io/external-dns/external-dns:v0.13.6
+***********************************************************************
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$
+

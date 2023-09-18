@@ -1,0 +1,54 @@
+# Annotate Kubernetes Service Account with GCP IAM SA email Address
+kubectl annotate serviceaccount KSA_NAME \
+    --namespace NAMESPACE \
+    iam.gke.io/gcp-service-account=GSA_NAME@GSA_PROJECT.iam.gserviceaccount.com
+
+# Replace KSA_NAME, NAMESPACE, GSA_NAME, GSA_PROJECT
+kubectl annotate serviceaccount external-dns-ksa \
+    --namespace external-dns-ns \
+    iam.gke.io/gcp-service-account=external-dns-gsa@kdaida123.iam.gserviceaccount.com
+
+# Describe Kubernetes Service Account
+kubectl -n external-dns-ns describe sa external-dns-ksa 
+
+-
+### Annotate Kubernetes Service Account with GCP IAM SA email Address
+
+kubectl annotate serviceaccount ${KSA_NAME} \
+    --namespace ${NAMESPACE} \
+    iam.gke.io/gcp-service-account={GSA_EMAIL}
+
+### Set Environment Variable
+
+GSA_EMAIL='external-dns-gsa@expanded-origin-395402.iam.gserviceaccount.com'
+NAMESPACE='external-dns-ns'
+KSA_NAME='external-dns-ksa'
+
+### Annonate k8s sa with GCP sa
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$ kubectl annotate serviceaccount ${KSA_NAME} \
+>     --namespace ${NAMESPACE} \
+>     iam.gke.io/gcp-service-account={GSA_EMAIL}
+
+serviceaccount/external-dns-ksa annotate
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$
+
+### GET k8s sa annonation using kubectl describe sa command
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$ kubectl get sa -n external-dns-ns -o wide
+NAME               SECRETS   AGE
+default            0         52m
+external-dns-ksa   0         51m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$ kubectl describe sa external-dns-ksa -n external-dns-ns
+Name:                external-dns-ksa
+Namespace:           external-dns-ns
+Labels:              <none>
+Annotations:         iam.gke.io/gcp-service-account: {GSA_EMAIL}
+Image pull secrets:  <none>
+Mountable secrets:   <none>
+Tokens:              <none>
+Events:              <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/42-GKE-ExternalDNS-Install$

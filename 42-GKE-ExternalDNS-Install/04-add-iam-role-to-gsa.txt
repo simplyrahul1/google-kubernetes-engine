@@ -1,0 +1,100 @@
+### Add IAM Roles to GCP IAM Service Account
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member "serviceAccount:${GSA_EMAIL}" \
+    --role ${DNS_ROLE_NAME}
+
+
+### Get Project ID & GCP IAM Email
+
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects list
+PROJECT_ID: expanded-origin-395402
+NAME: My First Project
+PROJECT_NUMBER: 353602304802
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud iam service-accounts list
+DISPLAY NAME: GCP_Service_Account
+EMAIL: gcp-sa@expanded-origin-395402.iam.gserviceaccount.com
+DISABLED: False
+
+DISPLAY NAME: GCP Service Account for External DNS
+EMAIL: external-dns-gsa@expanded-origin-395402.iam.gserviceaccount.com
+DISABLED: False
+
+DISPLAY NAME: 
+EMAIL: wid-gcpiam-sa@expanded-origin-395402.iam.gserviceaccount.com
+DISABLED: False
+
+DISPLAY NAME: App Engine default service account
+EMAIL: expanded-origin-395402@appspot.gserviceaccount.com
+DISABLED: False
+
+DISPLAY NAME: Compute Engine default service account
+EMAIL: 353602304802-compute@developer.gserviceaccount.com
+DISABLED: False
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
+
+### Set Environment variables
+
+PROJECT_ID='expanded-origin-395402'
+GSA_EMAIL='external-dns-gsa@expanded-origin-395402.iam.gserviceaccount.com'
+DNS_ROLE_NAME='roles/dns.admin'
+
+
+### Add IAM Roles to GSA
+
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects add-iam-policy-binding ${PROJECT_ID}     --member "serviceAccount:${GSA_EMAIL}"     --role ${DNS_ROLE_NAME}
+Updated IAM policy for project [expanded-origin-395402].
+bindings:
+- members:
+  - serviceAccount:service-353602304802@compute-system.iam.gserviceaccount.com
+  role: roles/compute.serviceAgent
+- members:
+  - serviceAccount:service-353602304802@container-engine-robot.iam.gserviceaccount.com
+  role: roles/container.serviceAgent
+- members:
+  - serviceAccount:service-353602304802@containerregistry.iam.gserviceaccount.com
+  role: roles/containerregistry.ServiceAgent
+- members:
+  - serviceAccount:external-dns-gsa@expanded-origin-395402.iam.gserviceaccount.com
+  role: roles/dns.admin
+- members:
+  - serviceAccount:353602304802-compute@developer.gserviceaccount.com
+  - serviceAccount:353602304802@cloudservices.gserviceaccount.com
+  - serviceAccount:expanded-origin-395402@appspot.gserviceaccount.com
+  role: roles/editor
+- members:
+  - serviceAccount:service-353602304802@cloud-filer.iam.gserviceaccount.com
+  role: roles/file.serviceAgent
+- members:
+  - serviceAccount:service-353602304802@gcp-sa-firestore.iam.gserviceaccount.com
+  role: roles/firestore.serviceAgent
+- members:
+  - user:simplyrahul.gke.udemy@gmail.com
+  role: roles/owner
+- members:
+  - serviceAccount:service-353602304802@gcp-sa-pubsub.iam.gserviceaccount.com
+  role: roles/pubsub.serviceAgent
+- members:
+  - serviceAccount:service-353602304802@service-networking.iam.gserviceaccount.com
+  role: roles/servicenetworking.serviceAgent
+etag: BwYFoLSHeVc=
+version: 1
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
+
+### GET IAM Role assigned to GSA
+
+gcloud projects get-iam-policy ${PROJECT_ID}  \
+      --flatten="bindings[].members" \
+      --format='table(bindings.role)' \
+      --filter="bindings.members:${GSA_EMAIL}"
+
+
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud projects get-iam-policy ${PROJECT_ID}  \
+      --flatten="bindings[].members" \
+      --format='table(bindings.role)' \
+      --filter="bindings.members:${GSA_EMAIL}"
+ROLE: roles/dns.admin
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
+
+
+
+
