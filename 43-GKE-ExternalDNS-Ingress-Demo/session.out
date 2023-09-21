@@ -1,0 +1,223 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ ls kube-manifests/
+01-Nginx-App3-Deployment-and-NodePortService.yaml  02-ingress-external-dns.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ cat kube-manifests/01-Nginx-App3-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-nginx-deployment
+  labels:
+    app: app3-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app3-nginx
+  template:
+    metadata:
+      labels:
+        app: app3-nginx
+    spec:
+      containers:
+        - name: app3-nginx
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-nginx-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    app: app3-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ cat kube-manifests/02-ingress-external-dns.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-externaldns-demo
+  annotations:
+    # If the class annotation is not specified it defaults to "gce".
+    # gce: external load balancer
+    # gce-internal: internal load balancer
+    kubernetes.io/ingress.class: "gce"
+    # External DNS - For creating a Record Set in Google Cloud - Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: ingressextdns101.kalyanreddydaida.com
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ vim kube-manifests/02-ingress-external-dns.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ cat kube-manifests/02-ingress-external-dns.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-externaldns-demo
+  annotations:
+    # If the class annotation is not specified it defaults to "gce".
+    # gce: external load balancer
+    # gce-internal: internal load balancer
+    kubernetes.io/ingress.class: "gce"
+    # External DNS - For creating a Record Set in Google Cloud - Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: nginx.rahulsinha.info
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl apply -f kube-manifests/
+deployment.apps/app3-nginx-deployment created
+service/app3-nginx-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-externaldns-demo created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app3-nginx-deployment   1/1     1            1           4m22s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl get pods -o wide --show-labels
+NAME                                     READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+app3-nginx-deployment-5778df6d5f-28d5d   1/1     Running   0          4m48s   10.76.0.15   gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=app3-nginx,pod-template-hash=5778df6d5f
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl get svc -o wide --show-labels
+NAME                          TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE    SELECTOR         LABELS
+app3-nginx-nodeport-service   NodePort    10.80.6.154   <none>        80:31000/TCP   5m1s   app=app3-nginx   <none>
+kubernetes                    ClusterIP   10.80.0.1     <none>        443/TCP        29d    <none>           component=apiserver,provider=kubernetes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl get ingress -o wide --show-labels
+NAME                       CLASS    HOSTS   ADDRESS         PORTS   AGE     LABELS
+ingress-externaldns-demo   <none>   *       34.160.142.68   80      5m13s   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl describe ingress ingress-externaldns-demo
+Name:             ingress-externaldns-demo
+Labels:           <none>
+Namespace:        default
+Address:          34.160.142.68
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.0.15:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *           *     app3-nginx-nodeport-service:80 (10.76.0.15:80)
+Annotations:  external-dns.alpha.kubernetes.io/hostname: nginx.rahulsinha.info
+              ingress.kubernetes.io/backends: {"k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6":"HEALTHY"}
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-externaldns-demo-3crpjxqx
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-externaldns-demo-3crpjxqx
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-externaldns-demo-3crpjxqx
+              kubernetes.io/ingress.class: gce
+Events:
+  Type    Reason     Age                  From                     Message
+  ----    ------     ----                 ----                     -------
+  Normal  Sync       4m49s                loadbalancer-controller  UrlMap "k8s2-um-jdj5k2n0-default-ingress-externaldns-demo-3crpjxqx" created
+  Normal  Sync       4m47s                loadbalancer-controller  TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-externaldns-demo-3crpjxqx" created
+  Normal  Sync       4m32s                loadbalancer-controller  ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-externaldns-demo-3crpjxqx" created
+  Normal  IPChanged  4m31s                loadbalancer-controller  IP is now 34.160.142.68
+  Normal  Sync       35s (x6 over 5m34s)  loadbalancer-controller  Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ nslookup nginx.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   nginx.rahulsinha.info
+Address: 34.160.142.68
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ curl http://nginx.rahulsinha.info
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ curl http://rahulsinha.info
+curl: (6) Could not resolve host: rahulsinha.info
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ curl http://rahulsinha.info/
+curl: (6) Could not resolve host: rahulsinha.info
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ 
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl get ns
+NAME                       STATUS   AGE
+default                    Active   29d
+external-dns-ns            Active   2d12h
+gke-managed-filestorecsi   Active   29d
+gmp-public                 Active   29d
+gmp-system                 Active   29d
+kube-node-lease            Active   29d
+kube-public                Active   29d
+kube-system                Active   29d
+wid-kns                    Active   3d18h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl get pods -n external-dns-ns
+NAME                            READY   STATUS    RESTARTS   AGE
+external-dns-65798ffcb8-4dqs2   1/1     Running   0          2d1h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl logs -f external-dns-65798ffcb8-4dqs2 -n external-dns-ns
+
+
+time="2023-09-20T23:59:23Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:00:24Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:01:25Z" level=info msg="Change zone: rahulsinha-info batch #0"
+time="2023-09-21T00:01:25Z" level=info msg="Add records: a-nginx.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-externaldns-demo\"] 300"
+time="2023-09-21T00:01:25Z" level=info msg="Add records: nginx.rahulsinha.info. A [34.160.142.68] 300"
+time="2023-09-21T00:01:25Z" level=info msg="Add records: nginx.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-externaldns-demo\"] 300"
+time="2023-09-21T00:02:26Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:03:26Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:04:27Z" level=info msg="All records are already up to date"
+
+
+https://console.cloud.google.com/net-services/dns/zones/rahulsinha-info/details?authuser=1&project=expanded-origin-395402
+
+DNS name                    Type   TTL (seconds)     Routing policy
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+a-nginx.rahulsinha.info.    TXT	   300	             Default      "heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-externaldns-demo"
+nginx.rahulsinha.info.	    TXT	   300	             Default      "heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-externaldns-demo"
+nginx.rahulsinha.info.	    A	   300	             Default      34.160.142.68
+rahulsinha.info.	    NS	   21600	     Default      ns-cloud-a1.googledomains.com.
+                                                                  ns-cloud-a2.googledomains.com.
+                                                                  ns-cloud-a3.googledomains.com.
+                                                                  ns-cloud-a4.googledomains.com.
+rahulsinha.info.	    SOA	   21600	     Default      ns-cloud-a1.googledomains.com. cloud-dns-hostmaster.google.com. 1 21600 3600 259200 300
+sara.rahulsinha.info.	    A	   300	             Default      34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl delete -f kube-manifests/
+deployment.apps "app3-nginx-deployment" deleted
+service "app3-nginx-nodeport-service" deleted
+ingress.networking.k8s.io "ingress-externaldns-demo" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/43-GKE-ExternalDNS-Ingress-Demo$ kubectl logs -f external-dns-65798ffcb8-4dqs2 -n external-dns-ns
+
+time="2023-09-21T00:23:37Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:24:38Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:25:38Z" level=info msg="Change zone: rahulsinha-info batch #0"
+time="2023-09-21T00:25:38Z" level=info msg="Del records: a-nginx.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-externaldns-demo\"] 300"
+time="2023-09-21T00:25:38Z" level=info msg="Del records: nginx.rahulsinha.info. A [34.160.142.68] 300"
+time="2023-09-21T00:25:38Z" level=info msg="Del records: nginx.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-externaldns-demo\"] 300"
+time="2023-09-21T00:26:39Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:27:39Z" level=info msg="All records are already up to date"
+
+
+https://console.cloud.google.com/net-services/dns/zones/rahulsinha-info/details?authuser=1&project=expanded-origin-395402
+
+DNS name                    Type   TTL (seconds)     Routing policy
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+rahulsinha.info.            NS     21600             Default      ns-cloud-a1.googledomains.com.
+                                                                  ns-cloud-a2.googledomains.com.
+                                                                  ns-cloud-a3.googledomains.com.
+                                                                  ns-cloud-a4.googledomains.com.
+rahulsinha.info.            SOA    21600             Default      ns-cloud-a1.googledomains.com. cloud-dns-hostmaster.google.com. 1 21600 3600 259200 300
+sara.rahulsinha.info.       A      300               Default      34.36.100.7
