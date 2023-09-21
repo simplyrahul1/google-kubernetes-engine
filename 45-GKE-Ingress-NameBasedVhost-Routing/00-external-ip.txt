@@ -1,0 +1,29 @@
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute addresses list
+NAME: gke-ingress-extip1
+ADDRESS/RANGE: 34.36.100.7
+TYPE: EXTERNAL
+PURPOSE: 
+NETWORK: 
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: google-managed-private-service-connection
+ADDRESS/RANGE: 10.116.0.0/16
+TYPE: INTERNAL
+PURPOSE: VPC_PEERING
+NETWORK: default
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: nat-auto-ip-5839377-9-1693086667609885
+ADDRESS/RANGE: 35.208.248.222
+TYPE: EXTERNAL
+PURPOSE: NAT_AUTO
+NETWORK: 
+REGION: us-central1
+SUBNET: 
+STATUS: IN_USE
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
+
