@@ -8,7 +8,7 @@ metadata:
     # gce-internal: internal load balancer
     kubernetes.io/ingress.class: "gce"  
     # External DNS - For creating a Record Set in Google Cloud - Cloud DNS
-    external-dns.alpha.kubernetes.io/hostname: ingressextdns101.kalyanreddydaida.com
+    external-dns.alpha.kubernetes.io/hostname: nginx.rahulsinha.info
 spec:
   defaultBackend:
     service:
