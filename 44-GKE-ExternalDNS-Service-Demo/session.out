@@ -1,0 +1,159 @@
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ cat kube-manifests/01-kubernetes-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ cat kube-manifests/02-kubernetes-loadbalancer-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp1-lb-service
+  annotations:
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: extdns-k8s-svc-demo.kalyanreddydaida.com
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp1
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ ls kube-manifests/
+01-kubernetes-deployment.yaml  02-kubernetes-loadbalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ vim kube-manifests/02-kubernetes-loadbalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ cat kube-manifests/02-kubernetes-loadbalancer-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp1-lb-service
+  annotations:
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: extdns-k8s-svc-demo.rahulsinha.info
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp1
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   2/2     2            2           42s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ kubectl get pods -o wide --show-labels
+NAME                                READY   STATUS    RESTARTS   AGE   IP            NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+myapp1-deployment-b99ccfb9d-6rwjm   1/1     Running   0          55s   10.76.1.158   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=myapp1,pod-template-hash=b99ccfb9d
+myapp1-deployment-b99ccfb9d-pgj67   1/1     Running   0          55s   10.76.0.16    gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=myapp1,pod-template-hash=b99ccfb9d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ kubectl get svc -o wide --show-labels
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE   SELECTOR     LABELS
+kubernetes          ClusterIP      10.80.0.1     <none>          443/TCP        30d   <none>       component=apiserver,provider=kubernetes
+myapp1-lb-service   LoadBalancer   10.80.4.185   35.194.57.115   80:32002/TCP   86s   app=myapp1   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ kubectl describe svc myapp1-lb-service
+Name:                     myapp1-lb-service
+Namespace:                default
+Labels:                   <none>
+Annotations:              cloud.google.com/neg: {"ingress":true}
+                          external-dns.alpha.kubernetes.io/hostname: extdns-k8s-svc-demo.rahulsinha.info
+Selector:                 app=myapp1
+Type:                     LoadBalancer
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.80.4.185
+IPs:                      10.80.4.185
+LoadBalancer Ingress:     35.194.57.115
+Port:                     http  80/TCP
+TargetPort:               80/TCP
+NodePort:                 http  32002/TCP
+Endpoints:                10.76.0.16:80,10.76.1.158:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason                Age   From                Message
+  ----    ------                ----  ----                -------
+  Normal  EnsuringLoadBalancer  2m    service-controller  Ensuring load balancer
+  Normal  EnsuredLoadBalancer   81s   service-controller  Ensured load balancer
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ nslookup extdns-k8s-svc-demo.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   extdns-k8s-svc-demo.rahulsinha.info
+Address: 35.194.57.115
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ curl http://extdns-k8s-svc-demo.rahulsinha.info
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ kubectl logs -f external-dns-65798ffcb8-4dqs2 -n external-dns-ns
+
+time="2023-09-21T00:34:44Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:35:45Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:36:45Z" level=info msg="Change zone: rahulsinha-info batch #0"
+time="2023-09-21T00:36:45Z" level=info msg="Add records: a-extdns-k8s-svc-demo.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/myapp1-lb-service\"] 300"
+time="2023-09-21T00:36:45Z" level=info msg="Add records: extdns-k8s-svc-demo.rahulsinha.info. A [35.194.57.115] 300"
+time="2023-09-21T00:36:45Z" level=info msg="Add records: extdns-k8s-svc-demo.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/myapp1-lb-service\"] 300"
+time="2023-09-21T00:37:46Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:38:46Z" level=info msg="All records are already up to date"
+
+
+https://console.cloud.google.com/net-services/dns/zones/rahulsinha-info/details?authuser=1&project=expanded-origin-395402
+
+
+
+
+DNS name                                Type   TTL (seconds)     Routing policy
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+a-extdns-k8s-svc-demo.rahulsinha.info.	TXT	   300	             Default     "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/myapp1-lb-service"
+extdns-k8s-svc-demo.rahulsinha.info.	TXT	   300	             Default     "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/myapp1-lb-service"
+extdns-k8s-svc-demo.rahulsinha.info.	A	   300	             Default     35.194.57.115
+rahulsinha.info.                        NS     21600             Default     ns-cloud-a1.googledomains.com.
+                                                                             ns-cloud-a2.googledomains.com.
+                                                                             ns-cloud-a3.googledomains.com.
+                                                                             ns-cloud-a4.googledomains.com.
+rahulsinha.info.                        SOA    21600             Default     ns-cloud-a1.googledomains.com. cloud-dns-hostmaster.google.com. 1 21600 3600 259200 300
+sara.rahulsinha.info.                   A      300               Default     34.36.100.7
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ kubectl delete -f kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/44-GKE-ExternalDNS-Service-Demo$ kubectl logs -f external-dns-65798ffcb8-4dqs2 -n external-dns-ns
+
+time="2023-09-21T00:42:48Z" level=info msg="All records are already up to date"
+time="2023-09-21T00:43:49Z" level=info msg="Change zone: rahulsinha-info batch #0"
+time="2023-09-21T00:43:49Z" level=info msg="Del records: a-extdns-k8s-svc-demo.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/myapp1-lb-service\"] 300"
+time="2023-09-21T00:43:49Z" level=info msg="Del records: extdns-k8s-svc-demo.rahulsinha.info. A [35.194.57.115] 300"
+time="2023-09-21T00:43:49Z" level=info msg="Del records: extdns-k8s-svc-demo.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/myapp1-lb-service\"] 300"
+
+
