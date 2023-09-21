@@ -4,7 +4,7 @@ metadata:
   name: myapp1-lb-service
   annotations:
     # External DNS - For creating a Record Set in Google Cloud Cloud DNS
-    external-dns.alpha.kubernetes.io/hostname: extdns-k8s-svc-demo.kalyanreddydaida.com
+    external-dns.alpha.kubernetes.io/hostname: extdns-k8s-svc-demo.rahulsinha.info
 spec:
   type: LoadBalancer # ClusterIp, # NodePort
   selector:
