@@ -1,0 +1,104 @@
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute addresses list
+NAME: gke-ingress-extip1
+ADDRESS/RANGE: 34.36.100.7
+TYPE: EXTERNAL
+PURPOSE: 
+NETWORK: 
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: google-managed-private-service-connection
+ADDRESS/RANGE: 10.116.0.0/16
+TYPE: INTERNAL
+PURPOSE: VPC_PEERING
+NETWORK: default
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: nat-auto-ip-5839377-9-1693086667609885
+ADDRESS/RANGE: 35.208.248.222
+TYPE: EXTERNAL
+PURPOSE: NAT_AUTO
+NETWORK: 
+REGION: us-central1
+SUBNET: 
+STATUS: IN_USE
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute ssl-policies list-available-features
+TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+
+TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+
+TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+
+TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+
+TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+
+TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+
+TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+
+TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+
+TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+
+TLS_RSA_WITH_3DES_EDE_CBC_SHA
+
+TLS_RSA_WITH_AES_128_CBC_SHA
+
+TLS_RSA_WITH_AES_128_GCM_SHA256
+
+TLS_RSA_WITH_AES_256_CBC_SHA
+
+TLS_RSA_WITH_AES_256_GCM_SHA384
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute ssl-policies list
+Listed 0 items.
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute ssl-policies create gke-ingress-ssl-policy --profile MODERN --min-tls-version 1.0
+Creating SSL policy...done.                                                                                                                                                 
+NAME: gke-ingress-ssl-policy
+PROFILE: MODERN
+MIN_TLS_VERSION: TLS_1_0
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute ssl-policies list
+NAME: gke-ingress-ssl-policy
+REGION: 
+PROFILE: MODERN
+MIN_TLS_VERSION: TLS_1_0
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
+
+
+https://console.cloud.google.com/net-services/ssl-policies/details/gke-ingress-ssl-policy?project=expanded-origin-395402
+
+gke-ingress-ssl-policy
+---------------------------------------------------------------------------------
+Scope                    Global
+Minimum TLS Version      1.0
+Profile                  Modern
+In use by                This policy has not yet been applied to any targets.
+
+
+Modern profile features
+
+Enabled features
+------------------------------------------------
+TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+
+Disabled features
+-------------------------------------------------
+TLS_RSA_WITH_3DES_EDE_CBC_SHA
+TLS_RSA_WITH_AES_128_CBC_SHA
+TLS_RSA_WITH_AES_128_GCM_SHA256
+TLS_RSA_WITH_AES_256_CBC_SHA
+TLS_RSA_WITH_AES_256_GCM_SHA384

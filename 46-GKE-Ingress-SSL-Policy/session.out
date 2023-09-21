@@ -1,0 +1,563 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ vim 00-ssl-policy.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ ls kube-manifests/
+01-Nginx-App1-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  05-Managed-Certificate.yaml
+02-Nginx-App2-Deployment-and-NodePortService.yaml  04-Ingress-NameBasedVHost-Routing.yaml             06-frontendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cat kube-manifests/06-frontendconfig.yaml
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: my-frontend-config
+spec:
+  # HTTP to HTTPS Redirect
+  redirectToHttps:
+    enabled: true
+    #responseCodeName: RESPONSE_CODE
+  # SSL Policy
+  sslPolicy: gke-ingress-ssl-policy    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment unchanged
+service/app1-nginx-nodeport-service unchanged
+deployment.apps/app2-nginx-deployment unchanged
+service/app2-nginx-nodeport-service unchanged
+deployment.apps/app3-nginx-deployment unchanged
+service/app3-nginx-nodeport-service unchanged
+ingress.networking.k8s.io/ingress-namebasedvhost-routing configured
+managedcertificate.networking.gke.io/managed-cert-for-ingress configured
+frontendconfig.networking.gke.io/my-frontend-config configured
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl apply -f kube-manifests/05-Managed-Certificate.yaml
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cat kube-manifests/05-Managed-Certificate.yaml
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: managed-cert-for-ingress
+spec:
+  domains:
+    - default-ingress.kalyanreddydaida.com
+    - app1-ingress.kalyanreddydaida.com
+    - app2-ingress.kalyanreddydaida.comsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl delete -f kube-manifests/04-Ingress-NameBasedVHost-Routing.yaml
+ingress.networking.k8s.io "ingress-namebasedvhost-routing" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl delete -f kube-manifests/05-Managed-Certificate.yaml
+managedcertificate.networking.gke.io "managed-cert-for-ingress" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cat kube-manifests/06-frontendconfig.yaml
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: my-frontend-config
+spec:
+  # HTTP to HTTPS Redirect
+  redirectToHttps:
+    enabled: true
+    #responseCodeName: RESPONSE_CODE
+  # SSL Policy
+  sslPolicy: gke-ingress-ssl-policy    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           44m
+app2-nginx-deployment   1/1     1            1           44m
+app3-nginx-deployment   1/1     1            1           44m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-jpf2p   1/1     Running   0          44m
+app2-nginx-deployment-7c46c8bb8c-z6zqf   1/1     Running   0          44m
+app3-nginx-deployment-5778df6d5f-xbdzp   1/1     Running   0          44m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get sv
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get svc
+NAME                          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+app1-nginx-nodeport-service   NodePort    10.80.15.198   <none>        80:32084/TCP   44m
+app2-nginx-nodeport-service   NodePort    10.80.11.202   <none>        80:31867/TCP   44m
+app3-nginx-nodeport-service   NodePort    10.80.2.217    <none>        80:31211/TCP   44m
+kubernetes                    ClusterIP   10.80.0.1      <none>        443/TCP        30d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get ingress
+No resources found in default namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cd ../45-GKE-Ingress-NameBasedVhost-Routing/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/45-GKE-Ingress-NameBasedVhost-Routing$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment unchanged
+service/app1-nginx-nodeport-service unchanged
+deployment.apps/app2-nginx-deployment unchanged
+service/app2-nginx-nodeport-service unchanged
+deployment.apps/app3-nginx-deployment unchanged
+service/app3-nginx-nodeport-service unchanged
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-namebasedvhost-routing created
+managedcertificate.networking.gke.io/managed-cert-for-ingress created
+frontendconfig.networking.gke.io/my-frontend-config configured
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/45-GKE-Ingress-NameBasedVhost-Routing$ cd ../46-GKE-Ingress-SSL-Policy/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cat kube-manifests/06-frontendconfig.yaml
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: my-frontend-config
+spec:
+  # HTTP to HTTPS Redirect
+  redirectToHttps:
+    enabled: true
+    #responseCodeName: RESPONSE_CODE
+  # SSL Policy
+  sslPolicy: gke-ingress-ssl-policy    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cat kube-manifests/04-frontendconfig.yaml
+cat: kube-manifests/04-frontendconfig.yaml: No such file or directory
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cat kube-manifests/04-Ingress-NameBasedVHost-Routing.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-namebasedvhost-routing
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+    # Google Managed SSL Certificates
+    networking.gke.io/managed-certificates: managed-cert-for-ingress
+    # SSL Redirect HTTP to HTTPS
+    networking.gke.io/v1beta1.FrontendConfig: "my-frontend-config"
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: default-ingress.kalyanreddydaida.com
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - host: app1-ingress.kalyanreddydaida.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+    - host: app2-ingress.kalyanreddydaida.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ diff ../45-GKE-Ingress-NameBasedVhost-Routing/kube-manifests/04-Ingress-NameBasedVHost-Routing.yaml kube-manifests/04-Ingress-NameBasedVHost-
+Routing.yaml
+15c15
+<     external-dns.alpha.kubernetes.io/hostname: sara-ingress.rahulsinha.info
+---
+>     external-dns.alpha.kubernetes.io/hostname: default-ingress.kalyanreddydaida.com
+23c23
+<     - host: sara1-ingress.rahulsinha.info
+---
+>     - host: app1-ingress.kalyanreddydaida.com
+33c33
+<     - host: sara2-ingress.rahulsinha.info
+---
+>     - host: app2-ingress.kalyanreddydaida.com
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cp ../45-GKE-Ingress-NameBasedVhost-Routing/kube-manifests/04-Ingress-NameBasedVHost-Routing.yaml kube-manifests/04-Ingress-NameBasedVHost-Ro
+uting.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ diff ../45-GKE-Ingress-NameBasedVhost-Routing/kube-manifests/05-Managed-Certificate.yaml kube-manifests/05-Managed-Certificate.yaml
+7,9c7,9
+<     - sara-ingress.rahulsinha.info
+<     - sara1-ingress.rahulsinha.info
+<     - sara2-ingress.rahulsinha.info
+---
+>     - default-ingress.kalyanreddydaida.com
+>     - app1-ingress.kalyanreddydaida.com
+>     - app2-ingress.kalyanreddydaida.com
+\ No newline at end of file
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ cp ../45-GKE-Ingress-NameBasedVhost-Routing/kube-manifests/05-Managed-Certificate.yaml kube-manifests/05-Managed-Certificate.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ diff ../45-GKE-Ingress-NameBasedVhost-Routing/kube-manifests/06-frontendconfig.yaml kube-manifests/06-frontendconfig.yaml
+5a6
+>   # HTTP to HTTPS Redirect
+8c9,11
+<     #responseCodeName: RESPONSE_CODE
+\ No newline at end of file
+---
+>     #responseCodeName: RESPONSE_CODE
+>   # SSL Policy
+>   sslPolicy: gke-ingress-ssl-policy
+\ No newline at end of file
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment unchanged
+service/app1-nginx-nodeport-service unchanged
+deployment.apps/app2-nginx-deployment unchanged
+service/app2-nginx-nodeport-service unchanged
+deployment.apps/app3-nginx-deployment unchanged
+service/app3-nginx-nodeport-service unchanged
+ingress.networking.k8s.io/ingress-namebasedvhost-routing unchanged
+managedcertificate.networking.gke.io/managed-cert-for-ingress unchanged
+frontendconfig.networking.gke.io/my-frontend-config configured
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get frontendconfig
+NAME                 AGE
+my-frontend-config   48m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl describe frontendconfig my-frontend-config
+Name:         my-frontend-config
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1beta1
+Kind:         FrontendConfig
+Metadata:
+  Creation Timestamp:  2023-09-21T21:56:29Z
+  Generation:          4
+  Resource Version:    31811716
+  UID:                 f3094417-4665-4942-a9a4-71f75ba8cd1e
+Spec:
+  Redirect To Https:
+    Enabled:   true
+  Ssl Policy:  gke-ingress-ssl-policy
+Events:        <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           49m
+app2-nginx-deployment   1/1     1            1           49m
+app3-nginx-deployment   1/1     1            1           49m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-jpf2p   1/1     Running   0          49m
+app2-nginx-deployment-7c46c8bb8c-z6zqf   1/1     Running   0          49m
+app3-nginx-deployment-5778df6d5f-xbdzp   1/1     Running   0          49m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get svc
+NAME                          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+app1-nginx-nodeport-service   NodePort    10.80.15.198   <none>        80:32084/TCP   49m
+app2-nginx-nodeport-service   NodePort    10.80.11.202   <none>        80:31867/TCP   49m
+app3-nginx-nodeport-service   NodePort    10.80.2.217    <none>        80:31211/TCP   49m
+kubernetes                    ClusterIP   10.80.0.1      <none>        443/TCP        30d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get ingress
+NAME                             CLASS    HOSTS                                                         ADDRESS       PORTS   AGE
+ingress-namebasedvhost-routing   <none>   sara1-ingress.rahulsinha.info,sara2-ingress.rahulsinha.info   34.36.100.7   80      4m25s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl describe ingress ingress-namebasedvhost-routing
+Name:             ingress-namebasedvhost-routing
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.1.159:80)
+Rules:
+  Host                           Path  Backends
+  ----                           ----  --------
+  sara1-ingress.rahulsinha.info
+                                 /   app1-nginx-nodeport-service:80 (10.76.0.17:80)
+  sara2-ingress.rahulsinha.info
+                                 /   app2-nginx-nodeport-service:80 (10.76.2.19:80)
+Annotations:                     external-dns.alpha.kubernetes.io/hostname: sara-ingress.rahulsinha.info
+                                 ingress.gcp.kubernetes.io/pre-shared-cert: mcrt-57328068-a38c-4ef6-92a3-390234aa4720
+                                 ingress.kubernetes.io/backends:
+                                   {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+                                 ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/ssl-cert: mcrt-57328068-a38c-4ef6-92a3-390234aa4720
+                                 ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 kubernetes.io/ingress.class: gce
+                                 kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+                                 networking.gke.io/managed-certificates: managed-cert-for-ingress
+                                 networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type     Reason              Age                  From                            Message
+  ----     ------              ----                 ----                            -------
+  Warning  MissingCertificate  4m47s                managed-certificate-controller  ManagedCertificate default:managed-cert-for-ingress missing
+  Normal   Sync                2m38s                loadbalancer-controller         UrlMap "k8s2-um-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                2m33s                loadbalancer-controller         TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                2m21s                loadbalancer-controller         ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   IPChanged           2m21s                loadbalancer-controller         IP is now 34.36.100.7
+  Normal   Sync                2m11s                loadbalancer-controller         TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                119s                 loadbalancer-controller         ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                94s (x7 over 4m47s)  loadbalancer-controller         Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get managedcertificate
+NAME                       AGE     STATUS
+managed-cert-for-ingress   5m13s   Provisioning
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl describe managedcertificate managed-cert-for-ingress
+Name:         managed-cert-for-ingress
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1
+Kind:         ManagedCertificate
+Metadata:
+  Creation Timestamp:  2023-09-21T22:41:35Z
+  Generation:          10
+  Resource Version:    31811782
+  UID:                 18dd5e67-b8a1-454d-82e5-318a840038d8
+Spec:
+  Domains:
+    sara-ingress.rahulsinha.info
+    sara1-ingress.rahulsinha.info
+    sara2-ingress.rahulsinha.info
+Status:
+  Certificate Name:    mcrt-57328068-a38c-4ef6-92a3-390234aa4720
+  Certificate Status:  Provisioning
+  Domain Status:
+    Domain:  sara1-ingress.rahulsinha.info
+    Status:  Provisioning
+    Domain:  sara2-ingress.rahulsinha.info
+    Status:  Provisioning
+    Domain:  sara-ingress.rahulsinha.info
+    Status:  Provisioning
+Events:
+  Type    Reason  Age    From                            Message
+  ----    ------  ----   ----                            -------
+  Normal  Create  5m19s  managed-certificate-controller  Create SslCertificate mcrt-57328068-a38c-4ef6-92a3-390234aa4720
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ watch kubectl get managedcertificate
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl get managedcertificate
+NAME                       AGE   STATUS
+managed-cert-for-ingress   15m   Active
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ kubectl describe managedcertificate managed-cert-for-ingress
+Name:         managed-cert-for-ingress
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1
+Kind:         ManagedCertificate
+Metadata:
+  Creation Timestamp:  2023-09-21T22:41:35Z
+  Generation:          13
+  Resource Version:    31817995
+  UID:                 18dd5e67-b8a1-454d-82e5-318a840038d8
+Spec:
+  Domains:
+    sara-ingress.rahulsinha.info
+    sara1-ingress.rahulsinha.info
+    sara2-ingress.rahulsinha.info
+Status:
+  Certificate Name:    mcrt-57328068-a38c-4ef6-92a3-390234aa4720
+  Certificate Status:  Active
+  Domain Status:
+    Domain:     sara-ingress.rahulsinha.info
+    Status:     Active
+    Domain:     sara1-ingress.rahulsinha.info
+    Status:     Active
+    Domain:     sara2-ingress.rahulsinha.info
+    Status:     Active
+  Expire Time:  2023-12-20T14:41:37.000-08:00
+Events:
+  Type    Reason  Age   From                            Message
+  ----    ------  ----  ----                            -------
+  Normal  Create  15m   managed-certificate-controller  Create SslCertificate mcrt-57328068-a38c-4ef6-92a3-390234aa4720
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ curl -v https://sara1-ingress.rahulsinha.info/app1/
+*   Trying 34.36.100.7:443...
+* TCP_NODELAY set
+* Connected to sara1-ingress.rahulsinha.info (34.36.100.7) port 443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /etc/ssl/certs/ca-certificates.crt
+  CApath: /etc/ssl/certs
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: CN=sara-ingress.rahulsinha.info
+*  start date: Sep 21 21:53:06 2023 GMT
+*  expire date: Dec 20 22:41:37 2023 GMT
+*  subjectAltName: host "sara1-ingress.rahulsinha.info" matched cert's "sara1-ingress.rahulsinha.info"
+*  issuer: C=US; O=Google Trust Services LLC; CN=GTS CA 1D4
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* Using Stream ID: 1 (easy handle 0x561c93282860)
+> GET /app1/ HTTP/2
+> Host: sara1-ingress.rahulsinha.info
+> user-agent: curl/7.68.0
+> accept: */*
+>
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Connection state changed (MAX_CONCURRENT_STREAMS == 100)!
+< HTTP/2 200
+< server: nginx/1.17.10
+< date: Thu, 21 Sep 2023 22:57:12 GMT
+< content-type: text/html
+< content-length: 173
+< last-modified: Thu, 28 May 2020 05:01:35 GMT
+< etag: "5ecf45af-ad"
+< accept-ranges: bytes
+< via: 1.1 google
+< alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+* Connection #0 to host sara1-ingress.rahulsinha.info left intact
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ curl -v https://sara2-ingress.rahulsinha.info/app2/
+*   Trying 34.36.100.7:443...
+* TCP_NODELAY set
+* Connected to sara2-ingress.rahulsinha.info (34.36.100.7) port 443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /etc/ssl/certs/ca-certificates.crt
+  CApath: /etc/ssl/certs
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: CN=sara-ingress.rahulsinha.info
+*  start date: Sep 21 21:53:06 2023 GMT
+*  expire date: Dec 20 22:41:37 2023 GMT
+*  subjectAltName: host "sara2-ingress.rahulsinha.info" matched cert's "sara2-ingress.rahulsinha.info"
+*  issuer: C=US; O=Google Trust Services LLC; CN=GTS CA 1D4
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* Using Stream ID: 1 (easy handle 0x563254ffd860)
+> GET /app2/ HTTP/2
+> Host: sara2-ingress.rahulsinha.info
+> user-agent: curl/7.68.0
+> accept: */*
+>
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Connection state changed (MAX_CONCURRENT_STREAMS == 100)!
+< HTTP/2 200
+< server: nginx/1.17.10
+< date: Thu, 21 Sep 2023 23:00:19 GMT
+< content-type: text/html
+< content-length: 173
+< last-modified: Thu, 28 May 2020 05:01:33 GMT
+< etag: "5ecf45ad-ad"
+< accept-ranges: bytes
+< via: 1.1 google
+< alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+* Connection #0 to host sara2-ingress.rahulsinha.info left intact
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ curl -v https://sara-ingress.rahulsinha.info/
+*   Trying 34.36.100.7:443...
+* TCP_NODELAY set
+* Connected to sara-ingress.rahulsinha.info (34.36.100.7) port 443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /etc/ssl/certs/ca-certificates.crt
+  CApath: /etc/ssl/certs
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: CN=sara-ingress.rahulsinha.info
+*  start date: Sep 21 21:53:06 2023 GMT
+*  expire date: Dec 20 22:41:37 2023 GMT
+*  subjectAltName: host "sara-ingress.rahulsinha.info" matched cert's "sara-ingress.rahulsinha.info"
+*  issuer: C=US; O=Google Trust Services LLC; CN=GTS CA 1D4
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* Using Stream ID: 1 (easy handle 0x556e2b4d1860)
+> GET / HTTP/2
+> Host: sara-ingress.rahulsinha.info
+> user-agent: curl/7.68.0
+> accept: */*
+>
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Connection state changed (MAX_CONCURRENT_STREAMS == 100)!
+< HTTP/2 200
+< server: nginx/1.17.10
+< date: Thu, 21 Sep 2023 23:00:26 GMT
+< content-type: text/html
+< content-length: 218
+< last-modified: Sun, 17 May 2020 04:14:23 GMT
+< etag: "5ec0ba1f-da"
+< accept-ranges: bytes
+< via: 1.1 google
+< alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+* Connection #0 to host sara-ingress.rahulsinha.info left intact
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ curl https://sara-ingress.rahulsinha.info/app1
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ curl https://sara-ingress.rahulsinha.info/app1/
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ curl https://sara-ingress.rahulsinha.info/app2/
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ curl https://sara-ingress.rahulsinha.info
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ curl https://sara-ingress.rahulsinha.info/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$ ls
+00-ssl-policy.txt  README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/46-GKE-Ingress-SSL-Policy$
