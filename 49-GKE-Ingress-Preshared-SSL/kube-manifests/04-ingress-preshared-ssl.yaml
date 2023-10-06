@@ -10,7 +10,7 @@ metadata:
     # SSL Redirect HTTP to HTTPS
     networking.gke.io/v1beta1.FrontendConfig: "my-frontend-config"   
     # External DNS - For creating a Record Set in Google Cloud Cloud DNS
-    external-dns.alpha.kubernetes.io/hostname: app3-default.kalyanreddydaida.com
+    external-dns.alpha.kubernetes.io/hostname: app3-default.rahulsinha.info
     # Pre-shared certificate resources  
     ingress.gcp.kubernetes.io/pre-shared-cert: "app1-ingress,app2-ingress,app3-ingress"
 spec: 
@@ -20,7 +20,7 @@ spec:
       port:
         number: 80           
   rules:
-    - host: app1.kalyanreddydaida.com
+    - host: app1.rahulsinha.info
       http:
         paths:
           - path: /
@@ -30,7 +30,7 @@ spec:
                 name: app1-nginx-nodeport-service
                 port: 
                   number: 80
-    - host: app2.kalyanreddydaida.com
+    - host: app2.rahulsinha.info
       http:
         paths:                  
           - path: /
