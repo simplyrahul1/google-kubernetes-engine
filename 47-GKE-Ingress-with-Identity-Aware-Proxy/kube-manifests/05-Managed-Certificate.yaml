@@ -4,6 +4,6 @@ metadata:
   name: managed-cert-for-ingress
 spec:
   domains:
-    - default-ingress.kalyanreddydaida.com
-    - app1-ingress.kalyanreddydaida.com
-    - app2-ingress.kalyanreddydaida.com
+    - sara-ingress.rahulsinha.info
+    - sara1-ingress.rahulsinha.info
+    - sara2-ingress.rahulsinha.info

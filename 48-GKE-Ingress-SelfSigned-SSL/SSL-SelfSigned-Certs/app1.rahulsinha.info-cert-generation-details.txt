@@ -1,0 +1,109 @@
+openssl genrsa -out app1-ingress.key 2048
+openssl req -new -key app1-ingress.key -out app1-ingress.csr -subj "/C=SG/O=sre/CN=app1.rahulsinha.info"
+openssl x509 -req -days 7300 -in app1-ingress.csr -signkey app1-ingress.key -out app1-ingress.crt
+openssl req -in app1-ingress.csr -noout -text
+openssl x509 -in app1-ingress.crt -noout -text
+
+--
+openssl req -in app1-ingress.csr -noout -text
+
+Certificate Request:
+    Data:
+        Version: 1 (0x0)
+        Subject: C = SG, O = sre, CN = app1.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:ea:e6:0d:b6:81:ab:84:d5:51:d4:cd:19:9b:2a:
+                    17:bb:84:de:eb:a9:a5:c7:fa:03:81:9d:ea:b7:96:
+                    6b:26:51:65:b0:45:bd:c1:c7:8a:92:2b:f4:61:fe:
+                    e9:9e:e7:fc:6d:44:33:f9:cb:b6:69:89:90:3d:50:
+                    78:8a:a1:72:0d:80:bd:5e:56:c1:4c:83:c4:11:00:
+                    0f:06:35:bd:5d:20:46:bb:00:e2:5d:65:66:67:c6:
+                    61:74:48:38:4d:fb:34:c5:85:5e:c4:82:a1:34:ce:
+                    80:68:f0:ee:50:3a:21:ed:be:03:84:df:4c:ca:42:
+                    06:96:9d:c2:61:0b:af:5a:d2:6c:cc:d0:c9:c4:21:
+                    01:9b:c9:8e:65:6f:48:e4:8a:e1:d7:6d:39:55:85:
+                    ea:a0:31:7a:f0:f6:57:f1:5a:44:3f:a0:fe:e9:64:
+                    9e:e8:b8:aa:0c:5b:53:2e:c9:90:1d:50:e4:b4:72:
+                    6b:da:2b:8a:a3:ad:97:0a:b5:b7:cb:23:14:e0:c9:
+                    c7:a1:2e:52:86:bb:9f:07:c1:db:44:1d:b3:7c:cb:
+                    75:6f:77:18:11:cc:09:9e:de:3e:6d:d7:5f:11:e4:
+                    08:bb:95:c8:5f:f4:9d:f5:a7:39:d0:f5:40:a8:e6:
+                    cc:e3:2e:d9:b5:98:17:59:b4:41:3b:0c:d4:54:19:
+                    3c:6d
+                Exponent: 65537 (0x10001)
+        Attributes:
+            a0:00
+    Signature Algorithm: sha256WithRSAEncryption
+         da:92:8a:1a:5c:35:ab:a3:5a:39:3d:ad:a3:7a:d0:cd:d8:e7:
+         7d:d4:99:a3:96:99:93:4f:50:0a:b8:ed:33:1a:1c:de:49:d5:
+         c6:87:0a:46:a9:d6:01:e4:27:98:40:04:55:e4:bb:8e:81:54:
+         aa:30:46:37:2f:30:95:84:d7:9e:7e:ca:2c:17:fd:7e:ee:59:
+         52:3c:c1:28:e5:b9:bd:86:47:c9:9a:23:81:ce:d4:35:11:6f:
+         96:b8:7e:a8:7e:0f:ea:29:6b:8e:ee:7a:0c:71:c4:bd:51:0a:
+         73:41:0a:c5:0f:52:ce:1e:ba:dc:60:0e:b2:fc:16:e9:8a:28:
+         b4:71:72:97:42:80:4f:d4:d2:58:19:74:3c:81:2a:05:38:c2:
+         f3:38:7a:6f:89:70:f9:10:4b:45:b3:c4:c2:01:9c:98:2e:c1:
+         4e:a1:09:2b:69:12:69:d7:32:b9:19:20:c5:90:4f:63:01:39:
+         56:30:ea:13:88:69:dd:90:ac:b3:d7:bb:6e:68:d1:d6:d0:ef:
+         b9:9b:ed:cf:92:89:9d:1b:63:2e:35:c1:71:4e:ad:c6:0a:e8:
+         a5:93:fb:3c:cd:86:53:67:08:32:d8:57:2a:75:85:c0:21:45:
+         60:18:4e:1d:66:92:b3:ab:09:ac:08:a7:17:e7:02:be:00:9a:
+         61:d6:ae:0f
+
+
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl x509 -in app1-ingress.crt -noout -text
+Certificate:
+    Data:
+        Version: 1 (0x0)
+        Serial Number:
+            02:05:30:5e:54:82:14:a8:c2:9d:8a:75:15:da:b9:68:e1:3f:75:cd
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C = SG, O = sre, CN = app1.rahulsinha.info
+        Validity
+            Not Before: Oct  6 01:50:29 2023 GMT
+            Not After : Oct  1 01:50:29 2043 GMT
+        Subject: C = SG, O = sre, CN = app1.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:ea:e6:0d:b6:81:ab:84:d5:51:d4:cd:19:9b:2a:
+                    17:bb:84:de:eb:a9:a5:c7:fa:03:81:9d:ea:b7:96:
+                    6b:26:51:65:b0:45:bd:c1:c7:8a:92:2b:f4:61:fe:
+                    e9:9e:e7:fc:6d:44:33:f9:cb:b6:69:89:90:3d:50:
+                    78:8a:a1:72:0d:80:bd:5e:56:c1:4c:83:c4:11:00:
+                    0f:06:35:bd:5d:20:46:bb:00:e2:5d:65:66:67:c6:
+                    61:74:48:38:4d:fb:34:c5:85:5e:c4:82:a1:34:ce:
+                    80:68:f0:ee:50:3a:21:ed:be:03:84:df:4c:ca:42:
+                    06:96:9d:c2:61:0b:af:5a:d2:6c:cc:d0:c9:c4:21:
+                    01:9b:c9:8e:65:6f:48:e4:8a:e1:d7:6d:39:55:85:
+                    ea:a0:31:7a:f0:f6:57:f1:5a:44:3f:a0:fe:e9:64:
+                    9e:e8:b8:aa:0c:5b:53:2e:c9:90:1d:50:e4:b4:72:
+                    6b:da:2b:8a:a3:ad:97:0a:b5:b7:cb:23:14:e0:c9:
+                    c7:a1:2e:52:86:bb:9f:07:c1:db:44:1d:b3:7c:cb:
+                    75:6f:77:18:11:cc:09:9e:de:3e:6d:d7:5f:11:e4:
+                    08:bb:95:c8:5f:f4:9d:f5:a7:39:d0:f5:40:a8:e6:
+                    cc:e3:2e:d9:b5:98:17:59:b4:41:3b:0c:d4:54:19:
+                    3c:6d
+                Exponent: 65537 (0x10001)
+    Signature Algorithm: sha256WithRSAEncryption
+         c0:bc:87:de:f0:da:3d:bb:7d:c7:c8:f8:43:7b:d0:fc:18:39:
+         31:44:66:db:9e:2a:09:fc:52:79:15:36:cf:d6:88:83:09:85:
+         1e:97:f1:1d:83:23:57:c9:99:f9:79:1a:40:51:76:73:7b:11:
+         0f:5b:02:dd:a7:78:29:cb:20:8d:1e:93:3b:5c:f6:e1:5a:fa:
+         0d:58:d4:af:7c:4d:39:fe:e4:10:9e:00:19:4a:d9:6d:96:bb:
+         4e:5e:b0:cf:e8:78:3b:e8:d6:fd:00:7d:55:2b:b0:c2:51:f9:
+         3e:90:50:47:60:17:da:2c:9c:67:fd:4e:3d:39:64:61:56:a3:
+         7e:79:fb:b8:56:b9:6c:2c:98:44:ba:fa:19:1a:c4:d0:31:37:
+         9c:ef:a9:05:e7:8e:88:f8:b2:7c:80:5d:2f:8d:d9:a1:ab:24:
+         fb:e4:44:d2:64:c1:69:97:f2:78:20:3e:6e:2a:ab:ef:24:32:
+         56:cf:bb:3a:1d:9e:b2:c2:bd:82:d8:24:b1:e9:47:e6:c7:16:
+         79:c1:92:65:4c:80:da:1d:28:60:ef:2d:da:52:0d:b9:1c:b5:
+         6b:48:d9:b9:01:06:a8:c5:49:fd:de:84:07:f6:f5:b3:2a:95:
+         6e:d6:0e:0a:ed:a5:90:ee:f1:e7:78:51:22:33:86:49:07:ae:
+         ec:80:61:41

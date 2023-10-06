@@ -1,0 +1,708 @@
+simplyrahul@DESKTOP-C4GRDQ2:~$ cd gkr
+-bash: cd: gkr: No such file or directory
+simplyrahul@DESKTOP-C4GRDQ2:~$ cd gke
+simplyrahul@DESKTOP-C4GRDQ2:~/gke$ cd github/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github$ cd 47-GKE-Ingress-with-Identity-Aware-Proxy/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ ls -ltr
+total 16
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Aug 26 14:03 kube-manifests
+-rw-r--r-- 1 simplyrahul simplyrahul 6082 Aug 26 14:03 README.md
+-rw-r--r-- 1 simplyrahul simplyrahul   64 Oct  3 07:29 02-email-address.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim 03-client_secret.json
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim 03-client_secret.txt'
+> ^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim 03-client_secret.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ mv 03-client_secret.txt 03-oauth-credentials.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim 03-oauth-credentials.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ cat 03-oauth-credentials.txt
+Client ID
+353602304802-0tgehfse670e04linli50k30ferdabeb.apps.googleusercontent.com
+
+Client Secret
+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
+
+# Template
+https://iap.googleapis.com/v1/oauth/clientIds/CLIENT_ID:handleRedirect
+
+# Replace CLIENT_ID (Update URL in OAuth 2.0 Client IDs -> gke-ingress-iap-demo-oauth-creds)
+https://iap.googleapis.com/v1/oauth/clientIds/353602304802-0tgehfse670e04linli50k30ferdabeb.apps.googleusercontent.com:handleRedirect
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get all
+kubectl get secrets
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   42d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get secrets
+No resources found in default namespace.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl create secret generic my-secret --from-literal=client_id=353602304802-0tgehfse670e04linli50k30ferdabeb.apps.googleusercontent.com \ --from-literal=client_secret=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
+error: exactly one NAME is required, got 2
+See 'kubectl create secret generic -h' for help and examples
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl create secret generic -h
+Create a secret based on a file, directory, or specified literal value.
+
+ A single secret may package one or more key/value pairs.
+
+ When creating a secret based on a file, the key will default to the basename of the file, and the
+value will default to the file content. If the basename is an invalid key or you wish to chose your
+own, you may specify an alternate key.
+
+ When creating a secret based on a directory, each file whose basename is a valid key in the
+directory will be packaged into the secret. Any directory entries except regular files are ignored
+(e.g. subdirectories, symlinks, devices, pipes, etc).
+
+Examples:
+  # Create a new secret named my-secret with keys for each file in folder bar
+  kubectl create secret generic my-secret --from-file=path/to/bar
+
+  # Create a new secret named my-secret with specified keys instead of names on disk
+  kubectl create secret generic my-secret --from-file=ssh-privatekey=path/to/id_rsa
+--from-file=ssh-publickey=path/to/id_rsa.pub
+
+  # Create a new secret named my-secret with key1=supersecret and key2=topsecret
+  kubectl create secret generic my-secret --from-literal=key1=supersecret
+--from-literal=key2=topsecret
+
+  # Create a new secret named my-secret using a combination of a file and a literal
+  kubectl create secret generic my-secret --from-file=ssh-privatekey=path/to/id_rsa
+--from-literal=passphrase=topsecret
+
+  # Create a new secret named my-secret from env files
+  kubectl create secret generic my-secret --from-env-file=path/to/foo.env
+--from-env-file=path/to/bar.env
+
+Options:
+    --allow-missing-template-keys=true:
+        If true, ignore any errors in templates when a field or map key is missing in the
+        template. Only applies to golang and jsonpath output formats.
+
+    --append-hash=false:
+        Append a hash of the secret to its name.
+
+    --dry-run='none':
+        Must be "none", "server", or "client". If client strategy, only print the object that
+        would be sent, without sending it. If server strategy, submit server-side request without
+        persisting the resource.
+
+    --field-manager='kubectl-create':
+        Name of the manager used to track field ownership.
+
+    --from-env-file=[]:
+        Specify the path to a file to read lines of key=val pairs to create a secret.
+
+    --from-file=[]:
+        Key files can be specified using their file path, in which case a default name will be
+        given to them, or optionally with a name and file path, in which case the given name will
+        be used.  Specifying a directory will iterate each named file in the directory that is a
+        valid secret key.
+
+    --from-literal=[]:
+        Specify a key and literal value to insert in secret (i.e. mykey=somevalue)
+
+    -o, --output='':
+        Output format. One of: (json, yaml, name, go-template, go-template-file, template,
+        templatefile, jsonpath, jsonpath-as-json, jsonpath-file).
+
+    --save-config=false:
+        If true, the configuration of current object will be saved in its annotation. Otherwise,
+        the annotation will be unchanged. This flag is useful when you want to perform kubectl
+        apply on this object in the future.
+
+    --show-managed-fields=false:
+        If true, keep the managedFields when printing objects in JSON or YAML format.
+
+    --template='':
+        Template string or path to template file to use when -o=go-template, -o=go-template-file.
+        The template format is golang templates
+        [http://golang.org/pkg/text/template/#pkg-overview].
+
+    --type='':
+        The type of secret to create
+
+    --validate='strict':
+        Must be one of: strict (or true), warn, ignore (or false).              "true" or "strict" will use a
+        schema to validate the input and fail the request if invalid. It will perform server side
+        validation if ServerSideFieldValidation is enabled on the api-server, but will fall back
+        to less reliable client-side validation if not.                 "warn" will warn about unknown or
+        duplicate fields without blocking the request if server-side field validation is enabled
+        on the API server, and behave as "ignore" otherwise.            "false" or "ignore" will not
+        perform any schema validation, silently dropping any unknown or duplicate fields.
+
+Usage:
+  kubectl create secret generic NAME [--type=string] [--from-file=[key=]source]
+[--from-literal=key1=value1] [--dry-run=server|client|none] [options]
+
+Use "kubectl options" for a list of global command-line options (applies to all commands).
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl create secret generic my-secret --from-literal=client_id=353602304802-0tgehfse670e04linli50k30ferdabeb.apps.googleusercontent.com --from-literal=client_secret=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
+secret/my-secret created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get secrets
+NAME        TYPE     DATA   AGE
+my-secret   Opaque   2      13s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl describe secrets my-secret
+Name:         my-secret
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+client_id:      72 bytes
+client_secret:  35 bytes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-nginx-deployment
+  labels:
+    app: app1-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1-nginx
+  template:
+    metadata:
+      labels:
+        app: app1-nginx
+    spec:
+      containers:
+        - name: app1-nginx
+          image: stacksimplify/kube-nginxapp1:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app1/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nginx-nodeport-service
+  labels:
+    app: app1-nginx
+  annotations:
+    cloud.google.com/backend-config: '{"default": "my-backendconfig"}'
+spec:
+  type: NodePort
+  selector:
+    app: app1-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2-nginx-deployment
+  labels:
+    app: app2-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app2-nginx
+  template:
+    metadata:
+      labels:
+        app: app2-nginx
+    spec:
+      containers:
+        - name: app2-nginx
+          image: stacksimplify/kube-nginxapp2:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app2/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app2-nginx-nodeport-service
+  labels:
+    app: app2-nginx
+  annotations:
+    cloud.google.com/backend-config: '{"default": "my-backendconfig"}'
+spec:
+  type: NodePort
+  selector:
+    app: app2-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-nginx-deployment
+  labels:
+    app: app3-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app3-nginx
+  template:
+    metadata:
+      labels:
+        app: app3-nginx
+    spec:
+      containers:
+        - name: app3-nginx
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-nginx-nodeport-service
+  labels:
+    app: app3-nginx
+  annotations:
+    cloud.google.com/backend-config: '{"default": "my-backendconfig"}'
+spec:
+  type: NodePort
+  selector:
+    app: app3-nginx
+  ports:
+    - port: 80
+      targetPort: 80simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim kube-manifests/04-Ingress-NameBasedVHost-Routing.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim kube-manifests/05-Managed-Certificate.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim kube-manifests/06-frontendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim kube-manifests/07-backendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ vim kube-manifests/0
+01-Nginx-App1-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  05-Managed-Certificate.yaml                        07-backendconfig.yaml
+02-Nginx-App2-Deployment-and-NodePortService.yaml  04-Ingress-NameBasedVHost-Routing.yaml             06-frontendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ cat kube-manifests/07-backendconfig.yaml
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: my-backendconfig
+spec:
+  iap:
+    enabled: true
+    oauthclientCredentials:
+      secretName: my-secret
+
+# sampleRate: Specify a value from 0.0 through 1.0, where 0.0 means no packets are logged
+# and 1.0 means 100% of packets are logged. This field is only relevant if enable is set
+# to true. sampleRate is an optional field, but if it's configured then enable: true must
+# also be set or else it is interpreted as enable: false.    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ cat kube-manifests/06-frontendconfig.yaml
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: my-frontend-config
+spec:
+  redirectToHttps:
+    enabled: true
+    #responseCodeName: RESPONSE_CODEsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment created
+service/app1-nginx-nodeport-service created
+deployment.apps/app2-nginx-deployment created
+service/app2-nginx-nodeport-service created
+deployment.apps/app3-nginx-deployment created
+service/app3-nginx-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-namebasedvhost-routing created
+managedcertificate.networking.gke.io/managed-cert-for-ingress created
+frontendconfig.networking.gke.io/my-frontend-config created
+backendconfig.cloud.google.com/my-backendconfig created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           102s
+app2-nginx-deployment   1/1     1            1           101s
+app3-nginx-deployment   1/1     1            1           100s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-sw77s   1/1     Running   0          112s
+app2-nginx-deployment-7c46c8bb8c-zjxhg   1/1     Running   0          111s
+app3-nginx-deployment-5778df6d5f-9fr9z   1/1     Running   0          110s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get pods --show-labels
+NAME                                     READY   STATUS    RESTARTS   AGE    LABELS
+app1-nginx-deployment-544dfb8c8f-sw77s   1/1     Running   0          2m7s   app=app1-nginx,pod-template-hash=544dfb8c8f
+app2-nginx-deployment-7c46c8bb8c-zjxhg   1/1     Running   0          2m6s   app=app2-nginx,pod-template-hash=7c46c8bb8c
+app3-nginx-deployment-5778df6d5f-9fr9z   1/1     Running   0          2m5s   app=app3-nginx,pod-template-hash=5778df6d5f
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get svc --show-labels
+NAME                          TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE     LABELS
+app1-nginx-nodeport-service   NodePort    10.80.11.40   <none>        80:30534/TCP   2m17s   app=app1-nginx
+app2-nginx-nodeport-service   NodePort    10.80.2.196   <none>        80:31747/TCP   2m16s   app=app2-nginx
+app3-nginx-nodeport-service   NodePort    10.80.10.55   <none>        80:30109/TCP   2m16s   app=app3-nginx
+kubernetes                    ClusterIP   10.80.0.1     <none>        443/TCP        42d     component=apiserver,provider=kubernetes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get insgress
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get ingress
+NAME                             CLASS    HOSTS                                                         ADDRESS   PORTS   AGE
+ingress-namebasedvhost-routing   <none>   sara1-ingress.rahulsinha.info,sara2-ingress.rahulsinha.info             80      2m41s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get managedcertificate
+NAME                       AGE    STATUS
+managed-cert-for-ingress   3m6s   Provisioning
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get frontendconfig
+NAME                 AGE
+my-frontend-config   3m20s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get backendconfig
+NAME               AGE
+my-backendconfig   3m32s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl describe ingress ingress-namebasedvhost-routing
+Name:             ingress-namebasedvhost-routing
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.2.20:80)
+Rules:
+  Host                           Path  Backends
+  ----                           ----  --------
+  sara1-ingress.rahulsinha.info
+                                 /   app1-nginx-nodeport-service:80 (10.76.0.18:80)
+  sara2-ingress.rahulsinha.info
+                                 /   app2-nginx-nodeport-service:80 (10.76.1.160:80)
+Annotations:                     external-dns.alpha.kubernetes.io/hostname: sara-ingress.rahulsinha.info
+                                 ingress.gcp.kubernetes.io/pre-shared-cert: mcrt-fc1d2135-4bc6-4da6-813c-9e9a4f5c333a
+                                 ingress.kubernetes.io/backends:
+                                   {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+                                 ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/ssl-cert: mcrt-fc1d2135-4bc6-4da6-813c-9e9a4f5c333a
+                                 ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 kubernetes.io/ingress.class: gce
+                                 kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+                                 networking.gke.io/managed-certificates: managed-cert-for-ingress
+                                 networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type     Reason              Age                     From                            Message
+  ----     ------              ----                    ----                            -------
+  Warning  MissingCertificate  3m59s                   managed-certificate-controller  ManagedCertificate default:managed-cert-for-ingress missing
+  Warning  Translate           3m58s (x11 over 3m59s)  loadbalancer-controller         Translation failed: invalid ingress spec: error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/app1-nginx-nodeport-service", err: no BackendConfig for service port exists.; error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/app2-nginx-nodeport-service", err: no BackendConfig for service port exists.; error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/app3-nginx-nodeport-service", err: no BackendConfig for service port exists.
+  Normal   Sync                57s                     loadbalancer-controller         UrlMap "k8s2-um-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                51s                     loadbalancer-controller         TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                39s                     loadbalancer-controller         ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                35s                     loadbalancer-controller         TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                17s                     loadbalancer-controller         ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   IPChanged           17s                     loadbalancer-controller         IP is now 34.36.100.7
+  Normal   Sync                15s (x6 over 3m59s)     loadbalancer-controller         Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl describe ingress ingress-namebasedvhost-routing
+Name:             ingress-namebasedvhost-routing
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.2.20:80)
+Rules:
+  Host                           Path  Backends
+  ----                           ----  --------
+  sara1-ingress.rahulsinha.info
+                                 /   app1-nginx-nodeport-service:80 (10.76.0.18:80)
+  sara2-ingress.rahulsinha.info
+                                 /   app2-nginx-nodeport-service:80 (10.76.1.160:80)
+Annotations:                     external-dns.alpha.kubernetes.io/hostname: sara-ingress.rahulsinha.info
+                                 ingress.gcp.kubernetes.io/pre-shared-cert: mcrt-fc1d2135-4bc6-4da6-813c-9e9a4f5c333a
+                                 ingress.kubernetes.io/backends:
+                                   {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+                                 ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/ssl-cert: mcrt-fc1d2135-4bc6-4da6-813c-9e9a4f5c333a
+                                 ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9
+                                 kubernetes.io/ingress.class: gce
+                                 kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+                                 networking.gke.io/managed-certificates: managed-cert-for-ingress
+                                 networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type     Reason              Age                  From                            Message
+  ----     ------              ----                 ----                            -------
+  Warning  MissingCertificate  19m                  managed-certificate-controller  ManagedCertificate default:managed-cert-for-ingress missing
+  Warning  Translate           19m (x11 over 19m)   loadbalancer-controller         Translation failed: invalid ingress spec: error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/app1-nginx-nodeport-service", err: no BackendConfig for service port exists.; error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/app2-nginx-nodeport-service", err: no BackendConfig for service port exists.; error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/app3-nginx-nodeport-service", err: no BackendConfig for service port exists.
+  Normal   Sync                16m                  loadbalancer-controller         UrlMap "k8s2-um-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                16m                  loadbalancer-controller         TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                16m                  loadbalancer-controller         ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                16m                  loadbalancer-controller         TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   Sync                16m                  loadbalancer-controller         ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-namebasedvhost-routin-8i7f4yg9" created
+  Normal   IPChanged           16m                  loadbalancer-controller         IP is now 34.36.100.7
+  Normal   Sync                6m33s (x7 over 19m)  loadbalancer-controller         Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get managedcertificate
+NAME                       AGE   STATUS
+managed-cert-for-ingress   20m   Active
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl describe managedcertificate managed-cert-for-ingress
+Name:         managed-cert-for-ingress
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1
+Kind:         ManagedCertificate
+Metadata:
+  Creation Timestamp:  2023-10-03T14:51:27Z
+  Generation:          21
+  Resource Version:    42273287
+  UID:                 14247f6b-5e87-4c68-871c-d85b2eb1e181
+Spec:
+  Domains:
+    sara-ingress.rahulsinha.info
+    sara1-ingress.rahulsinha.info
+    sara2-ingress.rahulsinha.info
+Status:
+  Certificate Name:    mcrt-fc1d2135-4bc6-4da6-813c-9e9a4f5c333a
+  Certificate Status:  Active
+  Domain Status:
+    Domain:     sara2-ingress.rahulsinha.info
+    Status:     Active
+    Domain:     sara1-ingress.rahulsinha.info
+    Status:     Active
+    Domain:     sara-ingress.rahulsinha.info
+    Status:     Active
+  Expire Time:  2024-01-01T06:51:30.000-08:00
+Events:
+  Type    Reason  Age   From                            Message
+  ----    ------  ----  ----                            -------
+  Normal  Create  20m   managed-certificate-controller  Create SslCertificate mcrt-fc1d2135-4bc6-4da6-813c-9e9a4f5c333a
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get frontendconfig
+kuNAME                 AGE
+my-frontend-config   21m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl describe frontendconfig my-frontend-config
+Name:         my-frontend-config
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1beta1
+Kind:         FrontendConfig
+Metadata:
+  Creation Timestamp:  2023-10-03T14:51:28Z
+  Generation:          1
+  Resource Version:    42264937
+  UID:                 f800619d-11a1-400f-a236-1fe0c8efd1dd
+Spec:
+  Redirect To Https:
+    Enabled:  true
+Events:       <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get backendconfig
+NAME               AGE
+my-backendconfig   21m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl describe backendconfig my-backendconfig
+Name:         my-backendconfig
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  cloud.google.com/v1
+Kind:         BackendConfig
+Metadata:
+  Creation Timestamp:  2023-10-03T14:51:28Z
+  Generation:          1
+  Resource Version:    42264945
+  UID:                 56ab74b4-8a17-4c4b-90df-5fd2e573aa7b
+Spec:
+  Iap:
+    Enabled:  true
+    Oauthclient Credentials:
+      Secret Name:  my-secret
+Events:             <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ curl https://sara-ingress.rahulsinha.info/
+Invalid IAP credentials: empty tokensimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl describe backendconfig my-backendconfig
+Name:         my-backendconfig
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  cloud.google.com/v1
+Kind:         BackendConfig
+Metadata:
+  Creation Timestamp:  2023-10-03T14:51:28Z
+  Generation:          1
+  Resource Version:    42264945
+  UID:                 56ab74b4-8a17-4c4b-90df-5fd2e573aa7b
+Spec:
+  Iap:
+    Enabled:  true
+    Oauthclient Credentials:
+      Secret Name:  my-secret
+Events:             <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get svc --show-labels
+NAME                          TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE   LABELS
+app1-nginx-nodeport-service   NodePort    10.80.11.40   <none>        80:30534/TCP   31m   app=app1-nginx
+app2-nginx-nodeport-service   NodePort    10.80.2.196   <none>        80:31747/TCP   31m   app=app2-nginx
+app3-nginx-nodeport-service   NodePort    10.80.10.55   <none>        80:30109/TCP   31m   app=app3-nginx
+kubernetes                    ClusterIP   10.80.0.1     <none>        443/TCP        42d   component=apiserver,provider=kubernetes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl describe svc app1-nginx-nodeport-service
+Name:                     app1-nginx-nodeport-service
+Namespace:                default
+Labels:                   app=app1-nginx
+Annotations:              cloud.google.com/backend-config: {"default": "my-backendconfig"}
+                          cloud.google.com/neg: {"ingress":true}
+                          cloud.google.com/neg-status:
+                            {"network_endpoint_groups":{"80":"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc"},"zones":["us-central1-a","us-central1-b"...
+Selector:                 app=app1-nginx
+Type:                     NodePort
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.80.11.40
+IPs:                      10.80.11.40
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  30534/TCP
+Endpoints:                10.76.0.18:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason  Age   From            Message
+  ----    ------  ----  ----            -------
+  Normal  Create  31m   neg-controller  Created NEG "k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc" for default/app1-nginx-nodeport-service-k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-a".
+  Normal  Create  31m   neg-controller  Created NEG "k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc" for default/app1-nginx-nodeport-service-k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-b".
+  Normal  Create  31m   neg-controller  Created NEG "k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc" for default/app1-nginx-nodeport-service-k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-c".
+  Normal  Attach  31m   neg-controller  Attach 1 network endpoint(s) (NEG "k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc" in zone "us-central1-a")
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get svc --show-labels -a
+error: unknown shorthand flag: 'a' in -a
+See 'kubectl get --help' for usage.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get svc --show-labels -o wide
+NAME                          TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE   SELECTOR         LABELS
+app1-nginx-nodeport-service   NodePort    10.80.11.40   <none>        80:30534/TCP   34m   app=app1-nginx   app=app1-nginx
+app2-nginx-nodeport-service   NodePort    10.80.2.196   <none>        80:31747/TCP   34m   app=app2-nginx   app=app2-nginx
+app3-nginx-nodeport-service   NodePort    10.80.10.55   <none>        80:30109/TCP   34m   app=app3-nginx   app=app3-nginx
+kubernetes                    ClusterIP   10.80.0.1     <none>        443/TCP        42d   <none>           component=apiserver,provider=kubernetes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl get pods --show-labels -o wide
+NAME                                     READY   STATUS    RESTARTS   AGE   IP            NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+app1-nginx-deployment-544dfb8c8f-sw77s   1/1     Running   0          34m   10.76.0.18    gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=app1-nginx,pod-template-hash=544dfb8c8f
+app2-nginx-deployment-7c46c8bb8c-zjxhg   1/1     Running   0          34m   10.76.1.160   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=app2-nginx,pod-template-hash=7c46c8bb8c
+app3-nginx-deployment-5778df6d5f-9fr9z   1/1     Running   0          34m   10.76.2.20    gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=app3-nginx,pod-template-hash=5778df6d5f
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.0.18/app1"
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+pod "tempcurlpod" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s https://10.76.0.18/app1/"
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpod, falling back to streaming logs: unable to upgrade connection: container tempcurlpod not found in pod tempcurlpod_default
+pod "tempcurlpod" deleted
+pod default/tempcurlpod terminated (Error)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s https://10.76.0.18/app1/"
+pod "tempcurlpod1" deleted
+pod default/tempcurlpod1 terminated (Error)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl https://10.76.0.18/app1/"
+curl: (7) Failed to connect to 10.76.0.18 port 443 after 1 ms: Couldn't connect to server
+pod "tempcurlpod1" deleted
+pod default/tempcurlpod1 terminated (Error)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl https://10.80.11.40/app1/"
+If you don't see a command prompt, try pressing enter.
+
+
+^C
+curl: (28) Failed to connect to 10.80.11.40 port 443 after 128593 ms: Couldn't connect to server
+pod "tempcurlpod1" deleted
+pod default/tempcurlpod1 terminated (Error)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl https://10.76.0.18/app1/"
+curl: (7) Failed to connect to 10.76.0.18 port 443 after 2 ms: Couldn't connect to server
+pod "tempcurlpod1" deleted
+pod default/tempcurlpod1 terminated (Error)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl http://10.76.0.18/app1/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl http://10.76.1.160/app2/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl http://10.76.2.20/app3/"
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl http://10.76.2.20/"
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ nslookup rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+*** Can't find rahulsinha.info: No answer
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ nslookup sara-ingress.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   sara-ingress.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ nslookup sara1-ingress.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   sara1-ingress.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ nslookup sara2-ingress.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   sara2-ingress.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl http://34.36.100.7/"
+pod "tempcurlpod1" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$ kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl https://34.36.100.7/"
+curl: (60) SSL: no alternative certificate subject name matches target host name '34.36.100.7'
+More details here: https://curl.se/docs/sslcerts.html
+
+curl failed to verify the legitimacy of the server and therefore could not
+establish a secure connection to it. To learn more about this situation and
+how to fix it, please visit the web page mentioned above.
+pod "tempcurlpod1" deleted
+pod default/tempcurlpod1 terminated (Error)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/47-GKE-Ingress-with-Identity-Aware-Proxy$

@@ -1,0 +1,1653 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ ls
+README.md  SSL-SelfSigned-Certs  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat SSL-SelfSigned-Certs/app
+app1-ingress.crt  app1-ingress.csr  app1-ingress.key  app2-ingress.crt  app2-ingress.csr  app2-ingress.key  app3-ingress.crt  app3-ingress.csr  app3-ingress.key
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat kube-manifests/0
+01-Nginx-App1-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  05-frontendconfig.yaml
+02-Nginx-App2-Deployment-and-NodePortService.yaml  04-ingress-self-signed-ssl.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-nginx-deployment
+  labels:
+    app: app1-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1-nginx
+  template:
+    metadata:
+      labels:
+        app: app1-nginx
+    spec:
+      containers:
+        - name: app1-nginx
+          image: stacksimplify/kube-nginxapp1:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app1/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nginx-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    app: app1-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2-nginx-deployment
+  labels:
+    app: app2-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app2-nginx
+  template:
+    metadata:
+      labels:
+        app: app2-nginx
+    spec:
+      containers:
+        - name: app2-nginx
+          image: stacksimplify/kube-nginxapp2:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app2/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app2-nginx-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    app: app2-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-nginx-deployment
+  labels:
+    app: app3-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app3-nginx
+  template:
+    metadata:
+      labels:
+        app: app3-nginx
+    spec:
+      containers:
+        - name: app3-nginx
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-nginx-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    app: app3-nginx
+  ports:
+    - port: 80
+      targetPort: 80simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ vim kube-manifests/04-ingress-self-signed-ssl.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat kube-manifests/04-ingress-self-signed-ssl.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-selfsigned-ssl
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+    # SSL Redirect HTTP to HTTPS
+    networking.gke.io/v1beta1.FrontendConfig: "my-frontend-config"
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: app3-default.rahulsinha.info
+spec:
+  # SSL Certs - Associate using Kubernetes Secrets
+  tls:
+  - secretName: app1-secret
+  - secretName: app2-secret
+  - secretName: app3-secret
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - host: app1.rahulsinha.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+    - host: app2.rahulsinha.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat kube-manifests/0
+01-Nginx-App1-Deployment-and-NodePortService.yaml  03-Nginx-App3-Deployment-and-NodePortService.yaml  05-frontendconfig.yaml
+02-Nginx-App2-Deployment-and-NodePortService.yaml  04-ingress-self-signed-ssl.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat kube-manifests/05-frontendconfig.yaml
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: my-frontend-config
+spec:
+  redirectToHttps:
+    enabled: true
+    #responseCodeName: RESPONSE_CODEsimplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cd SSL-SelfSigned-Certs/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ ls -ltr
+total 36
+-rw-r--r-- 1 simplyrahul simplyrahul 1704 Aug 26 14:03 app3-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  924 Aug 26 14:03 app3-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1058 Aug 26 14:03 app3-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 1704 Aug 26 14:03 app2-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  911 Aug 26 14:03 app2-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1034 Aug 26 14:03 app2-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 1708 Aug 26 14:03 app1-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  911 Aug 26 14:03 app1-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1034 Aug 26 14:03 app1-ingress.crt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ mkdir kalyan
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ mv * kalyan/
+mv: cannot move 'kalyan' to a subdirectory of itself, 'kalyan/kalyan'
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl genrsa -out app1-ingress.key 2048
+Generating RSA private key, 2048 bit long modulus (2 primes)
+...................................+++++
+.+++++
+e is 65537 (0x010001)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ ls -ltr
+total 8
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Oct  6 09:30 kalyan
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:34 app1-ingress.key
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ cat app1-ingress.key
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA6uYNtoGrhNVR1M0ZmyoXu4Te66mlx/oDgZ3qt5ZrJlFlsEW9
+wceKkiv0Yf7pnuf8bUQz+cu2aYmQPVB4iqFyDYC9XlbBTIPEEQAPBjW9XSBGuwDi
+XWVmZ8ZhdEg4Tfs0xYVexIKhNM6AaPDuUDoh7b4DhN9MykIGlp3CYQuvWtJszNDJ
+xCEBm8mOZW9I5Irh1205VYXqoDF68PZX8VpEP6D+6WSe6LiqDFtTLsmQHVDktHJr
+2iuKo62XCrW3yyMU4MnHoS5ShrufB8HbRB2zfMt1b3cYEcwJnt4+bddfEeQIu5XI
+X/Sd9ac50PVAqObM4y7ZtZgXWbRBOwzUVBk8bQIDAQABAoIBAGglgdT2XxaxAewo
+136NRiJ1AeVYvVERz3YrjwLA5VcC5eQmt8Bv+Udfx6WfQPOchbXodGb/ZCwcuuAE
+ir1kYU4NU2i9bEzBay/iZ8boEsJ0agfFl5ezOpkuQs0srBIfG8GrpV3ZUSI5oINm
+tzLI43wmMCc8Xi6a4ZLr9V/Tr3bDVdcpIk9k5j2TGC9i12UD5+AX1EDiD+n+XOkT
+7Th1OM4vWRn3hD94uu7uddri3PtpVBH17Z44CNh+wm9dWkmRHswVrxTVhyfHtypf
+4PFZ6rCWgrSM4UOhG141RvFBVHDMk3O6o70IFo72kt0eFexgKO8P1/07KwEnCC5j
+Nci10UECgYEA9usi6xqWs+IaNaQnTIjKehGAmQhWnlzuA55MINNhZ4ClhaqqQ0aE
+NQfaJM3RNHLA9OPQ+6D+DmyHbzw987r4X+XjU0t64AUAaEW2Q7L98N4byYiMRmru
+hfZN8MKjNuvDacdnC0h9Lb5jDtYwM/6wcZmPjHJanxR8eUffuI+/dX0CgYEA84m+
+fZhJs30TfsIeMRkSpDGorabPEKtqhdsg7Bggg9aH46BSmzepmosjwkqV8tJWf5ZT
+A1hBKrK5sWC2HENyo7yQNZDbR1Mt0YAyaobaPzFQUvz9mqUS00Po0+E1Uo03W6ZF
+xfvvnTEdlJdLHW+CPtraS3/8TFSruKSMxxVY1bECgYEAk2poy4JxTO4Fhdb+W3Qj
+pmNCqprO0/dZZrGgc8yfj6K/r6DnzAiSr/KDK4vxheWpC8vjngdNBqGG7kNCHXyY
+AvEGGlmq/4oc5yQPoDWB5MdGQbkTPoti4nndqIsb1JNHdKTHAXaCvce37ki0OKar
+AveSO2Ced/FMK0Bc8hxoSyUCgYATRIWWqDLEiZO+Rpte5Q3tgaRHwNfHCNjPqEuN
+gkcoRxPPNYLzls7LVFDK8V21rWB8jacZr6TQPP2mA/HEgK2UOLnsEv7WQMVyOsNC
+XFLuBvfE6REjaAX6QvgrszilxFhp3tjMVidZ92XQuLuPo5/ZWzVEHecXHufLHvGo
+Wo8BsQKBgQC3/YC6A5a6gF/G4JMt9fyINMMGnYDolvwKPlm7V9GmmntSjcC9DiRu
+cNCvvpi/Idc1LTpllf05OStACesa1hL9c6UuvyZcHklHohGFLi3CnSPsIMDT8GgF
+NsYi/BxcEC/UFjT6zT65231nRBzGestz0k6i961m6Kfwf7i2QnvLMA==
+-----END RSA PRIVATE KEY-----
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl req -new -key app1-ingress.key -out app1-ingress.csr -subj "/CN=app1.rahulsinha.info"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ ls -ltr
+total 12
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Oct  6 09:30 kalyan
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:34 app1-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  907 Oct  6 09:39 app1-ingress.csr
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ cat app1-ingress.csr
+-----BEGIN CERTIFICATE REQUEST-----
+MIICZDCCAUwCAQAwHzEdMBsGA1UEAwwUYXBwMS5yYWh1bHNpbmhhLmluZm8wggEi
+MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDq5g22gauE1VHUzRmbKhe7hN7r
+qaXH+gOBneq3lmsmUWWwRb3Bx4qSK/Rh/ume5/xtRDP5y7ZpiZA9UHiKoXINgL1e
+VsFMg8QRAA8GNb1dIEa7AOJdZWZnxmF0SDhN+zTFhV7EgqE0zoBo8O5QOiHtvgOE
+30zKQgaWncJhC69a0mzM0MnEIQGbyY5lb0jkiuHXbTlVheqgMXrw9lfxWkQ/oP7p
+ZJ7ouKoMW1MuyZAdUOS0cmvaK4qjrZcKtbfLIxTgycehLlKGu58HwdtEHbN8y3Vv
+dxgRzAme3j5t118R5Ai7lchf9J31pznQ9UCo5szjLtm1mBdZtEE7DNRUGTxtAgMB
+AAGgADANBgkqhkiG9w0BAQsFAAOCAQEAvcDMTeDIM8AEsNxUdhPCw5r50LaN+8NM
+KY6sgdnMf7D+OdFUfMm6/qDhdGDkflxN30T7TkOT7R6M7TO+rbLKjf02qvKx5IB/
+XoltaPDQFlWQBVGwXuic5x6ISnshvh2hSgFp5tDmNpNDN8naL99LNdl0IUDMIUpM
+KostXMdtKWOEFqj32IAqx1JAZtKofrUH1WKkceONyTVR9ySWqNU4DXgeF5gaO/Rd
+9oDHxnoKkJJpfCbeU+QTXDrL+3tn8z6+2hxa6NuD9O4U7XUicVmpXHPVxal8xIDV
+1DgKiIL899LCEdod4/rFxqo3Fzc5CiDMUTbgGdDjW3nM4W84EvhFVw==
+-----END CERTIFICATE REQUEST-----
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl req -new -key app1-ingress.key -out app1-ingress.csr -subj "/C=SG/O=sre/CN=app1.rahulsinha.info"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ ls -ltr
+total 12
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Oct  6 09:30 kalyan
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:34 app1-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  944 Oct  6 09:48 app1-ingress.csr
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ cat app1-ingress.csr
+-----BEGIN CERTIFICATE REQUEST-----
+MIICfzCCAWcCAQAwOjELMAkGA1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UE
+AwwUYXBwMS5yYWh1bHNpbmhhLmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+ggEKAoIBAQDq5g22gauE1VHUzRmbKhe7hN7rqaXH+gOBneq3lmsmUWWwRb3Bx4qS
+K/Rh/ume5/xtRDP5y7ZpiZA9UHiKoXINgL1eVsFMg8QRAA8GNb1dIEa7AOJdZWZn
+xmF0SDhN+zTFhV7EgqE0zoBo8O5QOiHtvgOE30zKQgaWncJhC69a0mzM0MnEIQGb
+yY5lb0jkiuHXbTlVheqgMXrw9lfxWkQ/oP7pZJ7ouKoMW1MuyZAdUOS0cmvaK4qj
+rZcKtbfLIxTgycehLlKGu58HwdtEHbN8y3VvdxgRzAme3j5t118R5Ai7lchf9J31
+pznQ9UCo5szjLtm1mBdZtEE7DNRUGTxtAgMBAAGgADANBgkqhkiG9w0BAQsFAAOC
+AQEA2pKKGlw1q6NaOT2to3rQzdjnfdSZo5aZk09QCrjtMxoc3knVxocKRqnWAeQn
+mEAEVeS7joFUqjBGNy8wlYTXnn7KLBf9fu5ZUjzBKOW5vYZHyZojgc7UNRFvlrh+
+qH4P6ilrju56DHHEvVEKc0EKxQ9Szh663GAOsvwW6YootHFyl0KAT9TSWBl0PIEq
+BTjC8zh6b4lw+RBLRbPEwgGcmC7BTqEJK2kSadcyuRkgxZBPYwE5VjDqE4hp3ZCs
+s9e7bmjR1tDvuZvtz5KJnRtjLjXBcU6txgropZP7PM2GU2cIMthXKnWFwCFFYBhO
+HWaSs6sJrAinF+cCvgCaYdauDw==
+-----END CERTIFICATE REQUEST-----
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl x509 -req -days 7300 -in app1-ingress.csr -signkey app1-ingress.key -out app1-ingress.crt
+Signature ok
+subject=C = SG, O = sre, CN = app1.rahulsinha.info
+Getting Private key
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ ls -ltr
+total 16
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Oct  6 09:30 kalyan
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:34 app1-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  944 Oct  6 09:48 app1-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1094 Oct  6 09:50 app1-ingress.crt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ cat app1-ingress.crt
+-----BEGIN CERTIFICATE-----
+MIIC+zCCAeMCFAIFMF5UghSowp2KdRXauWjhP3XNMA0GCSqGSIb3DQEBCwUAMDox
+CzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDEucmFodWxz
+aW5oYS5pbmZvMB4XDTIzMTAwNjAxNTAyOVoXDTQzMTAwMTAxNTAyOVowOjELMAkG
+A1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMS5yYWh1bHNpbmhh
+LmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDq5g22gauE1VHU
+zRmbKhe7hN7rqaXH+gOBneq3lmsmUWWwRb3Bx4qSK/Rh/ume5/xtRDP5y7ZpiZA9
+UHiKoXINgL1eVsFMg8QRAA8GNb1dIEa7AOJdZWZnxmF0SDhN+zTFhV7EgqE0zoBo
+8O5QOiHtvgOE30zKQgaWncJhC69a0mzM0MnEIQGbyY5lb0jkiuHXbTlVheqgMXrw
+9lfxWkQ/oP7pZJ7ouKoMW1MuyZAdUOS0cmvaK4qjrZcKtbfLIxTgycehLlKGu58H
+wdtEHbN8y3VvdxgRzAme3j5t118R5Ai7lchf9J31pznQ9UCo5szjLtm1mBdZtEE7
+DNRUGTxtAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAMC8h97w2j27fcfI+EN70PwY
+OTFEZtueKgn8UnkVNs/WiIMJhR6X8R2DI1fJmfl5GkBRdnN7EQ9bAt2neCnLII0e
+kztc9uFa+g1Y1K98TTn+5BCeABlK2W2Wu05esM/oeDvo1v0AfVUrsMJR+T6QUEdg
+F9osnGf9Tj05ZGFWo355+7hWuWwsmES6+hkaxNAxN5zvqQXnjoj4snyAXS+N2aGr
+JPvkRNJkwWmX8nggPm4qq+8kMlbPuzodnrLCvYLYJLHpR+bHFnnBkmVMgNodKGDv
+LdpSDbkctWtI2bkBBqjFSf3ehAf29bMqlW7WDgrtpZDu8ed4USIzhkkHruyAYUE=
+-----END CERTIFICATE-----
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl req -in app1-ingress.csr -noout -text
+Certificate Request:
+    Data:
+        Version: 1 (0x0)
+        Subject: C = SG, O = sre, CN = app1.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:ea:e6:0d:b6:81:ab:84:d5:51:d4:cd:19:9b:2a:
+                    17:bb:84:de:eb:a9:a5:c7:fa:03:81:9d:ea:b7:96:
+                    6b:26:51:65:b0:45:bd:c1:c7:8a:92:2b:f4:61:fe:
+                    e9:9e:e7:fc:6d:44:33:f9:cb:b6:69:89:90:3d:50:
+                    78:8a:a1:72:0d:80:bd:5e:56:c1:4c:83:c4:11:00:
+                    0f:06:35:bd:5d:20:46:bb:00:e2:5d:65:66:67:c6:
+                    61:74:48:38:4d:fb:34:c5:85:5e:c4:82:a1:34:ce:
+                    80:68:f0:ee:50:3a:21:ed:be:03:84:df:4c:ca:42:
+                    06:96:9d:c2:61:0b:af:5a:d2:6c:cc:d0:c9:c4:21:
+                    01:9b:c9:8e:65:6f:48:e4:8a:e1:d7:6d:39:55:85:
+                    ea:a0:31:7a:f0:f6:57:f1:5a:44:3f:a0:fe:e9:64:
+                    9e:e8:b8:aa:0c:5b:53:2e:c9:90:1d:50:e4:b4:72:
+                    6b:da:2b:8a:a3:ad:97:0a:b5:b7:cb:23:14:e0:c9:
+                    c7:a1:2e:52:86:bb:9f:07:c1:db:44:1d:b3:7c:cb:
+                    75:6f:77:18:11:cc:09:9e:de:3e:6d:d7:5f:11:e4:
+                    08:bb:95:c8:5f:f4:9d:f5:a7:39:d0:f5:40:a8:e6:
+                    cc:e3:2e:d9:b5:98:17:59:b4:41:3b:0c:d4:54:19:
+                    3c:6d
+                Exponent: 65537 (0x10001)
+        Attributes:
+            a0:00
+    Signature Algorithm: sha256WithRSAEncryption
+         da:92:8a:1a:5c:35:ab:a3:5a:39:3d:ad:a3:7a:d0:cd:d8:e7:
+         7d:d4:99:a3:96:99:93:4f:50:0a:b8:ed:33:1a:1c:de:49:d5:
+         c6:87:0a:46:a9:d6:01:e4:27:98:40:04:55:e4:bb:8e:81:54:
+         aa:30:46:37:2f:30:95:84:d7:9e:7e:ca:2c:17:fd:7e:ee:59:
+         52:3c:c1:28:e5:b9:bd:86:47:c9:9a:23:81:ce:d4:35:11:6f:
+         96:b8:7e:a8:7e:0f:ea:29:6b:8e:ee:7a:0c:71:c4:bd:51:0a:
+         73:41:0a:c5:0f:52:ce:1e:ba:dc:60:0e:b2:fc:16:e9:8a:28:
+         b4:71:72:97:42:80:4f:d4:d2:58:19:74:3c:81:2a:05:38:c2:
+         f3:38:7a:6f:89:70:f9:10:4b:45:b3:c4:c2:01:9c:98:2e:c1:
+         4e:a1:09:2b:69:12:69:d7:32:b9:19:20:c5:90:4f:63:01:39:
+         56:30:ea:13:88:69:dd:90:ac:b3:d7:bb:6e:68:d1:d6:d0:ef:
+         b9:9b:ed:cf:92:89:9d:1b:63:2e:35:c1:71:4e:ad:c6:0a:e8:
+         a5:93:fb:3c:cd:86:53:67:08:32:d8:57:2a:75:85:c0:21:45:
+         60:18:4e:1d:66:92:b3:ab:09:ac:08:a7:17:e7:02:be:00:9a:
+         61:d6:ae:0f
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl x509 in app1-ingress.crt -noout -text
+x509: Unknown parameter in
+x509: Use -help for summary.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl x509 -in app1-ingress.crt -noout -text
+Certificate:
+    Data:
+        Version: 1 (0x0)
+        Serial Number:
+            02:05:30:5e:54:82:14:a8:c2:9d:8a:75:15:da:b9:68:e1:3f:75:cd
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C = SG, O = sre, CN = app1.rahulsinha.info
+        Validity
+            Not Before: Oct  6 01:50:29 2023 GMT
+            Not After : Oct  1 01:50:29 2043 GMT
+        Subject: C = SG, O = sre, CN = app1.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:ea:e6:0d:b6:81:ab:84:d5:51:d4:cd:19:9b:2a:
+                    17:bb:84:de:eb:a9:a5:c7:fa:03:81:9d:ea:b7:96:
+                    6b:26:51:65:b0:45:bd:c1:c7:8a:92:2b:f4:61:fe:
+                    e9:9e:e7:fc:6d:44:33:f9:cb:b6:69:89:90:3d:50:
+                    78:8a:a1:72:0d:80:bd:5e:56:c1:4c:83:c4:11:00:
+                    0f:06:35:bd:5d:20:46:bb:00:e2:5d:65:66:67:c6:
+                    61:74:48:38:4d:fb:34:c5:85:5e:c4:82:a1:34:ce:
+                    80:68:f0:ee:50:3a:21:ed:be:03:84:df:4c:ca:42:
+                    06:96:9d:c2:61:0b:af:5a:d2:6c:cc:d0:c9:c4:21:
+                    01:9b:c9:8e:65:6f:48:e4:8a:e1:d7:6d:39:55:85:
+                    ea:a0:31:7a:f0:f6:57:f1:5a:44:3f:a0:fe:e9:64:
+                    9e:e8:b8:aa:0c:5b:53:2e:c9:90:1d:50:e4:b4:72:
+                    6b:da:2b:8a:a3:ad:97:0a:b5:b7:cb:23:14:e0:c9:
+                    c7:a1:2e:52:86:bb:9f:07:c1:db:44:1d:b3:7c:cb:
+                    75:6f:77:18:11:cc:09:9e:de:3e:6d:d7:5f:11:e4:
+                    08:bb:95:c8:5f:f4:9d:f5:a7:39:d0:f5:40:a8:e6:
+                    cc:e3:2e:d9:b5:98:17:59:b4:41:3b:0c:d4:54:19:
+                    3c:6d
+                Exponent: 65537 (0x10001)
+    Signature Algorithm: sha256WithRSAEncryption
+         c0:bc:87:de:f0:da:3d:bb:7d:c7:c8:f8:43:7b:d0:fc:18:39:
+         31:44:66:db:9e:2a:09:fc:52:79:15:36:cf:d6:88:83:09:85:
+         1e:97:f1:1d:83:23:57:c9:99:f9:79:1a:40:51:76:73:7b:11:
+         0f:5b:02:dd:a7:78:29:cb:20:8d:1e:93:3b:5c:f6:e1:5a:fa:
+         0d:58:d4:af:7c:4d:39:fe:e4:10:9e:00:19:4a:d9:6d:96:bb:
+         4e:5e:b0:cf:e8:78:3b:e8:d6:fd:00:7d:55:2b:b0:c2:51:f9:
+         3e:90:50:47:60:17:da:2c:9c:67:fd:4e:3d:39:64:61:56:a3:
+         7e:79:fb:b8:56:b9:6c:2c:98:44:ba:fa:19:1a:c4:d0:31:37:
+         9c:ef:a9:05:e7:8e:88:f8:b2:7c:80:5d:2f:8d:d9:a1:ab:24:
+         fb:e4:44:d2:64:c1:69:97:f2:78:20:3e:6e:2a:ab:ef:24:32:
+         56:cf:bb:3a:1d:9e:b2:c2:bd:82:d8:24:b1:e9:47:e6:c7:16:
+         79:c1:92:65:4c:80:da:1d:28:60:ef:2d:da:52:0d:b9:1c:b5:
+         6b:48:d9:b9:01:06:a8:c5:49:fd:de:84:07:f6:f5:b3:2a:95:
+         6e:d6:0e:0a:ed:a5:90:ee:f1:e7:78:51:22:33:86:49:07:ae:
+         ec:80:61:41
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ history
+    1  w
+    2  docker ps
+    3  systemctl status  docker
+    4  cd /etc
+    5  ls
+    6  git --version
+    7  who -b
+    8  ca /etc/os-release
+    9  cat /etc/os-release
+   10  apk
+   11  apg
+   12  deb
+   13  apt install docker
+   14  sudo apt install docker
+   15  ifconfig
+   16  sudo apt install net-tools
+   17  ifconfig
+   18  ping 172.17.0.1
+   19  bash --version
+   20  echo $PATH
+   21  echo "Hello World"
+   22  which ruby
+   23  which echo
+   24  file /usr/bin/echo
+   25  pwd
+   26  cd
+   27  ls -ltr
+   28  ls -ltra
+   29  cat .profile
+   30  cat .bashrc
+   31  which neqn
+   32  man neqn
+   33  nqqn
+   34  neqn
+   35  echo $(which neqn)
+   36  file $(which neqn)
+   37  cat $(which neqn)
+   38  echo exiftool
+   39  which exiftool
+   40  echo exiftool | cut -d "f"
+   41  echo exiftool | cut -d "f" -f2
+   42  echo exiftool | cut -d "f" -f1
+   43  echo exiftool | cut -d "f" -f1 | tr '\n' '+'
+   44  echo exiftool | cut -d "f" -f1 | tr 'i 'it'
+   45  echo exiftool | cut -d "f" -f1 | tr 'i' 'it'
+   46  echo exiftool | cut -d "f" -f1 | tr 'i' '+'
+   47  echo exiftool | cut -d "f" -f1 | tr 'i' 'a'
+   48  echo exiftool | cut -d "f" -f1 | tr 'i' 'it'
+   49  echo exiftool | cut -d "f" -f1 | tr 'i ' 'it'
+   50  echo exiftool | cut -d "f" -f1 | tr 'i\n' 'it'
+   51  echo exiftool | cut -d "f" -f1 | tr 'i\n' 'it\n'
+   52  man tr
+   53  echo "rahul sinha" | cut -d " " -f1
+   54  echo "rahul sinha" | cut -d " " -f1 | tr 'r' 'R'
+   55  pwd
+   56  ls
+   57  ls -ltr
+   58  mkdir airflow
+   59  cd airflow/
+   60  wget https://github.com/tejadata/spark/raw/master/puckel_customized.zip
+   61  ls -ltr
+   62  docker ps
+   63  wsl.exe -l -v
+   64  wsl.exe --set-version (distro name) 2
+   65  wsl.exe --set-default-version 2
+   66  wsl.exe -l -v
+   67  docker ps
+   68  kubectl get all
+   69  cd gke/github/
+   70  ls
+   71  cd 27-GKE-PD-Volume-Clone/01-kube-manifests/
+   72  ls
+   73  cd ..
+   74  kubectl apply -f 01-kube-manifests/
+   75  kubectl delete -f 01-kube-manifests/
+   76  clear
+   77  ls
+   78  ls 01-kube-manifests/
+   79  kubectl apply -f 01-kube-manifests/
+   80  kubectl get sc
+   81  kubectl get pc
+   82  kubectl get pv
+   83  kubectl get pvc
+   84  kubectl get configmap
+   85  kubectl get configmap usermanagement-dbcreation-script
+   86  kubectl get deploy
+   87  kubectl get deploy --showlabels
+   88  kubectl get pods -o wide --showlabels
+   89  kubectl get pods -o wide --show-labels
+   90  kubectl get deploy --show-labels
+   91  kubectl get svc -o wide --show-labels
+   92  # Abhishek user acount created
+   93  ls 02-Use-Cloned-Volume-kube-manifests/
+   94  cat 02-Use-Cloned-Volume-kube-manifests/01-podpvc-clone.yaml
+   95  cat 02-Use-Cloned-Volume-kube-manifests/03-mysql-deployment.yaml
+   96  kubectl apply -f 02-Use-Cloned-Volume-kube-manifests/
+   97  kubectl get pv
+   98  kubectl get pvc
+   99  kubectl get deploy --show-label
+  100  kubectl get deploy --show-labels
+  101  kubectl get pods --show-labels
+  102  kubectl get svc --show-labels
+  103  kubectl get svc -o wide --show-labels
+  104  kubectl get pods --show-labels
+  105  kubectl rollout 01-kube-manifests/
+  106  kubectl rollout -f 01-kube-manifests/
+  107  kubectl restart 01-kube-manifests/03-mysql-deployment.yaml
+  108  kubectl rollout 01-kube-manifests/03-mysql-deployment.yaml
+  109  kubectl rollout -f 01-kube-manifests/03-mysql-deployment.yaml
+  110  kubectl delete -f 01-kube-manifests/
+  111  kubectl delete -f 02-kube-manifests/
+  112  kubectl delete -f 02-Use-Cloned-Volume-kube-manifests/
+  113  cd gke/github/33-GKE-FileStore-Backup-and-Restore/
+  114  clear
+  115  ls
+  116  ls 01-myapp1-kube-manifests/
+  117  ls 02-volume-backup-kube-manifests/
+  118  ls 03-volume-restore-myapp2-kube-manifests/
+  119  kubectl get all
+  120  kubectl apply -f 01-myapp1-kube-manifests/
+  121  kubectl get sc
+  122  kubectl get pvc
+  123  watch kubectl get pvc
+  124  kubectl get pvc
+  125  kubectl get pv
+  126  kubectl get deploy
+  127  kubectl get pods
+  128  kubectl get pods -o --show-labels
+  129  kubectl get pods -o wide --show-labels
+  130  kubectl get svc -o wide --show-labels
+  131  history | grep curl
+  132  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://35.238.146.152"
+  133  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.70.179.212"
+  134  kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.70.179.212"
+  135  kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.70.179.212/filestore/myapp1.txt | tail -10 "
+  136  ls
+  137  ls 02-volume-backup-kube-manifests/
+  138  cat 02-volume-backup-kube-manifests/01-VolumeSnapshotClass.yaml
+  139  cat 02-volume-backup-kube-manifests/02-VolumeSnapshot.yaml
+  140  kubectl apply -f 02-volume-backup-kube-manifests/
+  141  kubectl get sc
+  142  kubectl get snapshot
+  143  kubectl get VolumeSnapshotClass
+  144  kubectl get VolumeSnapshotClass csi-gcp-filestore-backup-snap-class
+  145  kubectl sescribe VolumeSnapshotClass csi-gcp-filestore-backup-snap-class
+  146  kubectl describe VolumeSnapshotClass csi-gcp-filestore-backup-snap-class
+  147  kubectl get VolumeSnapshot
+  148  kubectl get VolumeSnapshot myapp1-volume-snapshot
+  149  kubectl describe VolumeSnapshot myapp1-volume-snapshot
+  150  ls 03-volume-restore-myapp2-kube-manifests/
+  151  cat 03-volume-restore-myapp2-kube-manifests/01-filestore-pvc.yaml
+  152  cat 03-volume-restore-myapp2-kube-manifests/02-myapp2-deployment.yaml
+  153  cat 03-volume-restore-myapp2-kube-manifests/03-myapp2-loadBalancer-service.yaml
+  154  kubectl apply -f 03-volume-restore-myapp2-kube-manifests/
+  155  kubectl get pvc
+  156  kubectl get deployment
+  157  kubectl get pods
+  158  kubectl delete pods tempcurlpod
+  159  kubectl get svc
+  160  kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.70.179.212/filestore/myapp1.txt | tail -10 "
+  161  kubectl run -it tempcurlpod1 --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://104.197.90.149/filestore/myapp1.txt | tail -10 "
+  162  ls
+  163  kubectl delete -f 01-myapp1-kube-manifests -f 02-volume-backup-kube-manifests -f 03-volume-restore-myapp2-kube-manifests
+  164  kubectl get VolumeSnapshot
+  165  kubectl delete VolumeSnapshot my-snapshot1
+  166  kubectl delete VolumeSnapshot my-snapshot1-use2
+  167  vim session.out
+  168  git add -A .
+  169  git commit -am"filestore (efs) VolumeSnapshot VolumeSnapshotClass restore curl"
+  170  git push
+  171  kubectl get all
+  172  cd ../34-GKE-Ingress-Basics/
+  173  clear
+  174  ls
+  175  ls kube-manifests/
+  176  cat kube-manifests/01-Nginx-App3-Deployment-and-NodePortService.yaml
+  177  ls
+  178  cat kube-manifests/02-ingress-basic.yaml
+  179  kubecl apply -f kube-manifests/
+  180  kubectl apply -f kube-manifests/
+  181  kuberctl get all
+  182  kubectl get all
+  183  kubectl get deploy
+  184  kubectl get pods -o wide --show-labels
+  185  kubectl get svc -o wide --show-labels
+  186  kubectl get ingress -o wide --show-labels
+  187  kubectl describe ingress ingress-basics
+  188  curl -s http://34.36.81.221
+  189  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://34.36.81.221"
+  190  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.5.109"
+  191  ls
+  192  kubectl delete -f kube-manifests/
+  193  vim session.out
+  194  git add -A .
+  195  git commit -am"ingress nodeport curl"
+  196  git push
+  197  cd ../35-GKE-Ingress-Context-Path-Routing/
+  198  clear
+  199  ls
+  200  ls kube-manifests/
+  201  ls -ltr kube-manifests/
+  202  cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+  203  cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+  204  cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+  205  cat kube-manifests/04-Ingress-ContextPath-Based-Routing.yaml
+  206  kubectl apply -f kube-manifests/
+  207  kubectl get deploy
+  208  kubectl get pods -o wide --show-labels
+  209  kubectl get svc -o wide --show-labels
+  210  kubectl get ingress -o wide --show-labels
+  211  kubectl describe ingress ingress-cpr
+  212  curl -s http://34.160.177.155
+  213  curl -s http://34.160.177.155/app1
+  214  curl -s http://34.160.177.155/app2
+  215  curl -s http://34.160.177.155/app3
+  216  curl -s http://34.160.177.155/app1/
+  217  curl -s http://34.160.177.155/app2/
+  218  curl -s http://34.160.177.155/
+  219  kubectl get svc -o wide --show-labels
+  220  kubectl get pods -o wide --show-labels
+  221  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.14.249/app1/"
+  222  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.4.48/app2/"
+  223  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.13.186/"
+  224  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.105/app1/"
+  225  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.106/app2/"
+  226  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.107/"
+  227  kubectl delete -f kube-manifests/
+  228  vim session.out
+  229  git add -A .
+  230  git commit -am"ingress context based routing /app1/ /app2/ default"
+  231  git push
+  232  cd gke/github/
+  233  l
+  234  cd 37-Google-Cloud-Domains/
+  235  ls
+  236  vim session.out
+  237  git add -A .
+  238  git commit -am"create domain rahulsinha.info & verify dns records"
+  239  git push
+  240  gcloud compute addresses list
+  241  cd ../38
+  242  cd ../38-GKE-Ingress-ExternalIP/
+  243  clear
+  244  gcloud compute addresses list
+  245  gcloud compute addresses create gke-ingress-extip1 --global
+  246  gcloud compute addresses describe gke-ingress-extip1 --global
+  247  gcloud compute addresses list
+  248  # https://cloud.google.com/dns/docs/overview#supported_dns_record_types
+  249  # https://cloud.google.com/dns/docs/set-up-dns-records-domain-name
+  250  # In the Google Cloud console, go to the Cloud DNS page.
+  251  #   # Click the zone where you want to add a record set. rahulsinha-info
+  252  #   # Click Add standard.
+  253  #   # For Resource Record Type, to create an A record, select A. To create an AAAA record, select AAAA.
+  254  #   # For IPv4 Address or IPv6 Address, enter the IP address that you want to use with this domain.
+  255  #   # click Create]
+  256  # Resource record set 'sara.rahulsinha.info.' has been successfully created in zone 'rahulsinha-info'
+  257  # #GET https://dns.googleapis.com/dns/v1beta2/projects/expanded-origin-395402/managedZones/rahulsinha-info/rrsets/sara.rahulsinha.info./A
+  258  #{
+  259  #  "name": "sara.rahulsinha.info.",
+  260  #  "rrdata": [
+  261  #    "34.36.100.7"
+  262  #  ],
+  263  #  "ttl": 300,
+  264  #  "type": "A"
+  265  vim dns-a.record
+  266  cat dns-a.record
+  267  nslookup sara.rahulsinha.info
+  268  ls
+  269  ls kube-manifests/
+  270  cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+  271  cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+  272  ls kube-manifests/
+  273  cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+  274  ls kube-manifests/
+  275  cat kube-manifests/04-Ingress-external-ip.yaml
+  276  kubectl get all
+  277  kubectl apply -f kube-manifests/
+  278  kubectl get deploy
+  279  kubectl get pods -o wie
+  280  kubectl get pods -o wide
+  281  kubectl get pods -o wide --show-labels
+  282  kubectl get svc -o wide --show-labels
+  283  kubectl get ingress -o wide --show-labels
+  284  watch kubectl get ingress -o wide --show-labels
+  285  kubectl get ingress -o wide --show-labels
+  286  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.123/app1/"
+  287  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.123/app2/"
+  288  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.124/app1/"
+  289  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.124/app2/"
+  290  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.125/app1/"
+  291  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.125/app2/"
+  292  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.125/app3/"
+  293  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.125/"
+  294  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.123/"
+  295  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.76.1.124/"
+  296  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.5.112/app1/"
+  297  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.14.235/app2/"
+  298  kubectl run -it tempcurlpod --image=curlimages/curl --rm --restart=Never -- sh -c "curl -s http://10.80.6.108/"
+  299  curl -s http://34.36.100.7/
+  300  curl -s http://34.36.100.7/app1/
+  301  curl -s http://34.36.100.7/app2/
+  302  curl -s http://sara.rahulsinha.info/
+  303  curl -s http://sara.rahulsinha.info/app1/
+  304  curl -s http://sara.rahulsinha.info/app2/
+  305  curl -s http://sara.rahulsinha.info/app1
+  306  cat kube-manifests/04-Ingress-external-ip.yaml
+  307  cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+  308  curl -s http://sara.rahulsinha.info/app1/index.html
+  309  curl -s http://sara.rahulsinha.info/app2/index.html
+  310  curl -s http://sara.rahulsinha.info/index.html
+  311  curl -s http://sara.rahulsinha.info/
+  312  kubectl delete -f kube-manifests/
+  313  gcloud compute addresses list
+  314  vim session.out
+  315  git add -A .
+  316  git commit -am"EIP domain dns ingres-eip"
+  317  ls
+  318  git push
+  319  cd ../39-GKE-Ingress-Google-Managed-SSL/
+  320  clear
+  321  ls
+  322  ls kube-manifests/
+  323  cat kube-manifests/04-Ingress-SSL.yaml
+  324  cat kube-manifests/05-Managed-Certificate.yaml
+  325  vim kube-manifests/05-Managed-Certificate.yaml
+  326  kubectl apply -f kube-manifests/
+  327  kubectl get deploy
+  328  kubectl get pods
+  329  kubectl get pods -o wide --show-labels
+  330  kubectl get svc -o wide --show-labels
+  331  kubectl get ingress -o wide --show-labels
+  332  kubectl get ManagedCertificate -o wide --show-labels
+  333  kubectl get mc -o wide --show-labels
+  334  kubectl get ManagedCertificate -o wide --show-labels
+  335  kubectl describe ManagedCertificate managed-cert-for-ingress
+  336  kubectl describe ingress ingress-ssl
+  337  watch kubectl get ManagedCertificate -o wide --show-labels
+  338  kubectl get ManagedCertificate -o wide --show-labels
+  339  kubectl describe ManagedCertificate managed-cert-for-ingress
+  340  kubectl describe ingress ingress-ssl
+  341  curl -s http://sara.rahulsinha.info/index.html
+  342  curl -s http://sara.rahulsinha.info/app1/
+  343  curl -s http://sara.rahulsinha.info/app2/
+  344  curl -s http://sara.rahulsinha.info/
+  345  curl -s http://sara.rahulsinha.info
+  346  curl http://sara.rahulsinha.info
+  347  curl -s https://sara.rahulsinha.info/
+  348  curl -s https://sara.rahulsinha.info/app1/
+  349  curl -s https://sara.rahulsinha.info/app2/
+  350  curl https://sara.rahulsinha.info/
+  351  curl -v https://sara.rahulsinha.info/
+  352  curl -vv https://sara.rahulsinha.info/
+  353  curl -vvI https://sara.rahulsinha.info/
+  354  echo | openssl s_client -showcerts -servername  sara.rahulsiha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text
+  355  kubectl run -it tempopensslpod --image=alpine/openssl --rm -- sh -c "echo | openssl s_client -showcerts -servername  sara.rahulsinha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text"
+  356  kubectl run -it tempopensslpod --image=alpine/openssl --rm -v $(pwd):/apps -w /apps -- sh -c "echo | openssl s_client -showcerts -servername  sara.rahulsinha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text"
+  357  kubectl run -it tempopensslpod --image=alpine/openssl --rm "echo | openssl s_client -showcerts -servername  sara.rahulsinha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text"
+  358  kubectl run -it tempopensslpod --image=alpine/openssl --rm - -- "echo | openssl s_client -showcerts -servername  sara.rahulsinha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text"
+  359  kubectl run -it tempopensslpod2 --image=alpine/openssl --rm - -- "echo | openssl s_client -showcerts -servername  sara.rahulsinha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text"
+  360  #kubectl run -it tempopensslpod3 --image=alpine/openssl --rm -- "echo | openssl s_client -showcerts -servername  sara.rahulsinha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text"
+  361  kubectl run -it tempopensslpod3 --image=alpine/openssl --rm -- "openssl -v"
+  362  vim session.out
+  363  git add -A .
+  364  git commit -am"domain-ssl openssl"
+  365  git push
+  366  kubectl delete -f kube-manifests/
+  367  cd ../40-GKE-Ingress-Google-Managed-SSL-Redirect/
+  368  clear
+  369  ls
+  370  ls kube-manifests/
+  371  cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+  372  cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+  373  cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+  374  ls kube-manifests/
+  375  cat kube-manifests/04-Ingress-SSL.yaml
+  376  cat kube-manifests/05-Managed-Certificate.yaml
+  377  cat kube-manifests/06-frontendconfig.yaml
+  378  kubectl apply -f kube-manifests/
+  379  kubectl get deploy
+  380  kubectl get pods
+  381  kubectl delete pods tempopensslpod
+  382  kubectl delete pods tempopensslpod2
+  383  kubectl get pods
+  384  kubectl get svc
+  385  kubectl get ingress
+  386  kubectl get managedcertificate
+  387  kubectl get frontendconfig
+  388  kubectl describe frontendconfig my-frontend-config
+  389  kubectl describe ingress ingress-ssl
+  390  kubectl describe managedcertificate managed-cert-for-ingress
+  391  watch kubectl get managedcertificate
+  392  vim kube-manifests/05-Managed-Certificate.yaml
+  393  kubectl -f kube-manifests/04-Ingress-SSL.yaml -f kube-manifests/05-Managed-Certificate.yaml  -f kube-manifests/06-frontendconfig.yaml
+  394  kubectl delete -f kube-manifests/04-Ingress-SSL.yaml -f kube-manifests/05-Managed-Certificate.yaml  -f kube-manifests/06-frontendconfig.yaml
+  395  kubectl apply -f kube-manifests/
+  396  kubectl get deploy
+  397  kubectl get pods
+  398  kubectl get pods -o wide --show-labels
+  399  kubectl get svc -o wide --show-labels
+  400  kubectl get ingress -o wide --show-labels
+  401  kubectl get managedcertificate -o wide --show-labels
+  402  kubectl get frontendconfig -o wide --show-labels
+  403  kubectl describe my-frontend-config
+  404  kubectl describe frontendconfig my-frontend-config
+  405  kubectl describe managedcertificate managed-cert-for-ingress
+  406  kubectl describe ingress ingress-ssl
+  407  kubectl get managedcertificate -o wide --show-labels
+  408  kubectl describe managedcertifiate managed-cert-for-ingress
+  409  kubectl describe managedcertificate managed-cert-for-ingress
+  410  watch kubectl get managedcertificate -o wide --show-labels
+  411  kubectl describe managedcertificate managed-cert-for-ingress
+  412  kubectl describe ingress ingress-ssl
+  413  echo | openssl s_client -showcerts -servername  sara.rahulsiha.info -connect sara.rahulsinha.info:443 2>/dev/null | openssl x509 -inform pem -noout -text
+  414  curl -v https://sara.rahulsinha.info/
+  415  curl https://sara.rahulsinha.info/app1/
+  416  curl https://sara.rahulsinha.info/app2/
+  417  curl https://sara.rahulsinha.info/
+  418  curl http://sara.rahulsinha.info/
+  419  curl -s https://sara.rahulsinha.info/app2/
+  420  curl -s http://sara.rahulsinha.info/app2/
+  421  curl http://sara.rahulsinha.info/app2/
+  422  curl -v http://sara.rahulsinha.info/app2/
+  423  curl -I http://sara.rahulsinha.info/app2/
+  424  curl -I http://sara.rahulsinha.info/app1/
+  425  curl -I http://sara.rahulsinha.info/
+  426  curl -I https://sara.rahulsinha.info/
+  427  curl -I https://sara.rahulsinha.info/app1/
+  428  curl -I https://sara.rahulsinha.info/app2/
+  429  for URL in "http://sara.rahulsinha.info/" ; do curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null ; done
+  430  #for URL in "http://sara.rahulsinha.info/" ; do curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null ; done
+  431  for URL in "http://sara.rahulsinha.info/" "http://sara.rahulsinha.info/app1/" "http://sara.rahulsinha.info/app2/" ; do curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null ; done
+  432  vim session.out
+  433  git add -A .
+  434  git commit -am"dns ssl redirect-http-to-https"
+  435  git push
+  436  kubectl delete -f kube-manifests/
+  437  cd gke/github/41-GKE-Workload-Identity/
+  438  kubectl get all
+  439  kubect get nodes
+  440  kubectl get svc
+  441  ls -ltra
+  442  cd
+  443  ls -ltra
+  444  cat .config
+  445  cd .config
+  446  ls
+  447  ls -ltr
+  448  cd gcloud
+  449  ls -ltr
+  450  cat gce
+  451  cat active_config
+  452  cd configurations/
+  453  ls
+  454  cd config_default
+  455  ls -ltr
+  456  cat config_default
+  457  kubectl get pods
+  458  gcloud container clusters get-credentials private-standard-22aug2023-2 --region us-central1 --project expanded-origin-395402
+  459  gcloud iam service-accounts list
+  460  pwd
+  461  ls
+  462  cd gke/github/
+  463  cd 41-GKE-Workload-Identity/
+  464  clear
+  465  vim create gke-service-account.txt
+  466  ls -ltr
+  467  mv create gke-service-account.txt
+  468  ls -ltr
+  469  cat gke-service-account.txt
+  470  vim create gke-service-account.txt
+  471  ls -ltr
+  472  vim gke-service-account.txt
+  473  vim gke-add-iam-policy.txt
+  474  git add -A .
+  475  # Create Kubernetes Namespace
+  476  kubectl create namespace wid-kns
+  477  curl ifconfig.me
+  478  ping google.com
+  479  cd gke/
+  480  cd github/
+  481  cd 41-GKE-Workload-Identity/
+  482  ls
+  483  vim 03.1-optional-create-gke-service-account.txt
+  484  git add -A .
+  485  git commit -am"GSA, KSA, IAM Binding, K8s Annonate, role -> compute_viewer,dns_admin"
+  486  git push
+  487  cat /etc/os-release
+  488  cd ../42-GKE-ExternalDNS-Install/
+  489  clear
+  490  cat /etc/os-release
+  491  uname -a
+  492  cd
+  493  ls
+  494  mkdir helm
+  495  cd helm
+  496  wget https://get.helm.sh/helm-v3.12.3-linux-amd64.tar.gz
+  497  ls -ltr
+  498  tar -zxvf helm-v3.12.3-linux-amd64.tar.gz
+  499  ls -ltr
+  500  cd linux-amd64/
+  501  ls
+  502  ./helm --version
+  503  ./helm -version
+  504  ./helm -v
+  505  ./helm
+  506  ./helm version
+  507  cd
+  508  pwd
+  509  ls -ltr
+  510  ls -ltra
+  511  vim .bashrc
+  512  cd -
+  513  ls -ltr
+  514  pwd
+  515  cd -
+  516  vim .bashrc
+  517  source .bashrc
+  518  ls
+  519  helm version
+  520  export HOME=$HOME:/home/simplyrahul/helm/linux-amd64
+  521  export PATH=$PATH:/home/simplyrahul/helm/linux-amd64
+  522  helm version
+  523  vim .bashrc
+  524  pwd
+  525  ls
+  526  cd gke/github/
+  527  ls
+  528  cd 42-GKE-ExternalDNS-Install/
+  529  clear
+  530  ls
+  531  gcloud iam service-accounts list
+  532  kubectl get all
+  533  cd
+  534  exit
+  535  cd gke/github/
+  536  cd 47-GKE-Ingress-with-Identity-Aware-Proxy/
+  537  ls
+  538  view session.out
+  539  cd ../48-GKE-Ingress-SelfSigned-SSL/
+  540  clear
+  541  ls
+  542  cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+  543  cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+  544  cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+  545  vim kube-manifests/04-ingress-self-signed-ssl.yaml
+  546  cat kube-manifests/04-ingress-self-signed-ssl.yaml
+  547  cat kube-manifests/05-frontendconfig.yaml
+  548  cd SSL-SelfSigned-Certs/
+  549  ls -ltr
+  550  mkdir kalyan
+  551  mv * kalyan/
+  552  openssl genrsa -out app1-ingress.key 2048
+  553  ls -ltr
+  554  cat app1-ingress.key
+  555  openssl req -new -key app1-ingress.key -out app1-ingress.csr -subj "/CN=app1.rahulsinha.info"
+  556  ls -ltr
+  557  cat app1-ingress.csr
+  558  openssl req -new -key app1-ingress.key -out app1-ingress.csr -subj "/C=SG/O=sre/CN=app1.rahulsinha.info"
+  559  ls -ltr
+  560  cat app1-ingress.csr
+  561  openssl x509 -req -days 7300 -in app1-ingress.csr -signkey app1-ingress.key -out app1-ingress.crt
+  562  ls -ltr
+  563  cat app1-ingress.crt
+  564  openssl req -in app1-ingress.csr -noout -text
+  565  openssl x509 in app1-ingress.crt -noout -text
+  566  openssl x509 -in app1-ingress.crt -noout -text
+  567  history
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ vim app1.rahulsinha.info-cert-generation-details.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ vim app1.rahulsinha.info-cert-generation-details.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ cp app1.rahulsinha.info-cert-generation-details.txt app2.rahulsinha.info-cert-generation-details.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ head -5 app2.rahulsinha.info-cert-generation-details.txt
+openssl genrsa -out app1-ingress.key 2048
+openssl req -new -key app1-ingress.key -out app1-ingress.csr -subj "/C=SG/O=sre/CN=app1.rahulsinha.info"
+openssl x509 -req -days 7300 -in app1-ingress.csr -signkey app1-ingress.key -out app1-ingress.crt
+openssl req -in app1-ingress.csr -noout -text
+openssl x509 -in app1-ingress.crt -noout -text
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl genrsa -out app2-ingress.key 2048
+Generating RSA private key, 2048 bit long modulus (2 primes)
+..................+++++
+...........................................................................................................................................................+++++
+e is 65537 (0x010001)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl req -new -key app2-ingress.key -out app2-ingress.csr -subj "/C=SG/O=sre/CN=app2.rahulsinha.info"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl x509 -req -days 7300 -in app2-ingress.csr -signkey app2-ingress.key -out app2-ingress.crt
+Signature ok
+subject=C = SG, O = sre, CN = app2.rahulsinha.info
+Getting Private key
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl req -in app2-ingress.csr -noout -text
+Certificate Request:
+    Data:
+        Version: 1 (0x0)
+        Subject: C = SG, O = sre, CN = app2.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:f4:5a:b0:0a:51:04:21:65:c0:87:89:5f:56:bc:
+                    01:b4:91:3b:70:d3:09:b8:46:10:e0:31:5d:cc:13:
+                    71:11:96:5e:9c:28:d3:25:4f:4e:a5:e5:bd:1e:93:
+                    94:d5:01:37:02:66:86:88:88:12:1c:b5:78:76:25:
+                    38:12:82:94:10:0c:e2:6d:ae:e2:db:b9:90:fa:52:
+                    05:ae:44:e3:d0:aa:60:26:0f:e0:e7:7f:c6:7f:01:
+                    0d:10:bb:f9:31:9b:2a:de:a9:7d:e6:fe:a6:25:79:
+                    a9:f2:db:15:c6:9d:2a:4a:be:e4:ad:fd:55:3a:59:
+                    59:6b:7f:52:e0:50:2f:9f:44:54:96:f5:cd:35:b1:
+                    66:fe:77:d7:fd:6c:35:36:6d:15:58:5e:59:65:87:
+                    c1:eb:7f:3a:4f:07:74:7e:b7:20:22:8b:81:32:4a:
+                    8e:ca:77:48:a6:e4:b2:2e:45:0a:49:c5:72:fb:28:
+                    ea:be:af:a4:5c:b7:02:dc:f9:7e:36:35:24:4f:e9:
+                    df:c5:58:28:97:ea:1b:1c:d3:da:f5:aa:fc:3d:4c:
+                    79:75:63:ce:26:44:be:ca:f8:05:5c:a6:37:8a:df:
+                    09:90:d7:97:54:ae:03:88:39:4c:a2:bc:5a:0f:1a:
+                    90:59:9e:23:8e:c2:9f:1f:74:f5:c6:f0:f3:db:26:
+                    a3:33
+                Exponent: 65537 (0x10001)
+        Attributes:
+            a0:00
+    Signature Algorithm: sha256WithRSAEncryption
+         6d:48:80:23:88:10:b0:f4:94:82:78:8e:46:e2:48:e7:b1:60:
+         28:e8:05:fa:d8:10:cd:50:b5:7a:a5:89:86:f9:2c:bd:36:2f:
+         8d:48:b2:7f:b5:1c:b0:af:fb:15:c7:f1:d8:12:b2:d7:90:87:
+         6c:55:4a:81:1e:78:cf:dc:2f:23:e5:39:9e:31:af:c1:2a:75:
+         e9:66:9c:ee:6d:11:11:b0:3c:c6:d8:cc:7d:ef:cf:ef:c9:e2:
+         60:96:65:8e:24:63:16:26:00:17:95:0b:5b:43:af:a9:cd:69:
+         4e:86:ad:c4:d4:9c:dc:8d:c3:0c:e6:61:6f:61:f5:e1:c4:d3:
+         2a:b3:7d:bf:bb:48:2c:a6:39:42:6d:00:39:fd:97:1d:7d:20:
+         36:0b:ee:af:02:68:f1:f0:60:70:97:bf:b4:70:72:98:a4:76:
+         24:05:53:f4:0b:ff:3d:0b:97:59:cd:ce:b1:38:c0:d6:ef:96:
+         48:2e:b4:9f:08:c7:c2:9e:40:ce:00:b8:16:30:af:ed:88:b2:
+         ad:fb:3b:de:90:ab:89:fb:59:ec:5d:e3:17:46:36:9a:14:01:
+         1f:a0:b7:cf:5d:1d:b5:d5:2f:a1:c8:5d:dc:6a:25:7e:8b:f1:
+         cc:39:27:07:57:d3:ee:6a:10:9a:d0:0f:3e:b7:2a:7e:10:64:
+         1a:63:2e:bb
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl x509 -in app2-ingress.crt -noout -text
+Certificate:
+    Data:
+        Version: 1 (0x0)
+        Serial Number:
+            02:bf:ce:52:63:23:ce:10:af:03:7d:01:c7:76:cb:3c:a5:55:d3:42
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C = SG, O = sre, CN = app2.rahulsinha.info
+        Validity
+            Not Before: Oct  6 01:58:55 2023 GMT
+            Not After : Oct  1 01:58:55 2043 GMT
+        Subject: C = SG, O = sre, CN = app2.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:f4:5a:b0:0a:51:04:21:65:c0:87:89:5f:56:bc:
+                    01:b4:91:3b:70:d3:09:b8:46:10:e0:31:5d:cc:13:
+                    71:11:96:5e:9c:28:d3:25:4f:4e:a5:e5:bd:1e:93:
+                    94:d5:01:37:02:66:86:88:88:12:1c:b5:78:76:25:
+                    38:12:82:94:10:0c:e2:6d:ae:e2:db:b9:90:fa:52:
+                    05:ae:44:e3:d0:aa:60:26:0f:e0:e7:7f:c6:7f:01:
+                    0d:10:bb:f9:31:9b:2a:de:a9:7d:e6:fe:a6:25:79:
+                    a9:f2:db:15:c6:9d:2a:4a:be:e4:ad:fd:55:3a:59:
+                    59:6b:7f:52:e0:50:2f:9f:44:54:96:f5:cd:35:b1:
+                    66:fe:77:d7:fd:6c:35:36:6d:15:58:5e:59:65:87:
+                    c1:eb:7f:3a:4f:07:74:7e:b7:20:22:8b:81:32:4a:
+                    8e:ca:77:48:a6:e4:b2:2e:45:0a:49:c5:72:fb:28:
+                    ea:be:af:a4:5c:b7:02:dc:f9:7e:36:35:24:4f:e9:
+                    df:c5:58:28:97:ea:1b:1c:d3:da:f5:aa:fc:3d:4c:
+                    79:75:63:ce:26:44:be:ca:f8:05:5c:a6:37:8a:df:
+                    09:90:d7:97:54:ae:03:88:39:4c:a2:bc:5a:0f:1a:
+                    90:59:9e:23:8e:c2:9f:1f:74:f5:c6:f0:f3:db:26:
+                    a3:33
+                Exponent: 65537 (0x10001)
+    Signature Algorithm: sha256WithRSAEncryption
+         65:1c:ab:db:64:ac:2c:28:a0:b4:07:39:27:01:fc:0e:ce:f4:
+         3a:ee:7a:22:98:1d:be:94:73:6d:4d:5f:95:b3:75:ed:92:3d:
+         bf:80:39:c0:f9:fa:33:2e:af:ce:a8:ec:a1:40:63:5c:58:c8:
+         70:8b:06:78:9d:be:e4:27:e5:3a:91:2e:95:5d:08:f4:71:e2:
+         dc:bb:27:63:27:66:6f:03:7f:b5:5a:8c:7b:b8:92:ec:74:20:
+         31:f2:51:a0:23:5d:65:85:e5:fd:58:9e:33:dd:0c:21:ab:39:
+         e7:ca:c0:68:9a:31:ff:2b:68:bf:a6:6d:fb:72:b1:cd:73:ec:
+         27:2b:9c:6f:7b:2a:f4:5b:28:f1:70:bb:74:0e:10:d5:78:bf:
+         fa:87:93:5d:cd:df:58:7f:7c:45:31:29:1b:5a:ba:fd:34:a3:
+         a8:dd:74:a9:4b:3d:90:4a:6f:36:41:ff:d2:d2:28:01:7e:59:
+         9d:ef:b6:53:f2:57:b6:ca:50:e6:e8:88:e9:4a:f1:73:16:34:
+         c4:1e:8c:2e:a9:41:35:47:09:30:34:5a:b2:e2:4d:0e:f5:48:
+         5b:1f:60:8e:75:f5:37:b2:a1:2e:51:49:74:41:5b:d7:ea:ac:
+         1d:8e:e4:b9:fe:be:c9:8f:29:37:5e:f2:b7:ea:10:fe:71:af:
+         c0:f7:de:99
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ vim app2.rahulsinha.info-cert-generation-details.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ vim app3.rahulsinha.info-cert-generation-details.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ cat app3.rahulsinha.info-cert-generation-details.txt
+openssl genrsa -out app3-ingress.key 2048
+openssl req -new -key app3-ingress.key -out app3-ingress.csr -subj "/C=SG/O=sre/CN=app3.rahulsinha.info"
+openssl x509 -req -days 7300 -in app3-ingress.csr -signkey app3-ingress.key -out app3-ingress.crt
+openssl req -in app3-ingress.csr -noout -text
+openssl x509 -in app3-ingress.crt -noout -text
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl genrsa -out app3-ingress.key 2048
+Generating RSA private key, 2048 bit long modulus (2 primes)
+........................................................................+++++
+................+++++
+e is 65537 (0x010001)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl req -new -key app3-ingress.key -out app3-ingress.csr -subj "/C=SG/O=sre/CN=app3-default.rahulsinha.info"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl x509 -req -days 7300 -in app3-ingress.csr -signkey app3-ingress.key -out app3-ingress.crt
+Signature ok
+subject=C = SG, O = sre, CN = app3-default.rahulsinha.info
+Getting Private key
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl req -in app3-ingress.csr -noout -text
+Certificate Request:
+    Data:
+        Version: 1 (0x0)
+        Subject: C = SG, O = sre, CN = app3-default.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:a9:6e:0b:63:46:89:16:e5:52:d1:bd:6d:d5:eb:
+                    4a:cb:cf:93:db:5f:3b:b3:29:8c:e4:74:62:36:a5:
+                    73:3e:41:b8:d6:16:4a:59:cd:e4:2e:6e:70:ed:6c:
+                    96:a8:f3:16:75:7c:d9:c9:83:c2:2f:4f:91:18:1a:
+                    8a:d6:da:aa:e8:2a:50:b4:fb:be:82:3e:be:d6:cd:
+                    ab:47:66:44:66:17:c0:c9:c4:99:58:89:e9:b2:97:
+                    d6:4f:2f:71:53:0d:5e:13:48:a5:00:02:45:49:f2:
+                    3f:8f:a7:7b:24:f4:c8:21:90:af:d6:6a:39:23:b0:
+                    3c:39:76:91:5d:6b:10:ed:4c:aa:b1:fd:cd:3b:5d:
+                    fb:3a:07:cc:41:64:1b:ec:9b:ab:bb:8f:b7:61:3c:
+                    43:65:0a:77:4d:45:71:71:c6:c9:f1:85:46:35:0e:
+                    7a:f1:5a:56:81:90:64:89:de:9c:6f:4c:f0:ca:b4:
+                    ef:b0:30:73:c8:a0:8a:68:e1:85:fe:e8:2e:c1:71:
+                    ba:03:ed:dc:ad:c5:b1:f4:8f:7b:40:c9:33:7d:0b:
+                    f8:a3:f5:7a:0f:7f:23:12:d9:8e:0f:aa:b7:43:ec:
+                    7d:81:fb:54:39:a3:af:dd:7e:78:43:70:c6:bb:66:
+                    0d:ab:51:83:3a:f3:32:25:c1:f4:41:b6:5d:20:6e:
+                    c4:71
+                Exponent: 65537 (0x10001)
+        Attributes:
+            a0:00
+    Signature Algorithm: sha256WithRSAEncryption
+         4c:45:43:2f:14:75:7d:a3:4f:bc:3c:e6:15:12:aa:8e:88:20:
+         23:b8:f1:d5:76:35:3c:00:47:41:3a:c2:e0:65:df:57:ac:9b:
+         e2:6f:e8:c3:48:95:19:e5:3e:25:ed:e5:1a:6a:ed:1c:f7:31:
+         98:e4:00:bd:01:82:34:93:75:06:e9:64:3c:d3:db:38:6e:5d:
+         d9:b3:00:f9:e4:8b:be:97:b8:4e:47:ef:51:aa:02:3e:ae:0a:
+         15:30:a3:41:20:39:ef:48:de:5c:56:6e:c7:7b:a4:93:4e:b1:
+         b1:dc:d4:f7:e9:85:40:cd:6d:12:c0:b7:73:69:8c:06:0c:0e:
+         0e:94:fc:a6:63:8e:c4:9a:f3:88:67:77:43:57:e0:b3:27:e3:
+         55:ef:b8:bc:bd:8e:96:eb:6c:4e:54:6d:31:6a:af:13:f8:29:
+         7f:fa:b6:dd:32:81:ce:a7:2f:49:ca:5c:09:16:19:ea:ee:f1:
+         ca:7e:e9:8f:ea:01:7d:0b:40:fd:2e:6b:5c:87:83:a1:0f:fe:
+         23:ef:b7:f9:66:3e:a5:93:bb:65:15:48:11:b6:43:23:ff:63:
+         97:df:42:78:cd:08:6e:f7:0f:64:b2:01:6a:a9:22:4f:87:9f:
+         89:7a:f7:9e:13:f1:e5:b5:1c:f4:7c:46:df:b1:0a:1d:db:43:
+         9e:37:9e:2a
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ openssl x509 -in app3-ingress.crt -noout -text
+Certificate:
+    Data:
+        Version: 1 (0x0)
+        Serial Number:
+            49:cf:6d:1d:81:41:ca:b8:80:83:94:49:23:51:cf:89:be:77:f4:54
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C = SG, O = sre, CN = app3-default.rahulsinha.info
+        Validity
+            Not Before: Oct  6 02:02:28 2023 GMT
+            Not After : Oct  1 02:02:28 2043 GMT
+        Subject: C = SG, O = sre, CN = app3-default.rahulsinha.info
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:a9:6e:0b:63:46:89:16:e5:52:d1:bd:6d:d5:eb:
+                    4a:cb:cf:93:db:5f:3b:b3:29:8c:e4:74:62:36:a5:
+                    73:3e:41:b8:d6:16:4a:59:cd:e4:2e:6e:70:ed:6c:
+                    96:a8:f3:16:75:7c:d9:c9:83:c2:2f:4f:91:18:1a:
+                    8a:d6:da:aa:e8:2a:50:b4:fb:be:82:3e:be:d6:cd:
+                    ab:47:66:44:66:17:c0:c9:c4:99:58:89:e9:b2:97:
+                    d6:4f:2f:71:53:0d:5e:13:48:a5:00:02:45:49:f2:
+                    3f:8f:a7:7b:24:f4:c8:21:90:af:d6:6a:39:23:b0:
+                    3c:39:76:91:5d:6b:10:ed:4c:aa:b1:fd:cd:3b:5d:
+                    fb:3a:07:cc:41:64:1b:ec:9b:ab:bb:8f:b7:61:3c:
+                    43:65:0a:77:4d:45:71:71:c6:c9:f1:85:46:35:0e:
+                    7a:f1:5a:56:81:90:64:89:de:9c:6f:4c:f0:ca:b4:
+                    ef:b0:30:73:c8:a0:8a:68:e1:85:fe:e8:2e:c1:71:
+                    ba:03:ed:dc:ad:c5:b1:f4:8f:7b:40:c9:33:7d:0b:
+                    f8:a3:f5:7a:0f:7f:23:12:d9:8e:0f:aa:b7:43:ec:
+                    7d:81:fb:54:39:a3:af:dd:7e:78:43:70:c6:bb:66:
+                    0d:ab:51:83:3a:f3:32:25:c1:f4:41:b6:5d:20:6e:
+                    c4:71
+                Exponent: 65537 (0x10001)
+    Signature Algorithm: sha256WithRSAEncryption
+         a8:ed:8e:fb:5a:57:4a:23:71:e7:c5:db:af:82:20:79:32:7e:
+         8b:85:2a:d7:1b:07:a8:be:06:bc:8f:e7:91:b8:63:6a:38:80:
+         ed:32:77:2a:70:b8:84:92:db:64:e7:b0:57:b0:97:f1:9f:31:
+         65:97:1e:9f:b5:a2:9c:3c:04:fa:0e:4b:a0:eb:5a:0d:36:0b:
+         12:e0:de:f5:cf:2f:78:ac:4c:64:8e:61:27:6f:0e:57:d7:72:
+         e5:4a:d2:b6:6f:7d:54:fc:b7:be:60:f2:4b:d9:48:af:d2:1a:
+         9d:76:c4:30:1a:7a:81:35:dc:fd:9a:b4:ee:c0:93:d7:1c:25:
+         4e:88:1e:b4:27:46:c3:c4:b2:a6:0d:1b:ae:2c:f0:9a:4a:06:
+         e9:60:1a:79:c5:ea:f8:8b:55:28:85:21:9a:d6:5d:39:7d:ed:
+         2d:67:68:fb:08:76:fb:9b:d5:de:9b:57:06:91:7a:c0:d7:0e:
+         0d:41:9e:08:2f:e2:4e:77:e9:e6:d6:88:fa:81:45:87:e3:98:
+         2b:97:52:3c:e0:e2:d1:94:05:8d:97:da:33:8a:e0:f1:c6:86:
+         29:d1:da:e8:ac:cd:ad:c9:8b:d6:47:2a:54:f8:13:83:4b:94:
+         53:00:55:3b:30:43:6a:98:b3:66:73:11:e2:f9:a4:5c:74:78:
+         6c:b0:1d:60
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ vim app3.rahulsinha.info-cert-generation-details.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ ls -ltr
+total 64
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Oct  6 09:30 kalyan
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:34 app1-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  944 Oct  6 09:48 app1-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1094 Oct  6 09:50 app1-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 5727 Oct  6 09:56 app1.rahulsinha.info-cert-generation-details.txt
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:57 app2-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  944 Oct  6 09:58 app2-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1094 Oct  6 09:58 app2-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 6785 Oct  6 10:00 app2.rahulsinha.info-cert-generation-details.txt
+-rw------- 1 simplyrahul simplyrahul 1675 Oct  6 10:01 app3-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  952 Oct  6 10:02 app3-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1115 Oct  6 10:02 app3-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 6748 Oct  6 10:03 app3.rahulsinha.info-cert-generation-details.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ kubectl create secret tls app1-secret --cert app1-ingress.crt --key app1-ingress.key
+secret/app1-secret created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ kubectl create secret tls app2-secret --cert app2-ingress.crt --key app2-ingress.key
+secret/app2-secret created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ kubectl create secret tls app3-secret --cert app3-ingress.crt --key app3-ingress.key
+secret/app3-secret created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ kubectl get secrets
+NAME          TYPE                DATA   AGE
+app1-secret   kubernetes.io/tls   2      96s
+app2-secret   kubernetes.io/tls   2      28s
+app3-secret   kubernetes.io/tls   2      15s
+my-secret     Opaque              2      2d11h
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ kubectl describe secret app1-secret
+Name:         app1-secret
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  kubernetes.io/tls
+
+Data
+====
+tls.crt:  1094 bytes
+tls.key:  1679 bytes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ kubectl describe secret app2-secret
+Name:         app2-secret
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  kubernetes.io/tls
+
+Data
+====
+tls.crt:  1094 bytes
+tls.key:  1679 bytes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ kubectl describe secret app3-secret
+Name:         app3-secret
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  kubernetes.io/tls
+
+Data
+====
+tls.crt:  1115 bytes
+tls.key:  1675 bytes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs$ cd ..
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ vim kube-manifests/04-ingress-self-signed-ssl.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cat kube-manifests/04-ingress-self-signed-ssl.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-selfsigned-ssl
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+    # SSL Redirect HTTP to HTTPS
+    networking.gke.io/v1beta1.FrontendConfig: "my-frontend-config"
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: app3-default.rahulsinha.info
+spec:
+  # SSL Certs - Associate using Kubernetes Secrets
+  tls:
+  - secretName: app1-secret
+  - secretName: app2-secret
+  - secretName: app3-secret
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - host: app1.rahulsinha.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+    - host: app2.rahulsinha.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment created
+service/app1-nginx-nodeport-service created
+deployment.apps/app2-nginx-deployment created
+service/app2-nginx-nodeport-service created
+deployment.apps/app3-nginx-deployment created
+service/app3-nginx-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-selfsigned-ssl created
+frontendconfig.networking.gke.io/my-frontend-config created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           4m10s
+app2-nginx-deployment   1/1     1            1           4m9s
+app3-nginx-deployment   1/1     1            1           4m8s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl get pods -o wide --show-labels
+NAME                                     READY   STATUS    RESTARTS   AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+app1-nginx-deployment-544dfb8c8f-b8hvr   1/1     Running   0          4m32s   10.76.0.19   gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=app1-nginx,pod-template-hash=544dfb8c8f
+app2-nginx-deployment-7c46c8bb8c-nhc5p   1/1     Running   0          4m31s   10.76.2.26   gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=app2-nginx,pod-template-hash=7c46c8bb8c
+app3-nginx-deployment-5778df6d5f-x2l5r   1/1     Running   0          4m30s   10.76.2.27   gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=app3-nginx,pod-template-hash=5778df6d5f
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl get svc -o wide --show-labels
+NAME                          TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE     SELECTOR         LABELS
+app1-nginx-nodeport-service   NodePort    10.80.4.173   <none>        80:30563/TCP   4m49s   app=app1-nginx   <none>
+app2-nginx-nodeport-service   NodePort    10.80.7.155   <none>        80:32225/TCP   4m48s   app=app2-nginx   <none>
+app3-nginx-nodeport-service   NodePort    10.80.11.72   <none>        80:32402/TCP   4m47s   app=app3-nginx   <none>
+kubernetes                    ClusterIP   10.80.0.1     <none>        443/TCP        45d     <none>           component=apiserver,provider=kubernetes
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl get ingress -o wide --show-labels
+NAME                     CLASS    HOSTS                                       ADDRESS       PORTS     AGE     LABELS
+ingress-selfsigned-ssl   <none>   app1.rahulsinha.info,app2.rahulsinha.info   34.36.100.7   80, 443   5m12s   <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl describe ingress ingress-selfsigned-ssl
+Name:             ingress-selfsigned-ssl
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.2.27:80)
+TLS:
+  app1-secret terminates
+  app2-secret terminates
+  app3-secret terminates
+Rules:
+  Host                  Path  Backends
+  ----                  ----  --------
+  app1.rahulsinha.info
+                        /   app1-nginx-nodeport-service:80 (10.76.0.19:80)
+  app2.rahulsinha.info
+                        /   app2-nginx-nodeport-service:80 (10.76.2.26:80)
+Annotations:            external-dns.alpha.kubernetes.io/hostname: app3-default.rahulsinha.info
+                        ingress.kubernetes.io/backends:
+                          {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+                        ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo
+                        ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo
+                        ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo
+                        ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo
+                        ingress.kubernetes.io/ssl-cert:
+                          k8s2-cr-jdj5k2n0-i9k4ukj88niv8piy-4790c163c71fd6d9,k8s2-cr-jdj5k2n0-i9k4ukj88niv8piy-b40fc033617b8619,k8s2-cr-jdj5k2n0-i9k4ukj88niv8piy-8e...
+                        ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo
+                        ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo
+                        kubernetes.io/ingress.class: gce
+                        kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+                        networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type    Reason     Age                  From                     Message
+  ----    ------     ----                 ----                     -------
+  Normal  Sync       3m12s                loadbalancer-controller  UrlMap "k8s2-um-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo" created
+  Normal  Sync       3m7s                 loadbalancer-controller  TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo" created
+  Normal  Sync       2m55s                loadbalancer-controller  ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo" created
+  Normal  Sync       2m43s                loadbalancer-controller  TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo" created
+  Normal  Sync       2m29s                loadbalancer-controller  ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-selfsigned-ssl-s6yjz8bo" created
+  Normal  IPChanged  2m29s                loadbalancer-controller  IP is now 34.36.100.7
+  Normal  Sync       16s (x5 over 5m40s)  loadbalancer-controller  Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl get frontendconfig
+NAME                 AGE
+my-frontend-config   6m27s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl describe frontendconfig my-frontend-config
+Name:         my-frontend-config
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  networking.gke.io/v1beta1
+Kind:         FrontendConfig
+Metadata:
+  Creation Timestamp:  2023-10-06T02:09:24Z
+  Generation:          1
+  Resource Version:    44478078
+  UID:                 b4b0af6f-11c8-454b-9fab-d6483b6d6620
+Spec:
+  Redirect To Https:
+    Enabled:  true
+Events:       <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubect get svc
+kubect: command not found
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl get svc
+NAME                          TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+app1-nginx-nodeport-service   NodePort    10.80.4.173   <none>        80:30563/TCP   7m18s
+app2-nginx-nodeport-service   NodePort    10.80.7.155   <none>        80:32225/TCP   7m17s
+app3-nginx-nodeport-service   NodePort    10.80.11.72   <none>        80:32402/TCP   7m16s
+kubernetes                    ClusterIP   10.80.0.1     <none>        443/TCP        45d
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl describe svc app1-nginx-nodeport-service
+Name:                     app1-nginx-nodeport-service
+Namespace:                default
+Labels:                   <none>
+Annotations:              cloud.google.com/neg: {"ingress":true}
+                          cloud.google.com/neg-status:
+                            {"network_endpoint_groups":{"80":"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc"},"zones":["us-central1-a","us-central1-b"...
+Selector:                 app=app1-nginx
+Type:                     NodePort
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.80.4.173
+IPs:                      10.80.4.173
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  30563/TCP
+Endpoints:                10.76.0.19:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason  Age    From            Message
+  ----    ------  ----   ----            -------
+  Normal  Create  7m33s  neg-controller  Created NEG "k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc" for default/app1-nginx-nodeport-service-k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-a".
+  Normal  Create  7m26s  neg-controller  Created NEG "k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc" for default/app1-nginx-nodeport-service-k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-b".
+  Normal  Create  7m19s  neg-controller  Created NEG "k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc" for default/app1-nginx-nodeport-service-k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-c".
+  Normal  Attach  7m17s  neg-controller  Attach 1 network endpoint(s) (NEG "k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc" in zone "us-central1-a")
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-b8hvr   1/1     Running   0          8m10s
+app2-nginx-deployment-7c46c8bb8c-nhc5p   1/1     Running   0          8m9s
+app3-nginx-deployment-5778df6d5f-x2l5r   1/1     Running   0          8m8s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ kubectl describe pods app1-nginx-deployment-544dfb8c8f-b8hvr
+Name:             app1-nginx-deployment-544dfb8c8f-b8hvr
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-b8a9f9fd-1hff/10.128.0.49
+Start Time:       Fri, 06 Oct 2023 10:09:21 +0800
+Labels:           app=app1-nginx
+                  pod-template-hash=544dfb8c8f
+Annotations:      <none>
+Status:           Running
+IP:               10.76.0.19
+IPs:
+  IP:           10.76.0.19
+Controlled By:  ReplicaSet/app1-nginx-deployment-544dfb8c8f
+Containers:
+  app1-nginx:
+    Container ID:   containerd://14b47692e536136d202df3699e28c450ef13ff25744c44bfbfe67149b7a70dcf
+    Image:          stacksimplify/kube-nginxapp1:1.0.0
+    Image ID:       docker.io/stacksimplify/kube-nginxapp1@sha256:ead648280067b834e13c321aeeedcd54702459815c623ef9859aaabdc9a8f4b5
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Fri, 06 Oct 2023 10:09:24 +0800
+    Ready:          True
+    Restart Count:  0
+    Readiness:      http-get http://:80/app1/index.html delay=10s timeout=5s period=15s #success=1 #failure=3
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-g6hxc (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-g6hxc:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  8m29s  default-scheduler  Successfully assigned default/app1-nginx-deployment-544dfb8c8f-b8hvr to gke-private-standard-22a-default-pool-b8a9f9fd-1hff
+  Normal  Pulled     8m27s  kubelet            Container image "stacksimplify/kube-nginxapp1:1.0.0" already present on machine
+  Normal  Created    8m27s  kubelet            Created container app1-nginx
+  Normal  Started    8m26s  kubelet            Started container app1-nginx
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ nslookup app3-default.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   app3-default.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ nslookup appa.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+** server can't find appa.rahulsinha.info: NXDOMAIN
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ nslookup app1.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   app1.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ nslookup app2.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   app2.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ nslookup app3.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+** server can't find app3.rahulsinha.info: NXDOMAIN
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl https://app1.rahulsinha.info/
+curl: (60) SSL certificate problem: self signed certificate
+More details here: https://curl.haxx.se/docs/sslcerts.html
+
+curl failed to verify the legitimacy of the server and therefore could not
+establish a secure connection to it. To learn more about this situation and
+how to fix it, please visit the web page mentioned above.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl -k https://app1.rahulsinha.info/
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl -k https://app1.rahulsinha.info/app1/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl -k https://app2.rahulsinha.info/app2/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl -k https://app3-default.rahulsinha.info/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl -k https://app3-default.rahulsinha.info/app3/
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl -k https://app3-default.rahulsinha.info/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl http://app3-default.rahulsinha.info/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl http://app3-default.rahulsinha.info/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ curl http://app2.rahulsinha.info/app2/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$
+
+--
+simplyrahul@DESKTOP-C4GRDQ2:~$ kubectl -n external-dns-ns get pods
+NAME                            READY   STATUS    RESTARTS   AGE
+external-dns-65798ffcb8-4dqs2   1/1     Running   0          17d
+simplyrahul@DESKTOP-C4GRDQ2:~$ kubectl -n external-dns-ns logs -f external-dns-65798ffcb8-4dqs2
+
+time="2023-10-06T02:10:28Z" level=info msg="All records are already up to date"
+time="2023-10-06T02:11:29Z" level=info msg="All records are already up to date"
+time="2023-10-06T02:12:30Z" level=info msg="All records are already up to date"
+time="2023-10-06T02:13:31Z" level=info msg="Change zone: rahulsinha-info batch #0"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: a-app1.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-selfsigned-ssl\"] 300"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: a-app2.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-selfsigned-ssl\"] 300"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: a-app3-default.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-selfsigned-ssl\"] 300"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: app1.rahulsinha.info. A [34.36.100.7] 300"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: app1.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-selfsigned-ssl\"] 300"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: app2.rahulsinha.info. A [34.36.100.7] 300"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: app2.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-selfsigned-ssl\"] 300"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: app3-default.rahulsinha.info. A [34.36.100.7] 300"
+time="2023-10-06T02:13:31Z" level=info msg="Add records: app3-default.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-selfsigned-ssl\"] 300"
+time="2023-10-06T02:14:31Z" level=info msg="All records are already up to date"
+time="2023-10-06T02:15:32Z" level=info msg="All records are already up to date"
