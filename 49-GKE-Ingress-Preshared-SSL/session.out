@@ -1,0 +1,634 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/48-GKE-Ingress-SelfSigned-SSL$ cd ../49-GKE-Ingress-Preshared-SSL/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ ls
+README.md  SSL-SelfSigned-Certs  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cd SSL-SelfSigned-Certs/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ ls
+app1-ingress.crt  app1-ingress.csr  app1-ingress.key  app2-ingress.crt  app2-ingress.csr  app2-ingress.key  app3-ingress.crt  app3-ingress.csr  app3-ingress.key
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ mkdir kalyan
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ mv * kalyan/
+mv: cannot move 'kalyan' to a subdirectory of itself, 'kalyan/kalyan'
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ cp -pR ../../48-GKE-Ingress-SelfSigned-SSL/SSL-SelfSigned-Certs/* .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ ls -ltr
+total 64
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Oct  6 09:30 kalyan
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:34 app1-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  944 Oct  6 09:48 app1-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1094 Oct  6 09:50 app1-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 5727 Oct  6 09:56 app1.rahulsinha.info-cert-generation-details.txt
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:57 app2-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  944 Oct  6 09:58 app2-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1094 Oct  6 09:58 app2-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 6785 Oct  6 10:00 app2.rahulsinha.info-cert-generation-details.txt
+-rw------- 1 simplyrahul simplyrahul 1675 Oct  6 10:01 app3-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  952 Oct  6 10:02 app3-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1115 Oct  6 10:02 app3-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 6748 Oct  6 10:03 app3.rahulsinha.info-cert-generation-details.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ mkdir 48
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ mv *.key 48/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ cp *.crt 48/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ cp -pR 48/*.key .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ ls -ltr
+total 68
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Oct  6 09:30 kalyan
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:34 app1-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  944 Oct  6 09:48 app1-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1094 Oct  6 09:50 app1-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 5727 Oct  6 09:56 app1.rahulsinha.info-cert-generation-details.txt
+-rw------- 1 simplyrahul simplyrahul 1679 Oct  6 09:57 app2-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  944 Oct  6 09:58 app2-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1094 Oct  6 09:58 app2-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 6785 Oct  6 10:00 app2.rahulsinha.info-cert-generation-details.txt
+-rw------- 1 simplyrahul simplyrahul 1675 Oct  6 10:01 app3-ingress.key
+-rw-r--r-- 1 simplyrahul simplyrahul  952 Oct  6 10:02 app3-ingress.csr
+-rw-r--r-- 1 simplyrahul simplyrahul 1115 Oct  6 10:02 app3-ingress.crt
+-rw-r--r-- 1 simplyrahul simplyrahul 6748 Oct  6 10:03 app3.rahulsinha.info-cert-generation-details.txt
+drwxr-xr-x 2 simplyrahul simplyrahul 4096 Oct  6 11:15 48
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ gcloud compute ssl-certificates create app1-ingress --certificate app1-ingress.crt  --private-key app1-ingress.key
+Created [https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/sslCertificates/app1-ingress].
+NAME          TYPE          CREATION_TIMESTAMP             EXPIRE_TIME                    REGION  MANAGED_STATUS
+app1-ingress  SELF_MANAGED  2023-10-05T20:16:28.609-07:00  2043-09-30T18:50:29.000-07:00
+
+
+Updates are available for some Google Cloud CLI components.  To install them,
+please run:
+  $ gcloud components update
+
+
+
+To take a quick anonymous survey, run:
+  $ gcloud survey
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ gcloud compute ssl-certificates create app2-ingress --certificate app2-ingress.crt  --private-key app2-ingress.key
+Created [https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/sslCertificates/app2-ingress].
+NAME          TYPE          CREATION_TIMESTAMP             EXPIRE_TIME                    REGION  MANAGED_STATUS
+app2-ingress  SELF_MANAGED  2023-10-05T20:17:39.297-07:00  2043-09-30T18:58:55.000-07:00
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ gcloud compute ssl-certificates create app3-ingress --certificate app3-ingress.crt  --private-key app3-ingress.key
+Created [https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/sslCertificates/app3-ingress].
+NAME          TYPE          CREATION_TIMESTAMP             EXPIRE_TIME                    REGION  MANAGED_STATUS
+app3-ingress  SELF_MANAGED  2023-10-05T20:18:33.014-07:00  2043-09-30T19:02:28.000-07:00
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ gcloud compute ssl-certificates list
+NAME          TYPE          CREATION_TIMESTAMP             EXPIRE_TIME                    REGION  MANAGED_STATUS
+app1-ingress  SELF_MANAGED  2023-10-05T20:16:28.609-07:00  2043-09-30T18:50:29.000-07:00
+app2-ingress  SELF_MANAGED  2023-10-05T20:17:39.297-07:00  2043-09-30T18:58:55.000-07:00
+app3-ingress  SELF_MANAGED  2023-10-05T20:18:33.014-07:00  2043-09-30T19:02:28.000-07:00
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL/SSL-SelfSigned-Certs$ cd ..
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cat kube-manifests/01-Nginx-App1-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-nginx-deployment
+  labels:
+    app: app1-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1-nginx
+  template:
+    metadata:
+      labels:
+        app: app1-nginx
+    spec:
+      containers:
+        - name: app1-nginx
+          image: stacksimplify/kube-nginxapp1:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app1/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nginx-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    app: app1-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cat kube-manifests/02-Nginx-App2-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2-nginx-deployment
+  labels:
+    app: app2-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app2-nginx
+  template:
+    metadata:
+      labels:
+        app: app2-nginx
+    spec:
+      containers:
+        - name: app2-nginx
+          image: stacksimplify/kube-nginxapp2:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /app2/index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app2-nginx-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    app: app2-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cat kube-manifests/03-Nginx-App3-Deployment-and-NodePortService.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-nginx-deployment
+  labels:
+    app: app3-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app3-nginx
+  template:
+    metadata:
+      labels:
+        app: app3-nginx
+    spec:
+      containers:
+        - name: app3-nginx
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-nginx-nodeport-service
+spec:
+  type: NodePort
+  selector:
+    app: app3-nginx
+  ports:
+    - port: 80
+      targetPort: 80simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ vim kube-manifests/04-ingress-preshared-ssl.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cat kube-manifests/04-ingress-preshared-ssl.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-preshared-ssl
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+    # SSL Redirect HTTP to HTTPS
+    networking.gke.io/v1beta1.FrontendConfig: "my-frontend-config"
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: app3-default.rahulsinha.info
+    # Pre-shared certificate resources
+    ingress.gcp.kubernetes.io/pre-shared-cert: "app1-ingress,app2-ingress,app3-ingress"
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+  rules:
+    - host: app1.rahulsinha.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nginx-nodeport-service
+                port:
+                  number: 80
+    - host: app2.rahulsinha.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-nginx-nodeport-service
+                port:
+                  number: 80
+
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ kubectl apply -f kube-manifests/
+deployment.apps/app1-nginx-deployment created
+service/app1-nginx-nodeport-service created
+deployment.apps/app2-nginx-deployment created
+service/app2-nginx-nodeport-service created
+deployment.apps/app3-nginx-deployment created
+service/app3-nginx-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-preshared-ssl created
+frontendconfig.networking.gke.io/my-frontend-config created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$
+
+-
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           3m14s
+app2-nginx-deployment   1/1     1            1           3m14s
+app3-nginx-deployment   1/1     1            1           3m13s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ for i in deploy pods svc ingress frontendconfig
+> ^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ for i in deploy pods svc ingress frontendconfig ; do kubectl get ${i} ; done
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           4m29s
+app2-nginx-deployment   1/1     1            1           4m29s
+app3-nginx-deployment   1/1     1            1           4m28s
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-phd7p   1/1     Running   0          4m33s
+app2-nginx-deployment-7c46c8bb8c-bcnpg   1/1     Running   0          4m32s
+app3-nginx-deployment-5778df6d5f-9r96d   1/1     Running   0          4m32s
+NAME                          TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+app1-nginx-nodeport-service   NodePort    10.80.11.14   <none>        80:32015/TCP   4m36s
+app2-nginx-nodeport-service   NodePort    10.80.8.177   <none>        80:30891/TCP   4m35s
+app3-nginx-nodeport-service   NodePort    10.80.8.188   <none>        80:31440/TCP   4m34s
+kubernetes                    ClusterIP   10.80.0.1     <none>        443/TCP        45d
+NAME                    CLASS    HOSTS                                       ADDRESS       PORTS   AGE
+ingress-preshared-ssl   <none>   app1.rahulsinha.info,app2.rahulsinha.info   34.36.100.7   80      4m37s
+NAME                 AGE
+my-frontend-config   4m40s
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ for i in deploy pods svc ingress frontendconfig ; do echo "kubectl get ${i}" && kubectl get ${i} && echo " " ; done
+kubectl get deploy
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+app1-nginx-deployment   1/1     1            1           5m11s
+app2-nginx-deployment   1/1     1            1           5m11s
+app3-nginx-deployment   1/1     1            1           5m10s
+
+kubectl get pods
+NAME                                     READY   STATUS    RESTARTS   AGE
+app1-nginx-deployment-544dfb8c8f-phd7p   1/1     Running   0          5m15s
+app2-nginx-deployment-7c46c8bb8c-bcnpg   1/1     Running   0          5m14s
+app3-nginx-deployment-5778df6d5f-9r96d   1/1     Running   0          5m14s
+
+kubectl get svc
+NAME                          TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+app1-nginx-nodeport-service   NodePort    10.80.11.14   <none>        80:32015/TCP   5m18s
+app2-nginx-nodeport-service   NodePort    10.80.8.177   <none>        80:30891/TCP   5m17s
+app3-nginx-nodeport-service   NodePort    10.80.8.188   <none>        80:31440/TCP   5m16s
+kubernetes                    ClusterIP   10.80.0.1     <none>        443/TCP        45d
+
+kubectl get ingress
+NAME                    CLASS    HOSTS                                       ADDRESS       PORTS   AGE
+ingress-preshared-ssl   <none>   app1.rahulsinha.info,app2.rahulsinha.info   34.36.100.7   80      5m19s
+
+kubectl get frontendconfig
+NAME                 AGE
+my-frontend-config   5m22s
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ kubectl describe ingress ingress-preshared-ssl
+Name:             ingress-preshared-ssl
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.2.29:80)
+Rules:
+  Host                  Path  Backends
+  ----                  ----  --------
+  app1.rahulsinha.info
+                        /   app1-nginx-nodeport-service:80 (10.76.0.20:80)
+  app2.rahulsinha.info
+                        /   app2-nginx-nodeport-service:80 (10.76.2.28:80)
+Annotations:            external-dns.alpha.kubernetes.io/hostname: app3-default.rahulsinha.info
+                        ingress.gcp.kubernetes.io/pre-shared-cert: app1-ingress,app2-ingress,app3-ingress
+                        ingress.kubernetes.io/backends:
+                          {"k8s1-3b22a415-default-app1-nginx-nodeport-service-80-28b50edc":"HEALTHY","k8s1-3b22a415-default-app2-nginx-nodeport-service-80-61584a78"...
+                        ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2
+                        ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2
+                        ingress.kubernetes.io/https-target-proxy: k8s2-ts-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2
+                        ingress.kubernetes.io/redirect-url-map: k8s2-rm-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2
+                        ingress.kubernetes.io/ssl-cert: app1-ingress,app2-ingress,app3-ingress
+                        ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2
+                        ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2
+                        kubernetes.io/ingress.class: gce
+                        kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+                        networking.gke.io/v1beta1.FrontendConfig: my-frontend-config
+Events:
+  Type    Reason     Age                    From                     Message
+  ----    ------     ----                   ----                     -------
+  Normal  Sync       3m28s                  loadbalancer-controller  UrlMap "k8s2-um-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2" created
+  Normal  Sync       3m23s                  loadbalancer-controller  TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2" created
+  Normal  Sync       3m8s                   loadbalancer-controller  ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2" created
+  Normal  Sync       3m5s                   loadbalancer-controller  TargetProxy "k8s2-ts-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2" created
+  Normal  Sync       2m51s                  loadbalancer-controller  ForwardingRule "k8s2-fs-jdj5k2n0-default-ingress-preshared-ssl-50ryxch2" created
+  Normal  IPChanged  2m51s                  loadbalancer-controller  IP is now 34.36.100.7
+  Normal  Sync       2m23s (x5 over 5m48s)  loadbalancer-controller  Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ gcloud compute ssl-certificates list
+NAME          TYPE          CREATION_TIMESTAMP             EXPIRE_TIME                    REGION  MANAGED_STATUS
+app1-ingress  SELF_MANAGED  2023-10-05T20:16:28.609-07:00  2043-09-30T18:50:29.000-07:00
+app2-ingress  SELF_MANAGED  2023-10-05T20:17:39.297-07:00  2043-09-30T18:58:55.000-07:00
+app3-ingress  SELF_MANAGED  2023-10-05T20:18:33.014-07:00  2043-09-30T19:02:28.000-07:00
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ gcloud compute ssl-certificates describe app1-ingress
+certificate: |
+  -----BEGIN CERTIFICATE-----
+  MIIC+zCCAeMCFAIFMF5UghSowp2KdRXauWjhP3XNMA0GCSqGSIb3DQEBCwUAMDox
+  CzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDEucmFodWxz
+  aW5oYS5pbmZvMB4XDTIzMTAwNjAxNTAyOVoXDTQzMTAwMTAxNTAyOVowOjELMAkG
+  A1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMS5yYWh1bHNpbmhh
+  LmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDq5g22gauE1VHU
+  zRmbKhe7hN7rqaXH+gOBneq3lmsmUWWwRb3Bx4qSK/Rh/ume5/xtRDP5y7ZpiZA9
+  UHiKoXINgL1eVsFMg8QRAA8GNb1dIEa7AOJdZWZnxmF0SDhN+zTFhV7EgqE0zoBo
+  8O5QOiHtvgOE30zKQgaWncJhC69a0mzM0MnEIQGbyY5lb0jkiuHXbTlVheqgMXrw
+  9lfxWkQ/oP7pZJ7ouKoMW1MuyZAdUOS0cmvaK4qjrZcKtbfLIxTgycehLlKGu58H
+  wdtEHbN8y3VvdxgRzAme3j5t118R5Ai7lchf9J31pznQ9UCo5szjLtm1mBdZtEE7
+  DNRUGTxtAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAMC8h97w2j27fcfI+EN70PwY
+  OTFEZtueKgn8UnkVNs/WiIMJhR6X8R2DI1fJmfl5GkBRdnN7EQ9bAt2neCnLII0e
+  kztc9uFa+g1Y1K98TTn+5BCeABlK2W2Wu05esM/oeDvo1v0AfVUrsMJR+T6QUEdg
+  F9osnGf9Tj05ZGFWo355+7hWuWwsmES6+hkaxNAxN5zvqQXnjoj4snyAXS+N2aGr
+  JPvkRNJkwWmX8nggPm4qq+8kMlbPuzodnrLCvYLYJLHpR+bHFnnBkmVMgNodKGDv
+  LdpSDbkctWtI2bkBBqjFSf3ehAf29bMqlW7WDgrtpZDu8ed4USIzhkkHruyAYUE=
+  -----END CERTIFICATE-----
+creationTimestamp: '2023-10-05T20:16:28.609-07:00'
+expireTime: '2043-09-30T18:50:29.000-07:00'
+id: '8235742983143736035'
+kind: compute#sslCertificate
+name: app1-ingress
+selfLink: https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/sslCertificates/app1-ingress
+selfManaged:
+  certificate: |
+    -----BEGIN CERTIFICATE-----
+    MIIC+zCCAeMCFAIFMF5UghSowp2KdRXauWjhP3XNMA0GCSqGSIb3DQEBCwUAMDox
+    CzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDEucmFodWxz
+    aW5oYS5pbmZvMB4XDTIzMTAwNjAxNTAyOVoXDTQzMTAwMTAxNTAyOVowOjELMAkG
+    A1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMS5yYWh1bHNpbmhh
+    LmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDq5g22gauE1VHU
+    zRmbKhe7hN7rqaXH+gOBneq3lmsmUWWwRb3Bx4qSK/Rh/ume5/xtRDP5y7ZpiZA9
+    UHiKoXINgL1eVsFMg8QRAA8GNb1dIEa7AOJdZWZnxmF0SDhN+zTFhV7EgqE0zoBo
+    8O5QOiHtvgOE30zKQgaWncJhC69a0mzM0MnEIQGbyY5lb0jkiuHXbTlVheqgMXrw
+    9lfxWkQ/oP7pZJ7ouKoMW1MuyZAdUOS0cmvaK4qjrZcKtbfLIxTgycehLlKGu58H
+    wdtEHbN8y3VvdxgRzAme3j5t118R5Ai7lchf9J31pznQ9UCo5szjLtm1mBdZtEE7
+    DNRUGTxtAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAMC8h97w2j27fcfI+EN70PwY
+    OTFEZtueKgn8UnkVNs/WiIMJhR6X8R2DI1fJmfl5GkBRdnN7EQ9bAt2neCnLII0e
+    kztc9uFa+g1Y1K98TTn+5BCeABlK2W2Wu05esM/oeDvo1v0AfVUrsMJR+T6QUEdg
+    F9osnGf9Tj05ZGFWo355+7hWuWwsmES6+hkaxNAxN5zvqQXnjoj4snyAXS+N2aGr
+    JPvkRNJkwWmX8nggPm4qq+8kMlbPuzodnrLCvYLYJLHpR+bHFnnBkmVMgNodKGDv
+    LdpSDbkctWtI2bkBBqjFSf3ehAf29bMqlW7WDgrtpZDu8ed4USIzhkkHruyAYUE=
+    -----END CERTIFICATE-----
+type: SELF_MANAGED
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ gcloud compute ssl-certificates describe app2-ingress
+certificate: |
+  -----BEGIN CERTIFICATE-----
+  MIIC+zCCAeMCFAK/zlJjI84QrwN9Acd2yzylVdNCMA0GCSqGSIb3DQEBCwUAMDox
+  CzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDIucmFodWxz
+  aW5oYS5pbmZvMB4XDTIzMTAwNjAxNTg1NVoXDTQzMTAwMTAxNTg1NVowOjELMAkG
+  A1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMi5yYWh1bHNpbmhh
+  LmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQD0WrAKUQQhZcCH
+  iV9WvAG0kTtw0wm4RhDgMV3ME3ERll6cKNMlT06l5b0ek5TVATcCZoaIiBIctXh2
+  JTgSgpQQDOJtruLbuZD6UgWuROPQqmAmD+Dnf8Z/AQ0Qu/kxmyreqX3m/qYleany
+  2xXGnSpKvuSt/VU6WVlrf1LgUC+fRFSW9c01sWb+d9f9bDU2bRVYXlllh8HrfzpP
+  B3R+tyAii4EySo7Kd0im5LIuRQpJxXL7KOq+r6RctwLc+X42NSRP6d/FWCiX6hsc
+  09r1qvw9THl1Y84mRL7K+AVcpjeK3wmQ15dUrgOIOUyivFoPGpBZniOOwp8fdPXG
+  8PPbJqMzAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAGUcq9tkrCwooLQHOScB/A7O
+  9DrueiKYHb6Uc21NX5Wzde2SPb+AOcD5+jMur86o7KFAY1xYyHCLBnidvuQn5TqR
+  LpVdCPRx4ty7J2MnZm8Df7VajHu4kux0IDHyUaAjXWWF5f1YnjPdDCGrOefKwGia
+  Mf8raL+mbftysc1z7CcrnG97KvRbKPFwu3QOENV4v/qHk13N31h/fEUxKRtauv00
+  o6jddKlLPZBKbzZB/9LSKAF+WZ3vtlPyV7bKUOboiOlK8XMWNMQejC6pQTVHCTA0
+  WrLiTQ71SFsfYI519TeyoS5RSXRBW9fqrB2O5Ln+vsmPKTde8rfqEP5xr8D33pk=
+  -----END CERTIFICATE-----
+creationTimestamp: '2023-10-05T20:17:39.297-07:00'
+expireTime: '2043-09-30T18:58:55.000-07:00'
+id: '6203310960563897020'
+kind: compute#sslCertificate
+name: app2-ingress
+selfLink: https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/sslCertificates/app2-ingress
+selfManaged:
+  certificate: |
+    -----BEGIN CERTIFICATE-----
+    MIIC+zCCAeMCFAK/zlJjI84QrwN9Acd2yzylVdNCMA0GCSqGSIb3DQEBCwUAMDox
+    CzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDIucmFodWxz
+    aW5oYS5pbmZvMB4XDTIzMTAwNjAxNTg1NVoXDTQzMTAwMTAxNTg1NVowOjELMAkG
+    A1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMi5yYWh1bHNpbmhh
+    LmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQD0WrAKUQQhZcCH
+    iV9WvAG0kTtw0wm4RhDgMV3ME3ERll6cKNMlT06l5b0ek5TVATcCZoaIiBIctXh2
+    JTgSgpQQDOJtruLbuZD6UgWuROPQqmAmD+Dnf8Z/AQ0Qu/kxmyreqX3m/qYleany
+    2xXGnSpKvuSt/VU6WVlrf1LgUC+fRFSW9c01sWb+d9f9bDU2bRVYXlllh8HrfzpP
+    B3R+tyAii4EySo7Kd0im5LIuRQpJxXL7KOq+r6RctwLc+X42NSRP6d/FWCiX6hsc
+    09r1qvw9THl1Y84mRL7K+AVcpjeK3wmQ15dUrgOIOUyivFoPGpBZniOOwp8fdPXG
+    8PPbJqMzAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAGUcq9tkrCwooLQHOScB/A7O
+    9DrueiKYHb6Uc21NX5Wzde2SPb+AOcD5+jMur86o7KFAY1xYyHCLBnidvuQn5TqR
+    LpVdCPRx4ty7J2MnZm8Df7VajHu4kux0IDHyUaAjXWWF5f1YnjPdDCGrOefKwGia
+    Mf8raL+mbftysc1z7CcrnG97KvRbKPFwu3QOENV4v/qHk13N31h/fEUxKRtauv00
+    o6jddKlLPZBKbzZB/9LSKAF+WZ3vtlPyV7bKUOboiOlK8XMWNMQejC6pQTVHCTA0
+    WrLiTQ71SFsfYI519TeyoS5RSXRBW9fqrB2O5Ln+vsmPKTde8rfqEP5xr8D33pk=
+    -----END CERTIFICATE-----
+type: SELF_MANAGED
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ gcloud compute ssl-certificates describe app3-ingress
+certificate: |
+  -----BEGIN CERTIFICATE-----
+  MIIDCzCCAfMCFEnPbR2BQcq4gIOUSSNRz4m+d/RUMA0GCSqGSIb3DQEBCwUAMEIx
+  CzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxJTAjBgNVBAMMHGFwcDMtZGVmYXVs
+  dC5yYWh1bHNpbmhhLmluZm8wHhcNMjMxMDA2MDIwMjI4WhcNNDMxMDAxMDIwMjI4
+  WjBCMQswCQYDVQQGEwJTRzEMMAoGA1UECgwDc3JlMSUwIwYDVQQDDBxhcHAzLWRl
+  ZmF1bHQucmFodWxzaW5oYS5pbmZvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+  CgKCAQEAqW4LY0aJFuVS0b1t1etKy8+T2187symM5HRiNqVzPkG41hZKWc3kLm5w
+  7WyWqPMWdXzZyYPCL0+RGBqK1tqq6CpQtPu+gj6+1s2rR2ZEZhfAycSZWInpspfW
+  Ty9xUw1eE0ilAAJFSfI/j6d7JPTIIZCv1mo5I7A8OXaRXWsQ7Uyqsf3NO137OgfM
+  QWQb7Juru4+3YTxDZQp3TUVxccbJ8YVGNQ568VpWgZBkid6cb0zwyrTvsDBzyKCK
+  aOGF/uguwXG6A+3crcWx9I97QMkzfQv4o/V6D38jEtmOD6q3Q+x9gftUOaOv3X54
+  Q3DGu2YNq1GDOvMyJcH0QbZdIG7EcQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCo
+  7Y77WldKI3HnxduvgiB5Mn6LhSrXGweovga8j+eRuGNqOIDtMncqcLiEkttk57BX
+  sJfxnzFllx6ftaKcPAT6Dkug61oNNgsS4N71zy94rExkjmEnbw5X13LlStK2b31U
+  /Le+YPJL2Uiv0hqddsQwGnqBNdz9mrTuwJPXHCVOiB60J0bDxLKmDRuuLPCaSgbp
+  YBp5xer4i1UohSGa1l05fe0tZ2j7CHb7m9Xem1cGkXrA1w4NQZ4IL+JOd+nm1oj6
+  gUWH45grl1I84OLRlAWNl9oziuDxxoYp0drorM2tyYvWRypU+BODS5RTAFU7MENq
+  mLNmcxHi+aRcdHhssB1g
+  -----END CERTIFICATE-----
+creationTimestamp: '2023-10-05T20:18:33.014-07:00'
+expireTime: '2043-09-30T19:02:28.000-07:00'
+id: '1886683495950107239'
+kind: compute#sslCertificate
+name: app3-ingress
+selfLink: https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/sslCertificates/app3-ingress
+selfManaged:
+  certificate: |
+    -----BEGIN CERTIFICATE-----
+    MIIDCzCCAfMCFEnPbR2BQcq4gIOUSSNRz4m+d/RUMA0GCSqGSIb3DQEBCwUAMEIx
+    CzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxJTAjBgNVBAMMHGFwcDMtZGVmYXVs
+    dC5yYWh1bHNpbmhhLmluZm8wHhcNMjMxMDA2MDIwMjI4WhcNNDMxMDAxMDIwMjI4
+    WjBCMQswCQYDVQQGEwJTRzEMMAoGA1UECgwDc3JlMSUwIwYDVQQDDBxhcHAzLWRl
+    ZmF1bHQucmFodWxzaW5oYS5pbmZvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+    CgKCAQEAqW4LY0aJFuVS0b1t1etKy8+T2187symM5HRiNqVzPkG41hZKWc3kLm5w
+    7WyWqPMWdXzZyYPCL0+RGBqK1tqq6CpQtPu+gj6+1s2rR2ZEZhfAycSZWInpspfW
+    Ty9xUw1eE0ilAAJFSfI/j6d7JPTIIZCv1mo5I7A8OXaRXWsQ7Uyqsf3NO137OgfM
+    QWQb7Juru4+3YTxDZQp3TUVxccbJ8YVGNQ568VpWgZBkid6cb0zwyrTvsDBzyKCK
+    aOGF/uguwXG6A+3crcWx9I97QMkzfQv4o/V6D38jEtmOD6q3Q+x9gftUOaOv3X54
+    Q3DGu2YNq1GDOvMyJcH0QbZdIG7EcQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCo
+    7Y77WldKI3HnxduvgiB5Mn6LhSrXGweovga8j+eRuGNqOIDtMncqcLiEkttk57BX
+    sJfxnzFllx6ftaKcPAT6Dkug61oNNgsS4N71zy94rExkjmEnbw5X13LlStK2b31U
+    /Le+YPJL2Uiv0hqddsQwGnqBNdz9mrTuwJPXHCVOiB60J0bDxLKmDRuuLPCaSgbp
+    YBp5xer4i1UohSGa1l05fe0tZ2j7CHb7m9Xem1cGkXrA1w4NQZ4IL+JOd+nm1oj6
+    gUWH45grl1I84OLRlAWNl9oziuDxxoYp0drorM2tyYvWRypU+BODS5RTAFU7MENq
+    mLNmcxHi+aRcdHhssB1g
+    -----END CERTIFICATE-----
+type: SELF_MANAGED
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl https://app2.rahulsinha.info/app2/
+curl: (60) SSL certificate problem: self signed certificate
+More details here: https://curl.haxx.se/docs/sslcerts.html
+
+curl failed to verify the legitimacy of the server and therefore could not
+establish a secure connection to it. To learn more about this situation and
+how to fix it, please visit the web page mentioned above.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://app2.rahulsinha.info/app2/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(221, 210, 250);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App2</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://app1.rahulsinha.info/app1/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(228, 250, 210);">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Application Name: App1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://app3.rahulsinha.info/
+curl: (6) Could not resolve host: app3.rahulsinha.info
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://app3-default.rahulsinha.info/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://rahulsinha.info/
+curl: (6) Could not resolve host: rahulsinha.info
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://rahulsinha.info/app2/
+curl: (6) Could not resolve host: rahulsinha.info
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ nslookup app1.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   app1.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://34.36.100.7/app2/
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://34.36.100.7/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://34.36.100.7/app1
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ curl -k https://34.36.100.7/app1/
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.17.10</center>
+</body>
+</html>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ echo | openssl s_client -connect 34.36.100.7:443 2>/dev/null | openssl x509 -noout -subject -issuer -dates -serial > 34.36.100.7_certificate_summary.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cat 34.36.100.7_certificate_summary.txt
+subject=C = SG, O = sre, CN = app1.rahulsinha.info
+issuer=C = SG, O = sre, CN = app1.rahulsinha.info
+notBefore=Oct  6 01:50:29 2023 GMT
+notAfter=Oct  1 01:50:29 2043 GMT
+serial=0205305E548214A8C29D8A7515DAB968E13F75CD
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ echo | openssl s_client -connect app1.rahulsinha.info:443 2>/dev/null | openssl x509 -noout -subject -issuer -dates -serial > app1.rahulsinha.info_certificate_summary.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cat app1.rahulsinha.info_certificate_summary.txt
+subject=C = SG, O = sre, CN = app1.rahulsinha.info
+issuer=C = SG, O = sre, CN = app1.rahulsinha.info
+notBefore=Oct  6 01:50:29 2023 GMT
+notAfter=Oct  1 01:50:29 2043 GMT
+serial=0205305E548214A8C29D8A7515DAB968E13F75CD
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ echo | openssl s_client -connect app2.rahulsinha.info:443 2>/dev/null | openssl x509 -noout -subject -issuer -dates -serial > app2.rahulsi
+nha.info_certificate_summary.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cat app2.rahulsinha.info_certificate_summary.txt
+subject=C = SG, O = sre, CN = app2.rahulsinha.info
+issuer=C = SG, O = sre, CN = app2.rahulsinha.info
+notBefore=Oct  6 01:58:55 2023 GMT
+notAfter=Oct  1 01:58:55 2043 GMT
+serial=02BFCE526323CE10AF037D01C776CB3CA555D342
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ echo | openssl s_client -connect app3-default.rahulsinha.info:443 2>/dev/null | openssl x509 -noout -subject -issuer -dates -serial > app3
+-default.rahulsinha.info_certificate_summary.txt
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ cat app3-default.rahulsinha.info_certificate_summary.txt
+subject=C = SG, O = sre, CN = app3-default.rahulsinha.info
+issuer=C = SG, O = sre, CN = app3-default.rahulsinha.info
+notBefore=Oct  6 02:02:28 2023 GMT
+notAfter=Oct  1 02:02:28 2043 GMT
+serial=49CF6D1D8141CAB8808394492351CF89BE77F454
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ echo | openssl s_client -connect google.com:443 2>/dev/null | openssl x509 -noout -subject -issuer -dates -serial
+subject=CN = *.google.com
+issuer=C = US, O = Google Trust Services LLC, CN = GTS CA 1C3
+notBefore=Sep 18 08:19:26 2023 GMT
+notAfter=Dec 11 08:19:25 2023 GMT
+serial=6F74D03820CB1B4510CB4C1EA27DA2EB
+
+--
+simplyrahul@DESKTOP-C4GRDQ2:~$ kubectl -n external-dns-ns logs -f $(kubectl -n external-dns-ns get po | egrep -o 'external-dns[A-Za-z0-9-]+')
+
+time="2023-10-06T03:23:06Z" level=info msg="All records are already up to date"
+time="2023-10-06T03:24:06Z" level=info msg="All records are already up to date"
+time="2023-10-06T03:25:07Z" level=info msg="Change zone: rahulsinha-info batch #0"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: a-app1.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-preshared-ssl\"] 300"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: a-app2.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-preshared-ssl\"] 300"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: a-app3-default.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-preshared-ssl\"] 300"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: app1.rahulsinha.info. A [34.36.100.7] 300"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: app1.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-preshared-ssl\"] 300"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: app2.rahulsinha.info. A [34.36.100.7] 300"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: app2.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-preshared-ssl\"] 300"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: app3-default.rahulsinha.info. A [34.36.100.7] 300"
+time="2023-10-06T03:25:07Z" level=info msg="Add records: app3-default.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-preshared-ssl\"] 300"
+time="2023-10-06T03:26:07Z" level=info msg="All records are already up to date"
+time="2023-10-06T03:27:08Z" level=info msg="All records are already up to date"
+time="2023-10-06T03:28:09Z" level=info msg="All records are already up to date"
+time="2023-10-06T03:29:09Z" level=info msg="All records are already up to date"
