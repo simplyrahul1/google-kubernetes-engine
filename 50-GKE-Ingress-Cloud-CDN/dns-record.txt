@@ -1,0 +1,23 @@
+GET https://dns.googleapis.com/dns/v1/projects/expanded-origin-395402/managedZones/rahulsinha-info/rrsets/sara-ingress-cdn.rahulsinha.info./A
+{
+  "name": "sara-ingress-cdn.rahulsinha.info.",
+  "rrdata": [
+    "34.36.100.7"
+  ],
+  "ttl": 300,
+  "type": "A"
+}
+
+--
+
+simplyrahul@DESKTOP-C4GRDQ2:~$ kubectl -n external-dns-ns logs -f $(kubectl -n external-dns-ns get po | egrep -o 'external-dns[A-Za-z0-9-]+')
+
+time="2023-10-06T08:10:49Z" level=info msg="All records are already up to date"
+time="2023-10-06T08:11:49Z" level=info msg="All records are already up to date"
+time="2023-10-06T08:12:50Z" level=info msg="Change zone: rahulsinha-info batch #0"
+time="2023-10-06T08:12:50Z" level=info msg="Add records: a-sara-ingress-cdn.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-cdn-demo\"] 300"
+time="2023-10-06T08:12:50Z" level=info msg="Add records: sara-ingress-cdn.rahulsinha.info. A [34.36.100.7] 300"
+time="2023-10-06T08:12:50Z" level=info msg="Add records: sara-ingress-cdn.rahulsinha.info. TXT [\"heritage=external-dns,external-dns/owner=default,external-dns/resource=ingress/default/ingress-cdn-demo\"] 300"
+time="2023-10-06T08:13:50Z" level=info msg="All records are already up to date"
+time="2023-10-06T08:14:51Z" level=info msg="All records are already up to date"
+time="2023-10-06T08:15:51Z" level=info msg="All records are already up to date"
