@@ -1,0 +1,73 @@
+https://console.cloud.google.com/security/ccm/lbCertificates/details/app1-ingress?project=expanded-origin-395402&authuser=1
+
+{
+  "certificate": "-----BEGIN CERTIFICATE-----\nMIIC+zCCAeMCFAIFMF5UghSowp2KdRXauWjhP3XNMA0GCSqGSIb3DQEBCwUAMDox\nCzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDEucmFodWxz\naW5oYS5pbmZvMB4XDTIzMTAwNjAxNTAyOVoXDTQzMTAwMTAxNTAyOVowOjELMAkG\nA1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMS5yYWh1bHNpbmhh\nLmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDq5g22gauE1VHU\nzRmbKhe7hN7rqaXH+gOBneq3lmsmUWWwRb3Bx4qSK/Rh/ume5/xtRDP5y7ZpiZA9\nUHiKoXINgL1eVsFMg8QRAA8GNb1dIEa7AOJdZWZnxmF0SDhN+zTFhV7EgqE0zoBo\n8O5QOiHtvgOE30zKQgaWncJhC69a0mzM0MnEIQGbyY5lb0jkiuHXbTlVheqgMXrw\n9lfxWkQ/oP7pZJ7ouKoMW1MuyZAdUOS0cmvaK4qjrZcKtbfLIxTgycehLlKGu58H\nwdtEHbN8y3VvdxgRzAme3j5t118R5Ai7lchf9J31pznQ9UCo5szjLtm1mBdZtEE7\nDNRUGTxtAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAMC8h97w2j27fcfI+EN70PwY\nOTFEZtueKgn8UnkVNs/WiIMJhR6X8R2DI1fJmfl5GkBRdnN7EQ9bAt2neCnLII0e\nkztc9uFa+g1Y1K98TTn+5BCeABlK2W2Wu05esM/oeDvo1v0AfVUrsMJR+T6QUEdg\nF9osnGf9Tj05ZGFWo355+7hWuWwsmES6+hkaxNAxN5zvqQXnjoj4snyAXS+N2aGr\nJPvkRNJkwWmX8nggPm4qq+8kMlbPuzodnrLCvYLYJLHpR+bHFnnBkmVMgNodKGDv\nLdpSDbkctWtI2bkBBqjFSf3ehAf29bMqlW7WDgrtpZDu8ed4USIzhkkHruyAYUE=\n-----END CERTIFICATE-----\n",
+  "creationTimestamp": "2023-10-05T20:16:28.609-07:00",
+  "expireTime": "2043-09-30T18:50:29.000-07:00",
+  "id": "8235742983143736035",
+  "kind": "compute#sslCertificate",
+  "name": "app1-ingress",
+  "selfLink": "projects/expanded-origin-395402/global/sslCertificates/app1-ingress",
+  "selfManaged": {
+    "certificate": "-----BEGIN CERTIFICATE-----\nMIIC+zCCAeMCFAIFMF5UghSowp2KdRXauWjhP3XNMA0GCSqGSIb3DQEBCwUAMDox\nCzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDEucmFodWxz\naW5oYS5pbmZvMB4XDTIzMTAwNjAxNTAyOVoXDTQzMTAwMTAxNTAyOVowOjELMAkG\nA1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMS5yYWh1bHNpbmhh\nLmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDq5g22gauE1VHU\nzRmbKhe7hN7rqaXH+gOBneq3lmsmUWWwRb3Bx4qSK/Rh/ume5/xtRDP5y7ZpiZA9\nUHiKoXINgL1eVsFMg8QRAA8GNb1dIEa7AOJdZWZnxmF0SDhN+zTFhV7EgqE0zoBo\n8O5QOiHtvgOE30zKQgaWncJhC69a0mzM0MnEIQGbyY5lb0jkiuHXbTlVheqgMXrw\n9lfxWkQ/oP7pZJ7ouKoMW1MuyZAdUOS0cmvaK4qjrZcKtbfLIxTgycehLlKGu58H\nwdtEHbN8y3VvdxgRzAme3j5t118R5Ai7lchf9J31pznQ9UCo5szjLtm1mBdZtEE7\nDNRUGTxtAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAMC8h97w2j27fcfI+EN70PwY\nOTFEZtueKgn8UnkVNs/WiIMJhR6X8R2DI1fJmfl5GkBRdnN7EQ9bAt2neCnLII0e\nkztc9uFa+g1Y1K98TTn+5BCeABlK2W2Wu05esM/oeDvo1v0AfVUrsMJR+T6QUEdg\nF9osnGf9Tj05ZGFWo355+7hWuWwsmES6+hkaxNAxN5zvqQXnjoj4snyAXS+N2aGr\nJPvkRNJkwWmX8nggPm4qq+8kMlbPuzodnrLCvYLYJLHpR+bHFnnBkmVMgNodKGDv\nLdpSDbkctWtI2bkBBqjFSf3ehAf29bMqlW7WDgrtpZDu8ed4USIzhkkHruyAYUE=\n-----END CERTIFICATE-----\n"
+  },
+  "type": "SELF_MANAGED"
+}
+
+-
+
+https://console.cloud.google.com/security/ccm/lbCertificates/details/app2-ingress?project=expanded-origin-395402&authuser=1
+
+{
+  "certificate": "-----BEGIN CERTIFICATE-----\nMIIC+zCCAeMCFAK/zlJjI84QrwN9Acd2yzylVdNCMA0GCSqGSIb3DQEBCwUAMDox\nCzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDIucmFodWxz\naW5oYS5pbmZvMB4XDTIzMTAwNjAxNTg1NVoXDTQzMTAwMTAxNTg1NVowOjELMAkG\nA1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMi5yYWh1bHNpbmhh\nLmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQD0WrAKUQQhZcCH\niV9WvAG0kTtw0wm4RhDgMV3ME3ERll6cKNMlT06l5b0ek5TVATcCZoaIiBIctXh2\nJTgSgpQQDOJtruLbuZD6UgWuROPQqmAmD+Dnf8Z/AQ0Qu/kxmyreqX3m/qYleany\n2xXGnSpKvuSt/VU6WVlrf1LgUC+fRFSW9c01sWb+d9f9bDU2bRVYXlllh8HrfzpP\nB3R+tyAii4EySo7Kd0im5LIuRQpJxXL7KOq+r6RctwLc+X42NSRP6d/FWCiX6hsc\n09r1qvw9THl1Y84mRL7K+AVcpjeK3wmQ15dUrgOIOUyivFoPGpBZniOOwp8fdPXG\n8PPbJqMzAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAGUcq9tkrCwooLQHOScB/A7O\n9DrueiKYHb6Uc21NX5Wzde2SPb+AOcD5+jMur86o7KFAY1xYyHCLBnidvuQn5TqR\nLpVdCPRx4ty7J2MnZm8Df7VajHu4kux0IDHyUaAjXWWF5f1YnjPdDCGrOefKwGia\nMf8raL+mbftysc1z7CcrnG97KvRbKPFwu3QOENV4v/qHk13N31h/fEUxKRtauv00\no6jddKlLPZBKbzZB/9LSKAF+WZ3vtlPyV7bKUOboiOlK8XMWNMQejC6pQTVHCTA0\nWrLiTQ71SFsfYI519TeyoS5RSXRBW9fqrB2O5Ln+vsmPKTde8rfqEP5xr8D33pk=\n-----END CERTIFICATE-----\n",
+  "creationTimestamp": "2023-10-05T20:17:39.297-07:00",
+  "expireTime": "2043-09-30T18:58:55.000-07:00",
+  "id": "6203310960563897020",
+  "kind": "compute#sslCertificate",
+  "name": "app2-ingress",
+  "selfLink": "projects/expanded-origin-395402/global/sslCertificates/app2-ingress",
+  "selfManaged": {
+    "certificate": "-----BEGIN CERTIFICATE-----\nMIIC+zCCAeMCFAK/zlJjI84QrwN9Acd2yzylVdNCMA0GCSqGSIb3DQEBCwUAMDox\nCzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxHTAbBgNVBAMMFGFwcDIucmFodWxz\naW5oYS5pbmZvMB4XDTIzMTAwNjAxNTg1NVoXDTQzMTAwMTAxNTg1NVowOjELMAkG\nA1UEBhMCU0cxDDAKBgNVBAoMA3NyZTEdMBsGA1UEAwwUYXBwMi5yYWh1bHNpbmhh\nLmluZm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQD0WrAKUQQhZcCH\niV9WvAG0kTtw0wm4RhDgMV3ME3ERll6cKNMlT06l5b0ek5TVATcCZoaIiBIctXh2\nJTgSgpQQDOJtruLbuZD6UgWuROPQqmAmD+Dnf8Z/AQ0Qu/kxmyreqX3m/qYleany\n2xXGnSpKvuSt/VU6WVlrf1LgUC+fRFSW9c01sWb+d9f9bDU2bRVYXlllh8HrfzpP\nB3R+tyAii4EySo7Kd0im5LIuRQpJxXL7KOq+r6RctwLc+X42NSRP6d/FWCiX6hsc\n09r1qvw9THl1Y84mRL7K+AVcpjeK3wmQ15dUrgOIOUyivFoPGpBZniOOwp8fdPXG\n8PPbJqMzAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAGUcq9tkrCwooLQHOScB/A7O\n9DrueiKYHb6Uc21NX5Wzde2SPb+AOcD5+jMur86o7KFAY1xYyHCLBnidvuQn5TqR\nLpVdCPRx4ty7J2MnZm8Df7VajHu4kux0IDHyUaAjXWWF5f1YnjPdDCGrOefKwGia\nMf8raL+mbftysc1z7CcrnG97KvRbKPFwu3QOENV4v/qHk13N31h/fEUxKRtauv00\no6jddKlLPZBKbzZB/9LSKAF+WZ3vtlPyV7bKUOboiOlK8XMWNMQejC6pQTVHCTA0\nWrLiTQ71SFsfYI519TeyoS5RSXRBW9fqrB2O5Ln+vsmPKTde8rfqEP5xr8D33pk=\n-----END CERTIFICATE-----\n"
+  },
+  "type": "SELF_MANAGED"
+}
+
+--
+
+https://console.cloud.google.com/security/ccm/lbCertificates/details/app3-ingress?project=expanded-origin-395402&authuser=1
+
+
+{
+  "certificate": "-----BEGIN CERTIFICATE-----\nMIIDCzCCAfMCFEnPbR2BQcq4gIOUSSNRz4m+d/RUMA0GCSqGSIb3DQEBCwUAMEIx\nCzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxJTAjBgNVBAMMHGFwcDMtZGVmYXVs\ndC5yYWh1bHNpbmhhLmluZm8wHhcNMjMxMDA2MDIwMjI4WhcNNDMxMDAxMDIwMjI4\nWjBCMQswCQYDVQQGEwJTRzEMMAoGA1UECgwDc3JlMSUwIwYDVQQDDBxhcHAzLWRl\nZmF1bHQucmFodWxzaW5oYS5pbmZvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB\nCgKCAQEAqW4LY0aJFuVS0b1t1etKy8+T2187symM5HRiNqVzPkG41hZKWc3kLm5w\n7WyWqPMWdXzZyYPCL0+RGBqK1tqq6CpQtPu+gj6+1s2rR2ZEZhfAycSZWInpspfW\nTy9xUw1eE0ilAAJFSfI/j6d7JPTIIZCv1mo5I7A8OXaRXWsQ7Uyqsf3NO137OgfM\nQWQb7Juru4+3YTxDZQp3TUVxccbJ8YVGNQ568VpWgZBkid6cb0zwyrTvsDBzyKCK\naOGF/uguwXG6A+3crcWx9I97QMkzfQv4o/V6D38jEtmOD6q3Q+x9gftUOaOv3X54\nQ3DGu2YNq1GDOvMyJcH0QbZdIG7EcQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCo\n7Y77WldKI3HnxduvgiB5Mn6LhSrXGweovga8j+eRuGNqOIDtMncqcLiEkttk57BX\nsJfxnzFllx6ftaKcPAT6Dkug61oNNgsS4N71zy94rExkjmEnbw5X13LlStK2b31U\n/Le+YPJL2Uiv0hqddsQwGnqBNdz9mrTuwJPXHCVOiB60J0bDxLKmDRuuLPCaSgbp\nYBp5xer4i1UohSGa1l05fe0tZ2j7CHb7m9Xem1cGkXrA1w4NQZ4IL+JOd+nm1oj6\ngUWH45grl1I84OLRlAWNl9oziuDxxoYp0drorM2tyYvWRypU+BODS5RTAFU7MENq\nmLNmcxHi+aRcdHhssB1g\n-----END CERTIFICATE-----\n",
+  "creationTimestamp": "2023-10-05T20:18:33.014-07:00",
+  "expireTime": "2043-09-30T19:02:28.000-07:00",
+  "id": "1886683495950107239",
+  "kind": "compute#sslCertificate",
+  "name": "app3-ingress",
+  "selfLink": "projects/expanded-origin-395402/global/sslCertificates/app3-ingress",
+  "selfManaged": {
+    "certificate": "-----BEGIN CERTIFICATE-----\nMIIDCzCCAfMCFEnPbR2BQcq4gIOUSSNRz4m+d/RUMA0GCSqGSIb3DQEBCwUAMEIx\nCzAJBgNVBAYTAlNHMQwwCgYDVQQKDANzcmUxJTAjBgNVBAMMHGFwcDMtZGVmYXVs\ndC5yYWh1bHNpbmhhLmluZm8wHhcNMjMxMDA2MDIwMjI4WhcNNDMxMDAxMDIwMjI4\nWjBCMQswCQYDVQQGEwJTRzEMMAoGA1UECgwDc3JlMSUwIwYDVQQDDBxhcHAzLWRl\nZmF1bHQucmFodWxzaW5oYS5pbmZvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB\nCgKCAQEAqW4LY0aJFuVS0b1t1etKy8+T2187symM5HRiNqVzPkG41hZKWc3kLm5w\n7WyWqPMWdXzZyYPCL0+RGBqK1tqq6CpQtPu+gj6+1s2rR2ZEZhfAycSZWInpspfW\nTy9xUw1eE0ilAAJFSfI/j6d7JPTIIZCv1mo5I7A8OXaRXWsQ7Uyqsf3NO137OgfM\nQWQb7Juru4+3YTxDZQp3TUVxccbJ8YVGNQ568VpWgZBkid6cb0zwyrTvsDBzyKCK\naOGF/uguwXG6A+3crcWx9I97QMkzfQv4o/V6D38jEtmOD6q3Q+x9gftUOaOv3X54\nQ3DGu2YNq1GDOvMyJcH0QbZdIG7EcQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCo\n7Y77WldKI3HnxduvgiB5Mn6LhSrXGweovga8j+eRuGNqOIDtMncqcLiEkttk57BX\nsJfxnzFllx6ftaKcPAT6Dkug61oNNgsS4N71zy94rExkjmEnbw5X13LlStK2b31U\n/Le+YPJL2Uiv0hqddsQwGnqBNdz9mrTuwJPXHCVOiB60J0bDxLKmDRuuLPCaSgbp\nYBp5xer4i1UohSGa1l05fe0tZ2j7CHb7m9Xem1cGkXrA1w4NQZ4IL+JOd+nm1oj6\ngUWH45grl1I84OLRlAWNl9oziuDxxoYp0drorM2tyYvWRypU+BODS5RTAFU7MENq\nmLNmcxHi+aRcdHhssB1g\n-----END CERTIFICATE-----\n"
+  },
+  "type": "SELF_MANAGED"
+}
+
+--
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ gcloud compute ssl-certificates list
+NAME          TYPE          CREATION_TIMESTAMP             EXPIRE_TIME                    REGION  MANAGED_STATUS
+app1-ingress  SELF_MANAGED  2023-10-05T20:16:28.609-07:00  2043-09-30T18:50:29.000-07:00
+app2-ingress  SELF_MANAGED  2023-10-05T20:17:39.297-07:00  2043-09-30T18:58:55.000-07:00
+app3-ingress  SELF_MANAGED  2023-10-05T20:18:33.014-07:00  2043-09-30T19:02:28.000-07:00
+
+--
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/49-GKE-Ingress-Preshared-SSL$ gcloud compute ssl-certificates delete app2-ingress app3-ingress
+The following ssl certificates will be deleted:
+ - [app2-ingress]
+ - [app3-ingress]
+
+Do you want to continue (Y/n)?  Y
+
+Deleted [https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/sslCertificates/app2-ingress].
+Deleted [https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/sslCertificates/app3-ingress].
+
