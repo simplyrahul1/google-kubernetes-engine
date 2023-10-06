@@ -9,5 +9,5 @@ spec:
   selector:
     app: cdn-demo
   ports:
-    - port: 80
-      targetPort: 8080
+  - port: 80
+    targetPort: 8080

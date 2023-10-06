@@ -13,10 +13,10 @@ spec:
         app: cdn-demo
     spec:
       containers:
-        - name: cdn-demo
-          image: us-docker.pkg.dev/google-samples/containers/gke/hello-app-cdn:1.0
-          ports:
-            - containerPort: 8080
+      - name: cdn-demo
+        image: us-docker.pkg.dev/google-samples/containers/gke/hello-app-cdn:1.0
+        ports:
+        - containerPort: 8080
 
 
    
