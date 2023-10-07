@@ -1,0 +1,31 @@
+simplyrahul_gke_udemy@cloudshell:~$ 35.197.156.169
+[1]+  Done                    curl ifconfig.me
+simplyrahul_gke_udemy@cloudshell:~$ 
+simplyrahul_gke_udemy@cloudshell:~$ curl ifconfig.me && echo " "
+35.197.156.169 
+simplyrahul_gke_udemy@cloudshell:~$ for i in range {1..5} ; do curl http://sara-ingress-with-clientip-affinity.rahulsinha.info && echo ${i} && sleep 4 ; done
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+range
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+1
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+2
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+3
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+4
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+5
+simplyrahul_gke_udemy@cloudshell:~$ 

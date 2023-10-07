@@ -1,0 +1,92 @@
+Welcome to Cloud Shell! Type "help" to get started.
+To set your Cloud Platform project in this session use “gcloud config set project [PROJECT_ID]”
+simplyrahul_gke_udemy@cloudshell:~$ curl http://sara-ingress-with-clientip-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+simplyrahul_gke_udemy@cloudshell:~$ nslookup sara-ingress-with-clientip-affinity.rahulsinha.info
+Server:         169.254.169.254
+Address:        169.254.169.254#53
+
+Non-authoritative answer:
+Name:   sara-ingress-with-clientip-affinity.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul_gke_udemy@cloudshell:~$ for i in range {1..5} ; do curl http://sara-ingress-with-clientip-affinity.rahulsinha.info && echo {i} && sleep 4 ; done
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+simplyrahul_gke_udemy@cloudshell:~$ for i in range {1..5} ; do curl http://sara-ingress-with-clientip-affinity.rahulsinha.info && echo {i} && sleep 4 ; done
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+{i}
+simplyrahul_gke_udemy@cloudshell:~$ for i in range {1..5} ; do curl http://sara-ingress-with-clientip-affinity.rahulsinha.info && echo ${i} && sleep 4 ; done
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+range
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+1
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+2
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+3
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+4
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+5
+simplyrahul_gke_udemy@cloudshell:~$ curl ifconfig.me && echo " "
+35.197.156.169 
+simplyrahul_gke_udemy@cloudshell:~$ 

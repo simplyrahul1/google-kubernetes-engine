@@ -1,0 +1,149 @@
+Welcome to Cloud Shell! Type "help" to get started.
+Your Cloud Platform project in this session is set to expanded-origin-395402.
+Use “gcloud config set project [PROJECT_ID]” to change to a different project.
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute addresses list
+NAME: gke-ingress-extip1
+ADDRESS/RANGE: 34.36.100.7
+TYPE: EXTERNAL
+PURPOSE: 
+NETWORK: 
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: google-managed-private-service-connection
+ADDRESS/RANGE: 10.116.0.0/16
+TYPE: INTERNAL
+PURPOSE: VPC_PEERING
+NETWORK: default
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: nat-auto-ip-5839377-9-1693086667609885
+ADDRESS/RANGE: 35.208.248.222
+TYPE: EXTERNAL
+PURPOSE: NAT_AUTO
+NETWORK: 
+REGION: us-central1
+SUBNET: 
+STATUS: IN_USE
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute addresses describe gke-ingress-extip1
+For the following address:
+ - [gke-ingress-extip1]
+choose a region or global:
+ [1] global
+ [2] region: asia-east1
+ [3] region: asia-east2
+ [4] region: asia-northeast1
+ [5] region: asia-northeast2
+ [6] region: asia-northeast3
+ [7] region: asia-south1
+ [8] region: asia-south2
+ [9] region: asia-southeast1
+ [10] region: asia-southeast2
+ [11] region: australia-southeast1
+ [12] region: australia-southeast2
+ [13] region: europe-central2
+ [14] region: europe-north1
+ [15] region: europe-southwest1
+ [16] region: europe-west1
+ [17] region: europe-west10
+ [18] region: europe-west12
+ [19] region: europe-west2
+ [20] region: europe-west3
+ [21] region: europe-west4
+ [22] region: europe-west6
+ [23] region: europe-west8
+ [24] region: europe-west9
+ [25] region: me-central1
+ [26] region: me-central2
+ [27] region: me-west1
+ [28] region: northamerica-northeast1
+ [29] region: northamerica-northeast2
+ [30] region: southamerica-east1
+ [31] region: southamerica-west1
+ [32] region: us-central1
+ [33] region: us-east1
+ [34] region: us-east4
+ [35] region: us-east5
+ [36] region: us-south1
+ [37] region: us-west1
+ [38] region: us-west2
+ [39] region: us-west3
+ [40] region: us-west4
+Please enter your numeric choice:  32
+
+ERROR: (gcloud.compute.addresses.describe) Could not fetch resource:
+ - The resource 'projects/expanded-origin-395402/regions/us-central1/addresses/gke-ingress-extip1' was not found
+
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute addresses describe gke-ingress-extip1 --global
+address: 34.36.100.7
+addressType: EXTERNAL
+creationTimestamp: '2023-09-15T20:10:42.098-07:00'
+description: ''
+id: '503227057634320989'
+ipVersion: IPV4
+kind: compute#address
+labelFingerprint: 42WmSpB8rSM=
+name: gke-ingress-extip1
+networkTier: PREMIUM
+selfLink: https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/addresses/gke-ingress-extip1
+status: RESERVED
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 
+
+
+--
+
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute addresses create gke-ingress-extip2 --global
+Created [https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/addresses/gke-ingress-extip2].
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute addresses list
+NAME: gke-ingress-extip1
+ADDRESS/RANGE: 34.36.100.7
+TYPE: EXTERNAL
+PURPOSE: 
+NETWORK: 
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: gke-ingress-extip2
+ADDRESS/RANGE: 34.98.125.106
+TYPE: EXTERNAL
+PURPOSE: 
+NETWORK: 
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: google-managed-private-service-connection
+ADDRESS/RANGE: 10.116.0.0/16
+TYPE: INTERNAL
+PURPOSE: VPC_PEERING
+NETWORK: default
+REGION: 
+SUBNET: 
+STATUS: RESERVED
+
+NAME: nat-auto-ip-5839377-9-1693086667609885
+ADDRESS/RANGE: 35.208.248.222
+TYPE: EXTERNAL
+PURPOSE: NAT_AUTO
+NETWORK: 
+REGION: us-central1
+SUBNET: 
+STATUS: IN_USE
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ gcloud compute addresses describe gke-ingress-extip2 --global
+address: 34.98.125.106
+addressType: EXTERNAL
+creationTimestamp: '2023-10-07T06:25:24.386-07:00'
+description: ''
+id: '955043542563873451'
+ipVersion: IPV4
+kind: compute#address
+labelFingerprint: 42WmSpB8rSM=
+name: gke-ingress-extip2
+networkTier: PREMIUM
+selfLink: https://www.googleapis.com/compute/v1/projects/expanded-origin-395402/global/addresses/gke-ingress-extip2
+status: RESERVED
+simplyrahul_gke_udemy@cloudshell:~ (expanded-origin-395402)$ 

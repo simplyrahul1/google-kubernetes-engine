@@ -1,0 +1,223 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+                                                                                                                                                                                                                 Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows                                                                                                                                                                                                                                                                                                                                         PS C:\Users\Rahul> nslookup sara-ingress-with-clientip-affinity.rahulsinha.info                                                                                                                                  Server:  103-7-200-10.myrepublic.com.sg
+Address:  103.7.200.10
+
+Non-authoritative answer:
+Name:    sara-ingress-with-clientip-affinity.rahulsinha.info
+Address:  34.36.100.7
+
+PS C:\Users\Rahul> nslookup sara-ingress-without-clientip-affinity.rahulsinha.info
+Server:  103-7-200-10.myrepublic.com.sg
+Address:  103.7.200.10
+
+Non-authoritative answer:
+Name:    sara-ingress-without-clientip-affinity.rahulsinha.info
+Address:  34.98.125.106
+
+PS C:\Users\Rahul> curl http://sara-ingress-without-clientip-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment2-6d79b774bf-btcdk
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 77
+                    Cache-Control: max-age=86400,public
+                    Content-Type: text/plain; charset=utf-8
+                    Date: Sat, 07 Oct 2023 15:14:22 GMT
+                    Via: 1.1 google
+
+                    Hello, world!                                                                                                                                                                                                    Version: 1.0.0                                                                                                                                                                                                   ...                                                                                                                                                                                          Forms             : {}
+Headers           : {[Content-Length, 77], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sat, 07 Oct 2023 15:14:22 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 77
+
+
+
+PS C:\Users\Rahul> curl http://sara-ingress-without-clientip-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment2-6d79b774bf-btcdk
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 77
+                    Cache-Control: max-age=86400,public
+                    Content-Type: text/plain; charset=utf-8
+                    Date: Sat, 07 Oct 2023 15:14:33 GMT
+                    Via: 1.1 google
+
+                    Hello, world!                                                                                                                                                                                                    Version: 1.0.0                                                                                                                                                                                                   ...                                                                                                                                                                                          Forms             : {}
+Headers           : {[Content-Length, 77], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sat, 07 Oct 2023 15:14:33 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 77
+
+
+
+PS C:\Users\Rahul> ipconfig /flushdns
+
+Windows IP Configuration
+
+Successfully flushed the DNS Resolver Cache.
+PS C:\Users\Rahul> curl http://sara-ingress-without-clientip-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment2-6d79b774bf-btcdk
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 77
+                    Cache-Control: max-age=86400,public                                                                                                                                                                              Content-Type: text/plain; charset=utf-8                                                                                                                                                                          Date: Sat, 07 Oct 2023 15:14:49 GMT                                                                                                                                                                              Via: 1.1 google
+
+                    Hello, world!
+                    Version: 1.0.0
+                    ...
+Forms             : {}
+Headers           : {[Content-Length, 77], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sat, 07 Oct 2023 15:14:49 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 77
+
+
+
+PS C:\Users\Rahul> curl http://sara-ingress-with-clientip-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 76
+                    Cache-Control: max-age=86400,public
+                    Content-Type: text/plain; charset=utf-8
+                    Date: Sat, 07 Oct 2023 15:15:02 GMT
+                    Via: 1.1 google
+
+                    Hello, world!
+                    Version: 1.0.0
+                    ...
+Forms             : {}
+Headers           : {[Content-Length, 76], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sat, 07 Oct 2023 15:15:02 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}                                                                                                                                                                                           ParsedHtml        : mshtml.HTMLDocumentClass                                                                                                                                                                     RawContentLength  : 76                                                                                                                                                                                           
+
+
+PS C:\Users\Rahul> curl http://sara-ingress-without-clientip-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment2-6d79b774bf-449gx
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 77
+                    Cache-Control: max-age=86400,public
+                    Content-Type: text/plain; charset=utf-8
+                    Date: Sat, 07 Oct 2023 15:15:07 GMT
+                    Via: 1.1 google
+
+                    Hello, world!
+                    Version: 1.0.0
+                    ...
+Forms             : {}
+Headers           : {[Content-Length, 77], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sat, 07 Oct 2023 15:15:07 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}                                                                                                                                                                                           ParsedHtml        : mshtml.HTMLDocumentClass                                                                                                                                                                     RawContentLength  : 77                                                                                                                                                                                           
+
+
+PS C:\Users\Rahul> curl -s http://sara-ingress-without-clientip-affinity.rahulsinha.info
+
+cmdlet Invoke-WebRequest at command pipeline position 1
+Supply values for the following parameters:
+Uri:
+curl : Cannot find drive. A drive with the name 'http' does not exist.
+At line:1 char:1
++ curl -s http://sara-ingress-without-clientip-affinity.rahulsinha.info
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (http:String) [Invoke-WebRequest], DriveNotFoundException
+    + FullyQualifiedErrorId : DriveNotFound,Microsoft.PowerShell.Commands.InvokeWebRequestCommand
+
+PS C:\Users\Rahul> curl http://sara-ingress-with-clientip-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment-79d9dc75df-zcjqn
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 76
+                    Cache-Control: max-age=86400,public
+                    Content-Type: text/plain; charset=utf-8
+                    Date: Sat, 07 Oct 2023 15:15:40 GMT
+                    Via: 1.1 google
+
+                    Hello, world!
+                    Version: 1.0.0
+                    ...
+Forms             : {}
+Headers           : {[Content-Length, 76], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sat, 07 Oct 2023 15:15:40 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 76
+
+
+
+PS C:\Users\Rahul> curl http://sara-ingress-without-clientip-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment2-6d79b774bf-btcdk
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 77
+                    Cache-Control: max-age=86400,public
+                    Content-Type: text/plain; charset=utf-8
+                    Date: Sat, 07 Oct 2023 15:15:47 GMT
+                    Via: 1.1 google
+
+                    Hello, world!
+                    Version: 1.0.0
+                    ...
+Forms             : {}
+Headers           : {[Content-Length, 77], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sat, 07 Oct 2023 15:15:47 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 77
+
+
+
+PS C:\Users\Rahul>

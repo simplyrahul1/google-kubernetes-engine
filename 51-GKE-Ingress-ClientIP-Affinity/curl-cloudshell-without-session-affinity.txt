@@ -1,0 +1,59 @@
+simplyrahul_gke_udemy@cloudshell:~$ curl http://sara-without-session-affinity.rahulsinha.info
+curl: (6) Could not resolve host: sara-without-session-affinity.rahulsinha.info
+simplyrahul_gke_udemy@cloudshell:~$ curl http://sara-ingress-without-session-affinity.rahulsinha.info
+curl: (6) Could not resolve host: sara-ingress-without-session-affinity.rahulsinha.info
+simplyrahul_gke_udemy@cloudshell:~$ curl sara-ingress-without-clientip-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+simplyrahul_gke_udemy@cloudshell:~$ for i in range {1..5} ; do curl sara-ingress-without-clientip-affinity.rahulsinha.info && echo ${i} ; done
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+range
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+1
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+2
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-449gx
+3
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+4
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+5
+simplyrahul_gke_udemy@cloudshell:~$ for i in range {1..5} ; do curl sara-ingress-without-clientip-affinity.rahulsinha.info && echo ${i} && sleep 2; done
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+range
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+1
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+2
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-z5xdp
+3
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-btcdk
+4
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment2-6d79b774bf-449gx
+5
+simplyrahul_gke_udemy@cloudshell:~$ 

@@ -8,10 +8,10 @@ metadata:
     # Static IP for Ingress Service
     kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip2"   
     # External DNS - For creating a Record Set in Google Cloud Cloud DNS
-    external-dns.alpha.kubernetes.io/hostname: ingress-without-clientip-affinity.kalyanreddydaida.com
+    external-dns.alpha.kubernetes.io/hostname: sara-ingress-without-clientip-affinity.rahulsinha.info
 spec:          
   defaultBackend:
     service:
       name: cdn-demo-nodeport-service2
       port:
-        number: 80     
+        number: 80
