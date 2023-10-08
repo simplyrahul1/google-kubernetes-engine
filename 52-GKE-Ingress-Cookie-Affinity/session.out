@@ -1,0 +1,354 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ ls
+01-kube-manifests-with-cookie-affinity  02-kube-manifests-without-cookie-affinity  README.md
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ ls 01-kube-manifests-with-cookie-affinity/
+01-kubernetes-deployment.yaml  02-kubernetes-NodePort-service.yaml  03-ingress.yaml  04-backendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 01-kube-manifests-with-cookie-affinity/01-kubernetes-deployment.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 01-kube-manifests-with-cookie-affinity/02-kubernetes-NodePort-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 01-kube-manifests-with-cookie-affinity/03-ingress.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 01-kube-manifests-with-cookie-affinity/04-backendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cat 01-kube-manifests-with-cookie-affinity/01-kubernetes-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdn-demo-deployment
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: cdn-demo
+  template:
+    metadata:
+      labels:
+        app: cdn-demo
+    spec:
+      containers:
+      - name: cdn-demo
+        image: us-docker.pkg.dev/google-samples/containers/gke/hello-app-cdn:1.0
+        ports:
+        - containerPort: 8080
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cat 01-kube-manifests-with-cookie-affinity/02-kubernetes-NodePort-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cdn-demo-nodeport-service
+  annotations:
+    #cloud.google.com/backend-config: '{"ports": {"80":"my-backendconfig"}}'
+    cloud.google.com/backend-config: '{"default": "my-backendconfig"}'
+spec:
+  type: NodePort
+  selector:
+    app: cdn-demo
+  ports:
+  - port: 80
+    targetPort: 8080
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cat 01-kube-manifests-with-cookie-affinity/03-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-cdn-demo
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: sara-ingress-with-cookie-affinity.rahulsinha.info
+spec:
+  defaultBackend:
+    service:
+      name: cdn-demo-nodeport-service
+      port:
+        number: 80
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cat 01-kube-manifests-with-cookie-affinity/04-backendconfig.yaml
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: my-backendconfig
+spec:
+  timeoutSec: 42 # Backend service timeout: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#timeout
+  connectionDraining: # Connection draining timeout: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#draining_timeout
+    drainingTimeoutSec: 62
+  logging: # HTTP access logging: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#http_logging
+    enable: true
+    sampleRate: 1.0
+  sessionAffinity:
+    affinityType: "GENERATED_COOKIE"
+    affinityCookieTtlSec: 50 # TTL of 50 seconds
+
+# sampleRate: Specify a value from 0.0 through 1.0, where 0.0 means no packets are logged
+# and 1.0 means 100% of packets are logged. This field is only relevant if enable is set
+# to true. sampleRate is an optional field, but if it's configured then enable: true must
+# also be set or else it is interpreted as enable: false.
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ kubectl apply -f 01-kube-manifests-with-cookie-affinity/
+deployment.apps/cdn-demo-deployment created
+service/cdn-demo-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-cdn-demo created
+backendconfig.cloud.google.com/my-backendconfig created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ for i in deploy pods svc ingress backendconfig ; do echo "kubectl get ${i} -o wide --show-labels" && kubectl get ${i} -o wide --show-labels && echo "" ; done
+kubectl get deploy -o wide --show-labels
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE    CONTAINERS   IMAGES                                                              SELECTOR       LABELS
+cdn-demo-deployment   4/4     4            4           2m6s   cdn-demo     us-docker.pkg.dev/google-samples/containers/gke/hello-app-cdn:1.0   app=cdn-demo   <none>
+
+kubectl get pods -o wide --show-labels
+NAME                                   READY   STATUS    RESTARTS   AGE    IP            NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+cdn-demo-deployment-79d9dc75df-7hqhs   1/1     Running   0          2m8s   10.76.0.24    gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=cdn-demo,pod-template-hash=79d9dc75df
+cdn-demo-deployment-79d9dc75df-r2zk2   1/1     Running   0          2m8s   10.76.1.172   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=cdn-demo,pod-template-hash=79d9dc75df
+cdn-demo-deployment-79d9dc75df-s46cl   1/1     Running   0          2m8s   10.76.2.33    gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=cdn-demo,pod-template-hash=79d9dc75df
+cdn-demo-deployment-79d9dc75df-xwslv   1/1     Running   0          2m8s   10.76.1.173   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=cdn-demo,pod-template-hash=79d9dc75df
+
+kubectl get svc -o wide --show-labels
+NAME                        TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE     SELECTOR       LABELS
+cdn-demo-nodeport-service   NodePort    10.80.4.43   <none>        80:31249/TCP   2m12s   app=cdn-demo   <none>
+kubernetes                  ClusterIP   10.80.0.1    <none>        443/TCP        47d     <none>         component=apiserver,provider=kubernetes
+
+kubectl get ingress -o wide --show-labels
+NAME               CLASS    HOSTS   ADDRESS       PORTS   AGE     LABELS
+ingress-cdn-demo   <none>   *       34.36.100.7   80      2m15s   <none>
+
+kubectl get backendconfig -o wide --show-labels
+NAME               AGE     LABELS
+my-backendconfig   2m17s   <none>
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ kubectl describe svc cdn-demo-nodeport-service
+Name:                     cdn-demo-nodeport-service
+Namespace:                default
+Labels:                   <none>
+Annotations:              cloud.google.com/backend-config: {"default": "my-backendconfig"}
+                          cloud.google.com/neg: {"ingress":true}
+                          cloud.google.com/neg-status:
+                            {"network_endpoint_groups":{"80":"k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661"},"zones":["us-central1-a","us-central1-b","...
+Selector:                 app=cdn-demo
+Type:                     NodePort
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.80.4.43
+IPs:                      10.80.4.43
+Port:                     <unset>  80/TCP
+TargetPort:               8080/TCP
+NodePort:                 <unset>  31249/TCP
+Endpoints:                10.76.0.24:8080,10.76.1.172:8080,10.76.1.173:8080 + 1 more...
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason  Age    From            Message
+  ----    ------  ----   ----            -------
+  Normal  Create  2m38s  neg-controller  Created NEG "k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661" for default/cdn-demo-nodeport-service-k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661-/80-8080-GCE_VM_IP_PORT-L7 in "us-central1-a".
+  Normal  Create  2m30s  neg-controller  Created NEG "k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661" for default/cdn-demo-nodeport-service-k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661-/80-8080-GCE_VM_IP_PORT-L7 in "us-central1-b".
+  Normal  Create  2m22s  neg-controller  Created NEG "k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661" for default/cdn-demo-nodeport-service-k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661-/80-8080-GCE_VM_IP_PORT-L7 in "us-central1-c".
+  Normal  Attach  2m20s  neg-controller  Attach 2 network endpoint(s) (NEG "k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661" in zone "us-central1-c")
+  Normal  Attach  2m19s  neg-controller  Attach 1 network endpoint(s) (NEG "k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661" in zone "us-central1-b")
+  Normal  Attach  2m19s  neg-controller  Attach 1 network endpoint(s) (NEG "k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661" in zone "us-central1-a")
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ kubectl describe ingress ingress-cdn-demo
+Name:             ingress-cdn-demo
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  cdn-demo-nodeport-service:80 (10.76.0.24:8080,10.76.1.172:8080,10.76.1.173:8080 + 1 more...)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *           *     cdn-demo-nodeport-service:80 (10.76.0.24:8080,10.76.1.172:8080,10.76.1.173:8080 + 1 more...)
+Annotations:  external-dns.alpha.kubernetes.io/hostname: sara-ingress-with-cookie-affinity.rahulsinha.info
+              ingress.kubernetes.io/backends: {"k8s1-3b22a415-default-cdn-demo-nodeport-service-80-bf6f7661":"Unknown"}
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-cdn-demo-yeczyiwl
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-cdn-demo-yeczyiwl
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-cdn-demo-yeczyiwl
+              kubernetes.io/ingress.class: gce
+              kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+Events:
+  Type     Reason     Age                  From                     Message
+  ----     ------     ----                 ----                     -------
+  Warning  Translate  3m4s (x7 over 3m5s)  loadbalancer-controller  Translation failed: invalid ingress spec: error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/cdn-demo-nodeport-service", err: no BackendConfig for service port exists.
+  Normal   Sync       2m6s                 loadbalancer-controller  UrlMap "k8s2-um-jdj5k2n0-default-ingress-cdn-demo-yeczyiwl" created
+  Normal   Sync       2m4s                 loadbalancer-controller  TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-cdn-demo-yeczyiwl" created
+  Normal   Sync       111s                 loadbalancer-controller  ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-cdn-demo-yeczyiwl" created
+  Normal   IPChanged  111s                 loadbalancer-controller  IP is now 34.36.100.7
+  Normal   Sync       110s (x5 over 3m5s)  loadbalancer-controller  Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ kubectl describe backendconfig my-backendconfig
+Name:         my-backendconfig
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  cloud.google.com/v1
+Kind:         BackendConfig
+Metadata:
+  Creation Timestamp:  2023-10-08T02:24:16Z
+  Generation:          1
+  Resource Version:    46279018
+  UID:                 1afc53ee-ac44-422e-badc-7e90e5d76a91
+Spec:
+  Connection Draining:
+    Draining Timeout Sec:  62
+  Logging:
+    Enable:       true
+    Sample Rate:  1
+  Session Affinity:
+    Affinity Cookie Ttl Sec:  50
+    Affinity Type:            GENERATED_COOKIE
+  Timeout Sec:                42
+Events:                       <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ nslookup sara-ingress-with-cookie-affinity.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   sara-ingress-with-cookie-affinity.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-s46cl
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cp /mnt/c/Users/Rahul/Downloads/ingress_with_cookie_affinity.png .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ gcloud compute addresses list
+NAME                                       ADDRESS/RANGE   TYPE      PURPOSE      NETWORK  REGION       SUBNET  STATUS
+gke-ingress-extip1                         34.36.100.7     EXTERNAL                                             IN_USE
+gke-ingress-extip2                         34.98.125.106   EXTERNAL                                             RESERVED
+google-managed-private-service-connection  10.116.0.0/16   INTERNAL  VPC_PEERING  default                       RESERVED
+nat-auto-ip-5839377-9-1693086667609885     35.208.248.222  EXTERNAL  NAT_AUTO              us-central1          IN_USE
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cp /mnt/c/Users/Rahul/Downloads/ingress-with-cookie-browser-screenshot.png .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ ls -ltr
+total 276
+-rw-r--r-- 1 simplyrahul simplyrahul   5225 Aug 26 14:03 README.md
+drwxr-xr-x 2 simplyrahul simplyrahul   4096 Aug 26 14:03 02-kube-manifests-without-cookie-affinity
+drwxr-xr-x 2 simplyrahul simplyrahul   4096 Oct  8 10:23 01-kube-manifests-with-cookie-affinity
+-rwxr-xr-x 1 simplyrahul simplyrahul 162044 Oct  8 10:31 ingress_with_cookie_affinity.png
+-rwxr-xr-x 1 simplyrahul simplyrahul 101414 Oct  8 10:38 ingress-with-cookie-browser-screenshot.png
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 00-with-affinity.out
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ git add -A .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ git commit -am"cookie affinity ingress"
+[main 8c20274] cookie affinity ingress
+ 7 files changed, 115 insertions(+), 11 deletions(-)
+ create mode 100644 52-GKE-Ingress-Cookie-Affinity/00-with-affinity.out
+ create mode 100755 52-GKE-Ingress-Cookie-Affinity/ingress-with-cookie-browser-screenshot.png
+ create mode 100755 52-GKE-Ingress-Cookie-Affinity/ingress_with_cookie_affinity.png
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cp /mnt/c/Users/Rahul/Downloads/ingress-with-cookie-browser-screenshot_chrome.png .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ ls 02-kube-manifests-without-cookie-affinity/
+01-kubernetes-deployment.yaml  02-kubernetes-NodePort-service.yaml  03-ingress.yaml  04-backendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 02-kube-manifests-without-cookie-affinity/01-kubernetes-deployment.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 02-kube-manifests-without-cookie-affinity/02-kubernetes-NodePort-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 02-kube-manifests-without-cookie-affinity/03-ingress.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ vim 02-kube-manifests-without-cookie-affinity/04-backendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ kubectl apply -f 02-kube-manifests-without-cookie-affinity/
+deployment.apps/cdn-demo-deployment2 created
+service/cdn-demo-nodeport-service2 created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-cdn-demo2 created
+backendconfig.cloud.google.com/my-backendconfig2 created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ for i in deploy pods svc ingress backendconfig ; do echo "kubectl get ${i} -o wide --show-labels" && kubectl get ${i} -o wide --show-labels && echo "" ; done
+kubectl get deploy -o wide --show-labels
+NAME                   READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                                              SELECTOR        LABELS
+cdn-demo-deployment    4/4     4            4           47m   cdn-demo     us-docker.pkg.dev/google-samples/containers/gke/hello-app-cdn:1.0   app=cdn-demo    <none>
+cdn-demo-deployment2   4/4     4            4           32s   cdn-demo2    us-docker.pkg.dev/google-samples/containers/gke/hello-app-cdn:1.0   app=cdn-demo2   <none>
+
+kubectl get pods -o wide --show-labels
+NAME                                    READY   STATUS    RESTARTS   AGE   IP            NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+cdn-demo-deployment-79d9dc75df-7hqhs    1/1     Running   0          47m   10.76.0.24    gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=cdn-demo,pod-template-hash=79d9dc75df
+cdn-demo-deployment-79d9dc75df-r2zk2    1/1     Running   0          47m   10.76.1.172   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=cdn-demo,pod-template-hash=79d9dc75df
+cdn-demo-deployment-79d9dc75df-s46cl    1/1     Running   0          47m   10.76.2.33    gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=cdn-demo,pod-template-hash=79d9dc75df
+cdn-demo-deployment-79d9dc75df-xwslv    1/1     Running   0          47m   10.76.1.173   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=cdn-demo,pod-template-hash=79d9dc75df
+cdn-demo-deployment2-6d79b774bf-7m6kx   1/1     Running   0          35s   10.76.2.34    gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=cdn-demo2,pod-template-hash=6d79b774bf
+cdn-demo-deployment2-6d79b774bf-b9hr8   1/1     Running   0          35s   10.76.1.174   gke-private-standard-22a-default-pool-f62b7b3f-4qbg   <none>           <none>            app=cdn-demo2,pod-template-hash=6d79b774bf
+cdn-demo-deployment2-6d79b774bf-pzmk2   1/1     Running   0          35s   10.76.0.25    gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=cdn-demo2,pod-template-hash=6d79b774bf
+cdn-demo-deployment2-6d79b774bf-r49n8   1/1     Running   0          35s   10.76.2.35    gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=cdn-demo2,pod-template-hash=6d79b774bf
+
+kubectl get svc -o wide --show-labels
+NAME                         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE   SELECTOR        LABELS
+cdn-demo-nodeport-service    NodePort    10.80.4.43     <none>        80:31249/TCP   47m   app=cdn-demo    <none>
+cdn-demo-nodeport-service2   NodePort    10.80.14.254   <none>        80:32684/TCP   39s   app=cdn-demo2   <none>
+kubernetes                   ClusterIP   10.80.0.1      <none>        443/TCP        47d   <none>          component=apiserver,provider=kubernetes
+
+kubectl get ingress -o wide --show-labels
+NAME                CLASS    HOSTS   ADDRESS       PORTS   AGE   LABELS
+ingress-cdn-demo    <none>   *       34.36.100.7   80      47m   <none>
+ingress-cdn-demo2   <none>   *                     80      42s   <none>
+
+kubectl get backendconfig -o wide --show-labels
+NAME                AGE   LABELS
+my-backendconfig    47m   <none>
+my-backendconfig2   45s   <none>
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ kubectl describe ingress ingress-cdn-demo2
+Name:             ingress-cdn-demo2
+Labels:           <none>
+Namespace:        default
+Address:          34.98.125.106
+Ingress Class:    <none>
+Default backend:  cdn-demo-nodeport-service2:80 (10.76.0.25:8080,10.76.1.174:8080,10.76.2.34:8080 + 1 more...)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *           *     cdn-demo-nodeport-service2:80 (10.76.0.25:8080,10.76.1.174:8080,10.76.2.34:8080 + 1 more...)
+Annotations:  external-dns.alpha.kubernetes.io/hostname: sara-ingress-without-cookie-affinity.rahulsinha.info
+              ingress.kubernetes.io/backends: {"k8s1-3b22a415-default-cdn-demo-nodeport-service2-80-960fe030":"HEALTHY"}
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-cdn-demo2-timcp0i7
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-cdn-demo2-timcp0i7
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-cdn-demo2-timcp0i7
+              kubernetes.io/ingress.class: gce
+              kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip2
+Events:
+  Type     Reason     Age                  From                     Message
+  ----     ------     ----                 ----                     -------
+  Warning  Translate  104s (x7 over 105s)  loadbalancer-controller  Translation failed: invalid ingress spec: error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/cdn-demo-nodeport-service2", err: no BackendConfig for service port exists.
+  Normal   Sync       36s                  loadbalancer-controller  UrlMap "k8s2-um-jdj5k2n0-default-ingress-cdn-demo2-timcp0i7" created
+  Normal   Sync       34s                  loadbalancer-controller  TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-cdn-demo2-timcp0i7" created
+  Normal   Sync       22s                  loadbalancer-controller  ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-cdn-demo2-timcp0i7" created
+  Normal   Sync       21s (x4 over 105s)   loadbalancer-controller  Scheduled for sync
+  Normal   IPChanged  21s                  loadbalancer-controller  IP is now 34.98.125.106
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ nslookup sara-ingress-without-cookie-affinity.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+** server can't find sara-ingress-without-cookie-affinity.rahulsinha.info: NXDOMAIN
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ gcloud compute addresses list
+NAME                                       ADDRESS/RANGE   TYPE      PURPOSE      NETWORK  REGION       SUBNET  STATUS
+gke-ingress-extip1                         34.36.100.7     EXTERNAL                                             IN_USE
+gke-ingress-extip2                         34.98.125.106   EXTERNAL                                             IN_USE
+google-managed-private-service-connection  10.116.0.0/16   INTERNAL  VPC_PEERING  default                       RESERVED
+nat-auto-ip-5839377-9-1693086667609885     35.208.248.222  EXTERNAL  NAT_AUTO              us-central1          IN_USE
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cp /mnt/c/Users/Rahul/Downloads/nslookup_sara-ingress-without-cookie-affinity.rahulsinha.info.png .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ cp /mnt/c/Users/Rahul/Downloads/no-cookies-found.png .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ git commit -am"cookie affinity ingress"
+[main d789cbd] cookie affinity ingress
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ git add -A .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ git commit -am"cookie affinity ingress"
+[main 83271a1] cookie affinity ingress
+ 3 files changed, 0 insertions(+), 0 deletions(-)
+ create mode 100755 52-GKE-Ingress-Cookie-Affinity/ingress-with-cookie-browser-screenshot_chrome.png
+ create mode 100755 52-GKE-Ingress-Cookie-Affinity/no-cookies-found.png
+ create mode 100755 52-GKE-Ingress-Cookie-Affinity/nslookup_sara-ingress-without-cookie-affinity.rahulsinha.info.png
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$ git push
+Username for 'https://github.com': simplyrahul@gmail.com
+Password for 'https://simplyrahul@gmail.com@github.com':
+Enumerating objects: 30, done.
+Counting objects: 100% (30/30), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (23/23), done.
+Writing objects: 100% (23/23), 523.79 KiB | 27.57 MiB/s, done.
+Total 23 (delta 11), reused 0 (delta 0)
+remote: Resolving deltas: 100% (11/11), completed with 5 local objects.
+To https://github.com/simplyrahul1/google-kubernetes-engine.git
+   e35cc2a..83271a1  main -> main
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/52-GKE-Ingress-Cookie-Affinity$
