@@ -1,0 +1,337 @@
+{
+  "checkIntervalSec": 5,
+  "creationTimestamp": "2023-10-07T21:36:57.202-07:00",
+  "description": "Default kubernetes L7 Loadbalancing health check for NEG.",
+  "healthyThreshold": 2,
+  "httpHealthCheck": {
+    "portSpecification": "USE_FIXED_PORT",
+    "port": 80,
+    "requestPath": "/index.html",
+    "proxyHeader": "NONE"
+  },
+  "id": "3879794556061847303",
+  "kind": "compute#healthCheck",
+  "name": "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6",
+  "selfLink": "projects/expanded-origin-395402/global/healthChecks/k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6",
+  "timeoutSec": 5,
+  "type": "HTTP",
+  "unhealthyThreshold": 2
+}
+
+--
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ cat kube-manifests/
+cat: kube-manifests/: Is a directory
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ ls kube-manifests/
+01-kubernetes-deployment.yaml  02-kubernetes-NodePort-service.yaml  03-ingress.yaml  04-backendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ cat kube-manifests/01-kubernetes-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-nginx-deployment
+  labels:
+    app: app3-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app3-nginx
+  template:
+    metadata:
+      labels:
+        app: app3-nginx
+    spec:
+      containers:
+        - name: app3-nginx
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          #readinessProbe:
+          #  httpGet:
+          #    scheme: HTTP
+          #    path: /index.html
+          #    port: 80
+          #  initialDelaySeconds: 10
+          #  periodSeconds: 15
+          #  timeoutSeconds: 5    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ cat kube-manifests/02-kubernetes-NodePort-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-nginx-nodeport-service
+  labels:
+    app: app3-nginx
+  annotations:
+    #cloud.google.com/backend-config: '{"ports": {"80":"my-backendconfig"}}'
+    cloud.google.com/backend-config: '{"default": "my-backendconfig"}'
+spec:
+  type: NodePort
+  selector:
+    app: app3-nginx
+  ports:
+    - port: 80
+      targetPort: 80simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ cat kube-manifests/03-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-custom-healthcheck
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+spec:
+  defaultBackend:
+    service:
+      name: app3-nginx-nodeport-service
+      port:
+        number: 80
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ cat kube-manifests/04-backendconfig.yaml
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: my-backendconfig
+spec:
+  timeoutSec: 42 # Backend service timeout: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#timeout
+  connectionDraining: # Connection draining timeout: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#draining_timeout
+    drainingTimeoutSec: 62
+  logging: # HTTP access logging: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#http_logging
+    enable: true
+    sampleRate: 1.0
+  healthCheck:
+    checkIntervalSec: 5 # Default is 5 seconds
+    timeoutSec: 5 # The value of timeoutSec must be less than or equal to the checkIntervalSec
+    healthyThreshold: 2 # Default value 2
+    unhealthyThreshold: 2 # Default value 2
+    type: HTTP # The BackendConfig only supports creating health checks using the HTTP, HTTPS, or HTTP2 protocols
+    requestPath: /index.html
+    port: 80
+
+# sampleRate: Specify a value from 0.0 through 1.0, where 0.0 means no packets are logged
+# and 1.0 means 100% of packets are logged. This field is only relevant if enable is set
+# to true. sampleRate is an optional field, but if it's configured then enable: true must
+# also be set or else it is interpreted as enable: false.    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ kubectl apply -f kube-manifests/
+deployment.apps/app3-nginx-deployment created
+service/app3-nginx-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-custom-healthcheck created
+backendconfig.cloud.google.com/my-backendconfig created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ for i in deploy pods svc ingress backendconfig ; do echo "kubectl get ${i} -o wide --show-labels" && kubectl get ${i} -o
+wide --show-labels && echo "" ; done
+kubectl get deploy -o wide --show-labels
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                          SELECTOR         LABELS
+app3-nginx-deployment   1/1     1            1           33s   app3-nginx   stacksimplify/kubenginx:1.0.0   app=app3-nginx   app=app3-nginx
+
+kubectl get pods -o wide --show-labels
+NAME                                     READY   STATUS    RESTARTS   AGE   IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+app3-nginx-deployment-776cb56c8d-rlx8s   1/1     Running   0          35s   10.76.0.26   gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=app3-nginx,pod-template-hash=776cb56c8d
+
+kubectl get svc -o wide --show-labels
+NAME                          TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE   SELECTOR         LABELS
+app3-nginx-nodeport-service   NodePort    10.80.7.19   <none>        80:30901/TCP   38s   app=app3-nginx   app=app3-nginx
+kubernetes                    ClusterIP   10.80.0.1    <none>        443/TCP        47d   <none>           component=apiserver,provider=kubernetes
+
+kubectl get ingress -o wide --show-labels
+NAME                         CLASS    HOSTS   ADDRESS   PORTS   AGE   LABELS
+ingress-custom-healthcheck   <none>   *                 80      40s   <none>
+
+kubectl get backendconfig -o wide --show-labels
+NAME               AGE   LABELS
+my-backendconfig   43s   <none>
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ kubectl describe deploy app3-nginx-deployment
+Name:                   app3-nginx-deployment
+Namespace:              default
+CreationTimestamp:      Sun, 08 Oct 2023 12:36:54 +0800
+Labels:                 app=app3-nginx
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=app3-nginx
+Replicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=app3-nginx
+  Containers:
+   app3-nginx:
+    Image:        stacksimplify/kubenginx:1.0.0
+    Port:         80/TCP
+    Host Port:    0/TCP
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   app3-nginx-deployment-776cb56c8d (1/1 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  107s  deployment-controller  Scaled up replica set app3-nginx-deployment-776cb56c8d to 1
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ kubectl describe pods app3-nginx-deployment-776cb56c8d-rlx8s
+Name:             app3-nginx-deployment-776cb56c8d-rlx8s
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-b8a9f9fd-1hff/10.128.0.49
+Start Time:       Sun, 08 Oct 2023 12:36:55 +0800
+Labels:           app=app3-nginx
+                  pod-template-hash=776cb56c8d
+Annotations:      <none>
+Status:           Running
+IP:               10.76.0.26
+IPs:
+  IP:           10.76.0.26
+Controlled By:  ReplicaSet/app3-nginx-deployment-776cb56c8d
+Containers:
+  app3-nginx:
+    Container ID:   containerd://80392d1871503b43cde0b633be885cbbda6e2ff5d4cc8d37327c67a9e7da8a49
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 08 Oct 2023 12:36:56 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-z6khr (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-z6khr:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  2m17s  default-scheduler  Successfully assigned default/app3-nginx-deployment-776cb56c8d-rlx8s to gke-private-standard-22a-default-pool-b8a9f9fd-1hff
+  Normal  Pulled     2m16s  kubelet            Container image "stacksimplify/kubenginx:1.0.0" already present on machine
+  Normal  Created    2m16s  kubelet            Created container app3-nginx
+  Normal  Started    2m16s  kubelet            Started container app3-nginx
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ kubectl describe svc app3-nginx-nodeport-service
+Name:                     app3-nginx-nodeport-service
+Namespace:                default
+Labels:                   app=app3-nginx
+Annotations:              cloud.google.com/backend-config: {"default": "my-backendconfig"}
+                          cloud.google.com/neg: {"ingress":true}
+                          cloud.google.com/neg-status:
+                            {"network_endpoint_groups":{"80":"k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6"},"zones":["us-central1-a","us-central1-b"...
+Selector:                 app=app3-nginx
+Type:                     NodePort
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.80.7.19
+IPs:                      10.80.7.19
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  30901/TCP
+Endpoints:                10.76.0.26:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason  Age    From            Message
+  ----    ------  ----   ----            -------
+  Normal  Create  2m41s  neg-controller  Created NEG "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6" for default/app3-nginx-nodeport-service-k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-a".
+  Normal  Create  2m35s  neg-controller  Created NEG "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6" for default/app3-nginx-nodeport-service-k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-b".
+  Normal  Create  2m28s  neg-controller  Created NEG "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6" for default/app3-nginx-nodeport-service-k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6-/80-80-GCE_VM_IP_PORT-L7 in "us-central1-c".
+  Normal  Attach  2m25s  neg-controller  Attach 1 network endpoint(s) (NEG "k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6" in zone "us-central1-a")
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ kubectl describe ingress ingress-custom-healthcheck
+Name:             ingress-custom-healthcheck
+Labels:           <none>
+Namespace:        default
+Address:          34.36.8.236
+Ingress Class:    <none>
+Default backend:  app3-nginx-nodeport-service:80 (10.76.0.26:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *           *     app3-nginx-nodeport-service:80 (10.76.0.26:80)
+Annotations:  ingress.kubernetes.io/backends: {"k8s1-3b22a415-default-app3-nginx-nodeport-service-80-73aaa8f6":"HEALTHY"}
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4
+              kubernetes.io/ingress.class: gce
+Events:
+  Type     Reason     Age                    From                     Message
+  ----     ------     ----                   ----                     -------
+  Warning  Translate  4m26s (x7 over 4m26s)  loadbalancer-controller  Translation failed: invalid ingress spec: error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/app3-nginx-nodeport-service", err: no BackendConfig for service port exists.
+  Normal   Sync       3m26s                  loadbalancer-controller  UrlMap "k8s2-um-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4" created
+  Normal   Sync       3m24s                  loadbalancer-controller  TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4" created
+  Normal   Sync       3m9s                   loadbalancer-controller  ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-custom-healthcheck-uvkgk5b4" created
+  Normal   IPChanged  3m9s                   loadbalancer-controller  IP is now 34.36.8.236
+  Normal   Sync       3m6s (x5 over 4m26s)   loadbalancer-controller  Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ gcloud compute addresses list
+NAME                                       ADDRESS/RANGE   TYPE      PURPOSE      NETWORK  REGION       SUBNET  STATUS
+gke-ingress-extip1                         34.36.100.7     EXTERNAL                                             RESERVED
+gke-ingress-extip2                         34.98.125.106   EXTERNAL                                             RESERVED
+google-managed-private-service-connection  10.116.0.0/16   INTERNAL  VPC_PEERING  default                       RESERVED
+nat-auto-ip-5839377-9-1693086667609885     35.208.248.222  EXTERNAL  NAT_AUTO              us-central1          IN_USE
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ curl http://34.36.8.236/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ kubectl describe backendconfig my-backendconfig
+Name:         my-backendconfig
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  cloud.google.com/v1
+Kind:         BackendConfig
+Metadata:
+  Creation Timestamp:  2023-10-08T04:36:56Z
+  Generation:          1
+  Resource Version:    46361715
+  UID:                 ae2f4411-6d1a-4d8b-ae2d-927c2c91121b
+Spec:
+  Connection Draining:
+    Draining Timeout Sec:  62
+  Health Check:
+    Check Interval Sec:   5
+    Healthy Threshold:    2
+    Port:                 80
+    Request Path:         /index.html
+    Timeout Sec:          5
+    Type:                 HTTP
+    Unhealthy Threshold:  2
+  Logging:
+    Enable:       true
+    Sample Rate:  1
+  Timeout Sec:    42
+Events:           <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ cp /mnt/c/Users/Rahul/Downloads/backend-health-check-parameters-gcp.png .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ ls -ltr
+total 188
+drwxr-xr-x 2 simplyrahul simplyrahul   4096 Aug 26 14:03 kube-manifests
+-rw-r--r-- 1 simplyrahul simplyrahul   4384 Aug 26 14:03 README.md
+-rwxr-xr-x 1 simplyrahul simplyrahul 177571 Oct  8 12:50 backend-health-check-parameters-gcp.png
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$ vim session.out
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/53-GKE-Ingress-HealthCheck-with-backendConfig$
