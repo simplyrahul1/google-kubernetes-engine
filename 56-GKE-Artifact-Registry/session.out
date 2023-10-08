@@ -1,0 +1,681 @@
+C:\Users\Rahul>mkdir docker_folder
+
+C:\Users\Rahul>cd docker_folder
+
+C:\Users\Rahul\docker_folder>vim Dockerfile
+'vim' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\Rahul\docker_folder>edit Dockerfile
+'edit' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\Rahul\docker_folder>notepad.exe Dockerfile
+
+C:\Users\Rahul\docker_folder>docker build -t sara_simple_webpage.html
+ERROR: "docker buildx build" requires exactly 1 argument.
+See 'docker buildx build --help'.
+
+Usage:  docker buildx build [OPTIONS] PATH | URL | -
+
+Start a build
+
+C:\Users\Rahul\docker_folder>docker build -t sara_simple_webpage.html:v1.0
+ERROR: "docker buildx build" requires exactly 1 argument.
+See 'docker buildx build --help'.
+
+Usage:  docker buildx build [OPTIONS] PATH | URL | -
+
+Start a build
+
+C:\Users\Rahul\docker_folder>docker build -t sara_simple_webpage.html:v1.0 .
+[+] Building 0.1s (2/2) FINISHED                                                                                                                                                                  docker:default
+ => [internal] load .dockerignore                                                                                                                                                                           0.0s
+ => => transferring context: 2B                                                                                                                                                                             0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                                        0.0s
+ => => transferring dockerfile: 2B                                                                                                                                                                          0.0s
+ERROR: failed to solve: failed to read dockerfile: open /var/lib/docker/tmp/buildkit-mount354076074/Dockerfile: no such file or directory
+
+C:\Users\Rahul\docker_folder>dir
+ Volume in drive C has no label.
+ Volume Serial Number is 4624-902B
+
+ Directory of C:\Users\Rahul\docker_folder
+
+08-10-2023  22:00    <DIR>          .
+08-10-2023  21:58    <DIR>          ..
+08-10-2023  22:00                49 Dockerfile.txt
+               1 File(s)             49 bytes
+               2 Dir(s)  779,480,588,288 bytes free
+
+C:\Users\Rahul\docker_folder>mv Dockerfile.txt Dokcerfile
+'mv' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\Rahul\docker_folder>move Dockerfile.txt Dokcerfile
+        1 file(s) moved.
+
+C:\Users\Rahul\docker_folder>notepad.exe index.html
+
+C:\Users\Rahul\docker_folder>ls -ltr
+'ls' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\Rahul\docker_folder>dir
+ Volume in drive C has no label.
+ Volume Serial Number is 4624-902B
+
+ Directory of C:\Users\Rahul\docker_folder
+
+08-10-2023  22:04    <DIR>          .
+08-10-2023  21:58    <DIR>          ..
+08-10-2023  22:04                49 Dockerfile.txt
+08-10-2023  22:00                49 Dokcerfile
+08-10-2023  22:03               274 index.html
+               3 File(s)            372 bytes
+               2 Dir(s)  779,480,215,552 bytes free
+
+C:\Users\Rahul\docker_folder>mv Dokcerfile Dockerfile
+'mv' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\Rahul\docker_folder>move Dokcerfile Dockerfile
+        1 file(s) moved.
+
+C:\Users\Rahul\docker_folder>dir
+ Volume in drive C has no label.
+ Volume Serial Number is 4624-902B
+
+ Directory of C:\Users\Rahul\docker_folder
+
+08-10-2023  22:04    <DIR>          .
+08-10-2023  21:58    <DIR>          ..
+08-10-2023  22:00                49 Dockerfile
+08-10-2023  22:04                49 Dockerfile.txt
+08-10-2023  22:03               274 index.html
+               3 File(s)            372 bytes
+               2 Dir(s)  779,480,150,016 bytes free
+
+C:\Users\Rahul\docker_folder>docker built -t sara-simplywebpage .
+unknown shorthand flag: 't' in -t
+See 'docker --help'.
+
+Usage:  docker [OPTIONS] COMMAND
+
+A self-sufficient runtime for containers
+
+Common Commands:
+  run         Create and run a new container from an image
+  exec        Execute a command in a running container
+  ps          List containers
+  build       Build an image from a Dockerfile
+  pull        Download an image from a registry
+  push        Upload an image to a registry
+  images      List images
+  login       Log in to a registry
+  logout      Log out from a registry
+  search      Search Docker Hub for images
+  version     Show the Docker version information
+  info        Display system-wide information
+
+Management Commands:
+  builder     Manage builds
+  buildx*     Docker Buildx (Docker Inc., v0.11.2-desktop.5)
+  compose*    Docker Compose (Docker Inc., v2.22.0-desktop.2)
+  container   Manage containers
+  context     Manage contexts
+  dev*        Docker Dev Environments (Docker Inc., v0.1.0)
+  extension*  Manages Docker extensions (Docker Inc., v0.2.20)
+  image       Manage images
+  init*       Creates Docker-related starter files for your project (Docker Inc., v0.1.0-beta.8)
+  manifest    Manage Docker image manifests and manifest lists
+  network     Manage networks
+  plugin      Manage plugins
+  sbom*       View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc., 0.6.0)
+  scan*       Docker Scan (Docker Inc., v0.26.0)
+  scout*      Docker Scout (Docker Inc., v1.0.7)
+  system      Manage Docker
+  trust       Manage trust on Docker images
+  volume      Manage volumes
+
+Swarm Commands:
+  swarm       Manage Swarm
+
+Commands:
+  attach      Attach local standard input, output, and error streams to a running container
+  commit      Create a new image from a container's changes
+  cp          Copy files/folders between a container and the local filesystem
+  create      Create a new container
+  diff        Inspect changes to files or directories on a container's filesystem
+  events      Get real time events from the server
+  export      Export a container's filesystem as a tar archive
+  history     Show the history of an image
+  import      Import the contents from a tarball to create a filesystem image
+  inspect     Return low-level information on Docker objects
+  kill        Kill one or more running containers
+  load        Load an image from a tar archive or STDIN
+  logs        Fetch the logs of a container
+  pause       Pause all processes within one or more containers
+  port        List port mappings or a specific mapping for the container
+  rename      Rename a container
+  restart     Restart one or more containers
+  rm          Remove one or more containers
+  rmi         Remove one or more images
+  save        Save one or more images to a tar archive (streamed to STDOUT by default)
+  start       Start one or more stopped containers
+  stats       Display a live stream of container(s) resource usage statistics
+  stop        Stop one or more running containers
+  tag         Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+  top         Display the running processes of a container
+  unpause     Unpause all processes within one or more containers
+  update      Update configuration of one or more containers
+  wait        Block until one or more containers stop, then print their exit codes
+
+Global Options:
+      --config string      Location of client config files (default
+                           "C:\\Users\\Rahul\\.docker")
+  -c, --context string     Name of the context to use to connect to the
+                           daemon (overrides DOCKER_HOST env var and
+                           default context set with "docker context use")
+  -D, --debug              Enable debug mode
+  -H, --host list          Daemon socket to connect to
+  -l, --log-level string   Set the logging level ("debug", "info",
+                           "warn", "error", "fatal") (default "info")
+      --tls                Use TLS; implied by --tlsverify
+      --tlscacert string   Trust certs signed only by this CA (default
+                           "C:\\Users\\Rahul\\.docker\\ca.pem")
+      --tlscert string     Path to TLS certificate file (default
+                           "C:\\Users\\Rahul\\.docker\\cert.pem")
+      --tlskey string      Path to TLS key file (default
+                           "C:\\Users\\Rahul\\.docker\\key.pem")
+      --tlsverify          Use TLS and verify the remote
+  -v, --version            Print version information and quit
+
+Run 'docker COMMAND --help' for more information on a command.
+
+For more help on how to use Docker, head to https://docs.docker.com/go/guides/
+
+
+C:\Users\Rahul\docker_folder>docker build -t sara-simplywebpage .
+[+] Building 8.7s (7/7) FINISHED                                                                                                                                                                  docker:default
+ => [internal] load build definition from Dockerfile                                                                                                                                                        0.0s
+ => => transferring dockerfile: 86B                                                                                                                                                                         0.0s
+ => [internal] load .dockerignore                                                                                                                                                                           0.0s
+ => => transferring context: 2B                                                                                                                                                                             0.0s
+ => [internal] load metadata for docker.io/library/nginx:latest                                                                                                                                             3.5s
+ => [internal] load build context                                                                                                                                                                           0.0s
+ => => transferring context: 313B                                                                                                                                                                           0.0s
+ => [1/2] FROM docker.io/library/nginx@sha256:32da30332506740a2f7c34d5dc70467b7f14ec67d912703568daff790ab3f755                                                                                              4.5s
+ => => resolve docker.io/library/nginx@sha256:32da30332506740a2f7c34d5dc70467b7f14ec67d912703568daff790ab3f755                                                                                              0.0s
+ => => sha256:a803e7c4b030119420574a882a52b6431e160fceb7620f61b525d49bc2d58886 29.12MB / 29.12MB                                                                                                            1.3s
+ => => sha256:32da30332506740a2f7c34d5dc70467b7f14ec67d912703568daff790ab3f755 1.86kB / 1.86kB                                                                                                              0.0s
+ => => sha256:b2888fc9cfe7cd9d6727aeb462d13c7c45dec413b66f2819a36c4a3cb9d4df75 1.78kB / 1.78kB                                                                                                              0.0s
+ => => sha256:61395b4c586da2b9b3b7ca903ea6a448e6783dfdd7f768ff2c1a0f3360aaba99 8.15kB / 8.15kB                                                                                                              0.0s
+ => => sha256:8b625c47d69711d95708566cd97b72bca565679d034ee0372e2e23499a0112be 41.34MB / 41.34MB                                                                                                            1.7s
+ => => sha256:4d3239651a63f0595b1c047313d6f5c63e1e69c834d315dce09e2c092c2fcea7 627B / 627B                                                                                                                  0.5s
+ => => sha256:0f816efa513d909851c457ae41744fe3ff36ab19ebc2d72687d8c8f0594c93b3 959B / 959B                                                                                                                  0.9s
+ => => sha256:01d159b8db2f24da97028c26bf6622e249e162b1adab06a3644c04f1c9fe2dd3 370B / 370B                                                                                                                  1.2s
+ => => extracting sha256:a803e7c4b030119420574a882a52b6431e160fceb7620f61b525d49bc2d58886                                                                                                                   1.2s
+ => => sha256:5fb9a81470f3644c474192baf0827a34749286cb6d933091d4d4463ea4f9c495 1.22kB / 1.22kB                                                                                                              1.6s
+ => => sha256:9b1e1e7164db75ad0f64e8deeb33e771d455fa590126b2e16d25e5a75fc6f517 1.41kB / 1.41kB                                                                                                              1.6s
+ => => extracting sha256:8b625c47d69711d95708566cd97b72bca565679d034ee0372e2e23499a0112be                                                                                                                   0.9s
+ => => extracting sha256:4d3239651a63f0595b1c047313d6f5c63e1e69c834d315dce09e2c092c2fcea7                                                                                                                   0.0s
+ => => extracting sha256:0f816efa513d909851c457ae41744fe3ff36ab19ebc2d72687d8c8f0594c93b3                                                                                                                   0.0s
+ => => extracting sha256:01d159b8db2f24da97028c26bf6622e249e162b1adab06a3644c04f1c9fe2dd3                                                                                                                   0.0s
+ => => extracting sha256:5fb9a81470f3644c474192baf0827a34749286cb6d933091d4d4463ea4f9c495                                                                                                                   0.0s
+ => => extracting sha256:9b1e1e7164db75ad0f64e8deeb33e771d455fa590126b2e16d25e5a75fc6f517                                                                                                                   0.0s
+ => [2/2] COPY index.html /usr/share/nginx/html                                                                                                                                                             0.3s
+ => exporting to image                                                                                                                                                                                      0.2s
+ => => exporting layers                                                                                                                                                                                     0.1s
+ => => writing image sha256:647cfe00450fdabca548a6a5baefb189dc2d2d3f5842cc3745731ee37a2f6a43                                                                                                                0.1s
+ => => naming to docker.io/library/sara-simplywebpage                                                                                                                                                       0.0s
+
+What's Next?
+  1. Sign in to your Docker account → docker login
+  2. View a summary of image vulnerabilities and recommendations → docker scout quickview
+
+C:\Users\Rahul\docker_folder>docker image ls
+REPOSITORY                           TAG                                                     IMAGE ID       CREATED              SIZE
+sara-simplywebpage                   latest                                                  647cfe00450f   About a minute ago   187MB
+gcr.io/k8s-minikube/kicbase          v0.0.32                                                 ff7b11088f07   15 months ago        1.15GB
+postgres                             9.6                                                     027ccf656dc1   20 months ago        200MB
+simplyrahul/docker101tutorial        latest                                                  7bc883d5fcdd   20 months ago        28.8MB
+docker101tutorial                    latest                                                  7bc883d5fcdd   20 months ago        28.8MB
+mysql                                latest                                                  d1dc36cf8d9e   20 months ago        519MB
+docker/desktop-kubernetes            kubernetes-v1.22.5-cni-v0.8.5-critools-v1.17.0-debian   88c30feb8fa7   21 months ago        294MB
+k8s.gcr.io/kube-apiserver            v1.22.5                                                 059e6cd8cf78   22 months ago        128MB
+k8s.gcr.io/kube-scheduler            v1.22.5                                                 935d8fdc2d52   22 months ago        52.7MB
+k8s.gcr.io/kube-proxy                v1.22.5                                                 8f8fdd6672d4   22 months ago        104MB
+k8s.gcr.io/kube-controller-manager   v1.22.5                                                 04185bc88e08   22 months ago        122MB
+alpine/git                           latest                                                  c6b70534b534   22 months ago        27.4MB
+centos                               centos7.9.2009                                          eeb6ee3f44bd   2 years ago          204MB
+centos                               latest                                                  5d0da3dc9764   2 years ago          231MB
+k8s.gcr.io/etcd                      3.5.0-0                                                 004811815584   2 years ago          295MB
+k8s.gcr.io/coredns/coredns           v1.8.4                                                  8d147537fb7d   2 years ago          47.6MB
+docker/desktop-vpnkit-controller     v2.0                                                    8c2c38aa676e   2 years ago          21MB
+docker/desktop-storage-provisioner   v2.0                                                    99f89471f470   2 years ago          41.9MB
+k8s.gcr.io/pause                     3.5                                                     ed210e3e4a5b   2 years ago          683kB
+puckel/docker-airflow                1.10.9                                                  3e408baf20fe   3 years ago          797MB
+mysql                                5.7.27                                                  383867b75fd2   4 years ago          373MB
+
+C:\Users\Rahul\docker_folder>notepad.exe Dockerfile
+
+C:\Users\Rahul\docker_folder>docker image sara-simplywebpage
+
+Usage:  docker image COMMAND
+
+Manage images
+
+Commands:
+  build       Build an image from a Dockerfile
+  history     Show the history of an image
+  import      Import the contents from a tarball to create a filesystem image
+  inspect     Display detailed information on one or more images
+  load        Load an image from a tar archive or STDIN
+  ls          List images
+  prune       Remove unused images
+  pull        Download an image from a registry
+  push        Upload an image to a registry
+  rm          Remove one or more images
+  save        Save one or more images to a tar archive (streamed to STDOUT by default)
+  tag         Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+
+Run 'docker image COMMAND --help' for more information on a command.
+
+C:\Users\Rahul\docker_folder>docker images sara-simplywebpage
+REPOSITORY           TAG       IMAGE ID       CREATED         SIZE
+sara-simplywebpage   latest    647cfe00450f   2 minutes ago   187MB
+
+C:\Users\Rahul\docker_folder>docker inspect sara-simplywebpage
+[
+    {
+        "Id": "sha256:647cfe00450fdabca548a6a5baefb189dc2d2d3f5842cc3745731ee37a2f6a43",
+        "RepoTags": [
+            "sara-simplywebpage:latest"
+        ],
+        "RepoDigests": [],
+        "Parent": "",
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2023-10-08T14:05:30.483272914Z",
+        "Container": "",
+        "ContainerConfig": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": null,
+            "Cmd": null,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": null
+        },
+        "DockerVersion": "",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "80/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "NGINX_VERSION=1.25.2",
+                "NJS_VERSION=0.8.0",
+                "PKG_RELEASE=1~bookworm"
+            ],
+            "Cmd": [
+                "nginx",
+                "-g",
+                "daemon off;"
+            ],
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": [
+                "/docker-entrypoint.sh"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "maintainer": "NGINX Docker Maintainers <docker-maint@nginx.com>"
+            },
+            "StopSignal": "SIGQUIT"
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 186640216,
+        "VirtualSize": 186640216,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/a7107d5e331b31c874f05159d85c360c71e2862d0de9333dfc432ad1a4b48793/diff:/var/lib/docker/overlay2/b7c6956b27371a526871185d10761d5912d79c95183f67d45dbd4cee2c8f607e/diff:/var/lib/docker/overlay2/703b8e9f71389219fdea7d785aa097e7ee268bbe30f4a567317e2eaafa73fdbb/diff:/var/lib/docker/overlay2/cab53d63d04987a9cd59652347cada52594e9e108c97fd0f45e9baf9d977b24c/diff:/var/lib/docker/overlay2/2f0c9eeebbb3fca66257b91eb066108d9687d13053421ef384ad5977ffd1e4b6/diff:/var/lib/docker/overlay2/3ce4857d5fd82053da3313ae6b47cb9434c91d2a57f2b0609ffbdbaad17ab9f7/diff:/var/lib/docker/overlay2/e6be0f615c4a8fffddcd86855b09ec5b58ab5c5c6b5af3d70e14e3ce83fe45a7/diff",
+                "MergedDir": "/var/lib/docker/overlay2/ac18bsktatm9va9fkqr1be1j8/merged",
+                "UpperDir": "/var/lib/docker/overlay2/ac18bsktatm9va9fkqr1be1j8/diff",
+                "WorkDir": "/var/lib/docker/overlay2/ac18bsktatm9va9fkqr1be1j8/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:d310e774110ab038b30c6a5f7b7f7dd527dbe527854496bd30194b9ee6ea496e",
+                "sha256:eb7e3384f0ab3a08dd0163ab66625d954e511e8fa112c09923e261418c8524cb",
+                "sha256:1dc45c680d0f1615d45021e85028c5d2089468518ec44b7aeeb947cdf0b22364",
+                "sha256:ea43d4f82a03877421d6bed1db76fd58f87555193a7921cefb22d6067d8963a7",
+                "sha256:9c6261b5d19808f0feab896f5f65c0f6287aa8589f880d4af64414608e54c023",
+                "sha256:a7e2a768c198ee94c3a3e8a1cc199a69510da1e39fd85beddc2d4f3200a21d1e",
+                "sha256:d26d4f0eb474290793ba42d20b4880daa7c6ddf0379adeb1c121e04f2840712e",
+                "sha256:104e45c9a17a14ac9f266bc2db6f2c1dd66b5f3d8f0c8f0c40bee308d40433b6"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2023-10-08T14:05:30.674677321Z"
+        }
+    }
+]
+
+C:\Users\Rahul\docker_folder>docker run --name sara-web1 -p 8084:80 -d sara-simplywebpage:v1.0
+Unable to find image 'sara-simplywebpage:v1.0' locally
+docker: Error response from daemon: pull access denied for sara-simplywebpage, repository does not exist or may require 'docker login': denied: requested access to the resource is denied.
+See 'docker run --help'.
+
+C:\Users\Rahul\docker_folder>docker run --name sara-web1 -p 8084:80 -d sara-simplywebpage
+45eea22d2db340f25aada51aaa7bcf9b1433b900eae8ca995fb83d108ac1fdab
+
+C:\Users\Rahul\docker_folder>docker ps
+CONTAINER ID   IMAGE                          COMMAND                  CREATED         STATUS                   PORTS                                        NAMES
+45eea22d2db3   sara-simplywebpage             "/docker-entrypoint.…"   6 seconds ago   Up 4 seconds             0.0.0.0:8084->80/tcp                         sara-web1
+e6b521084595   puckel/docker-airflow:1.10.9   "/entrypoint.sh webs…"   2 months ago    Up 2 minutes (healthy)   5555/tcp, 8793/tcp, 0.0.0.0:8080->8080/tcp   puckel_customized_webserver_1
+
+C:\Users\Rahul\docker_folder>curl http://localhost:8084
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(153, 204, 255);">
+      <h1>Welcome to Sara GKE</h1>
+      <p>Google Kubernetes Engine</p>
+      <p>Application Version: V1.0</p>
+      <p>Color code is suggested by Mr. Anirudh Sinha</p>
+   </body>
+</html>
+C:\Users\Rahul\docker_folder>
+C:\Users\Rahul\docker_folder>type Dockerfile
+FROM nginx
+COPY index.html /usr/share/nginx/html
+C:\Users\Rahul\docker_folder>
+C:\Users\Rahul\docker_folder>
+C:\Users\Rahul\docker_folder>type index.html
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(153, 204, 255);">
+      <h1>Welcome to Sara GKE</h1>
+      <p>Google Kubernetes Engine</p>
+      <p>Application Version: V1.0</p>
+      <p>Color code is suggested by Mr. Anirudh Sinha</p>
+   </body>
+</html>
+C:\Users\Rahul\docker_folder>
+
+--
+
+C:\Users\Rahul\docker_folder>docker ps
+CONTAINER ID   IMAGE                          COMMAND                  CREATED         STATUS                             PORTS                                        NAMES
+45eea22d2db3   sara-simplywebpage             "/docker-entrypoint.…"   2 minutes ago   Up 2 minutes                       0.0.0.0:8084->80/tcp                         sara-web1
+e6b521084595   puckel/docker-airflow:1.10.9   "/entrypoint.sh webs…"   2 months ago    Up 11 seconds (health: starting)   5555/tcp, 8793/tcp, 0.0.0.0:8080->8080/tcp   puckel_customized_webserver_1
+
+C:\Users\Rahul\docker_folder>docker stop sara-web1
+sara-web1
+
+C:\Users\Rahul\docker_folder>docker rm sara-web1
+sara-web1
+
+C:\Users\Rahul\docker_folder>docker ps
+CONTAINER ID   IMAGE                          COMMAND                  CREATED        STATUS                    PORTS                                        NAMES
+e6b521084595   puckel/docker-airflow:1.10.9   "/entrypoint.sh webs…"   2 months ago   Up 56 seconds (healthy)   5555/tcp, 8793/tcp, 0.0.0.0:8080->8080/tcp   puckel_customized_webserver_1
+
+C:\Users\Rahul\docker_folder>
+
+--
+
+
+C:\Users\Rahul\docker_folder>gcloud auth configure-docker us-central1-docker.pkg.dev
+Adding credentials for: us-central1-docker.pkg.dev
+After update, the following will be written to your Docker config file located at [C:\Users\Rahul\.docker\config.json]:
+ {
+  "credHelpers": {
+    "us-central1-docker.pkg.dev": "gcloud"
+  }
+}
+
+Do you want to continue (Y/n)?  Y
+
+Docker configuration file updated.
+
+C:\Users\Rahul\docker_folder>
+
+--
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ cp /mnt/c/Users/Rahul/Downloads/dokcer_artifact_image.png docker_artifact_image_location.png
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ ls -ltr
+total 140
+-rw-r--r-- 1 simplyrahul simplyrahul  4751 Aug 26 14:03 README.md
+drwxr-xr-x 2 simplyrahul simplyrahul  4096 Aug 26 14:03 02-kube-manifests
+drwxr-xr-x 2 simplyrahul simplyrahul  4096 Oct  8 21:45 01-Docker-Image
+-rw-r--r-- 1 simplyrahul simplyrahul 27487 Oct  8 22:19 session.out
+-rwxr-xr-x 1 simplyrahul simplyrahul 97932 Oct  8 22:26 docker_artifact_image_location.png
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ ls 02-kube-manifests/
+01-kubernetes-deployment.yaml  02-kubernetes-loadBalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ cat 02-kube-manifests/01-kubernetes-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp1-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:
+    metadata:
+      name: myapp1-pod
+      labels:
+        app: myapp1
+    spec:
+      containers:
+        - name: myapp1-container
+          #image: us-central1-docker.pkg.dev/<GCP-PROJECT-ID>/<ARTIFACT-REPO>/myapp1:v1
+          image: us-central1-docker.pkg.dev/kdaida123/gke-artifact-repo1/myapp1:v1
+          ports:
+            - containerPort: 80
+    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ vim 02-kube-manifests/02-kubernetes-loadBalancer-service.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ cat 02-kube-manifests/02-kubernetes-loadBalancer-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp1-lb-service
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp1
+  ports:
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ vim 02-kube-manifests/01-kubernetes-deployment.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ cat 02-kube-manifests/01-kubernetes-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp1-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:
+    metadata:
+      name: myapp1-pod
+      labels:
+        app: myapp1
+    spec:
+      containers:
+        - name: myapp1-container
+          #image: us-central1-docker.pkg.dev/<GCP-PROJECT-ID>/<ARTIFACT-REPO>/myapp1:v1
+          image: us-central1-docker.pkg.dev/expanded-origin-395402/gke-artifact-repo1/sara-simplywebpage:v1.0
+          ports:
+            - containerPort: 80
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ kubectl apply -f 02-kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ for i in deploy pods svc ingress backendconfig ; do echo "kubectl get ${i} -o wide --show-labels" && kubectl get ${i} -o wide --show-labels &&
+ echo "" ; done
+kubectl get deploy -o wide --show-labels
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS         IMAGES                                                                                         SELECTOR     LABELS
+myapp1-deployment   2/2     2            2           28s   myapp1-container   us-central1-docker.pkg.dev/expanded-origin-395402/gke-artifact-repo1/sara-simplywebpage:v1.0   app=myapp1   <none>
+
+kubectl get pods -o wide --show-labels
+NAME                                 READY   STATUS    RESTARTS         AGE    IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+curl-pod                             1/1     Running   42 (7m44s ago)   7h8m   10.76.2.36   gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            <none>
+myapp1-deployment-55d8cdc5cb-cmj5l   1/1     Running   0                30s    10.76.2.38   gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=myapp1,pod-template-hash=55d8cdc5cb
+myapp1-deployment-55d8cdc5cb-mjgq6   1/1     Running   0                31s    10.76.0.30   gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=myapp1,pod-template-hash=55d8cdc5cb
+
+kubectl get svc -o wide --show-labels
+NAME                TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE   SELECTOR     LABELS
+kubernetes          ClusterIP      10.80.0.1    <none>        443/TCP        47d   <none>       component=apiserver,provider=kubernetes
+myapp1-lb-service   LoadBalancer   10.80.8.68   <pending>     80:31895/TCP   33s   app=myapp1   <none>
+
+kubectl get ingress -o wide --show-labels
+No resources found in default namespace.
+
+kubectl get backendconfig -o wide --show-labels
+No resources found in default namespace.
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ kubectl describe pods myapp1-deployment-55d8cdc5cb-cmj5l
+Name:             myapp1-deployment-55d8cdc5cb-cmj5l
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-private-standard-22a-default-pool-76d79b51-6f20/10.128.0.51
+Start Time:       Sun, 08 Oct 2023 22:30:06 +0800
+Labels:           app=myapp1
+                  pod-template-hash=55d8cdc5cb
+Annotations:      <none>
+Status:           Running
+IP:               10.76.2.38
+IPs:
+  IP:           10.76.2.38
+Controlled By:  ReplicaSet/myapp1-deployment-55d8cdc5cb
+Containers:
+  myapp1-container:
+    Container ID:   containerd://e038b00ab6d031fe18bebcb2174f2369d82693d8f69b2435c106b50cf726686a
+    Image:          us-central1-docker.pkg.dev/expanded-origin-395402/gke-artifact-repo1/sara-simplywebpage:v1.0
+    Image ID:       us-central1-docker.pkg.dev/expanded-origin-395402/gke-artifact-repo1/sara-simplywebpage@sha256:32bed7c85ddc386cd49c8f920f46c3c73e6331e8f80add3fa34686c9deb53b20
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 08 Oct 2023 22:30:11 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-m5xfm (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-m5xfm:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  104s  default-scheduler  Successfully assigned default/myapp1-deployment-55d8cdc5cb-cmj5l to gke-private-standard-22a-default-pool-76d79b51-6f20
+  Normal  Pulling    103s  kubelet            Pulling image "us-central1-docker.pkg.dev/expanded-origin-395402/gke-artifact-repo1/sara-simplywebpage:v1.0"
+  Normal  Pulled     99s   kubelet            Successfully pulled image "us-central1-docker.pkg.dev/expanded-origin-395402/gke-artifact-repo1/sara-simplywebpage:v1.0" in 4.61131756s (4.6113384s including waiting)
+  Normal  Created    99s   kubelet            Created container myapp1-container
+  Normal  Started    99s   kubelet            Started container myapp1-container
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ kubectl describe loadbalancer  myapp1-lb-service
+error: the server doesn't have a resource type "loadbalancer"
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ kubectl describe svc  myapp1-lb-service
+Name:                     myapp1-lb-service
+Namespace:                default
+Labels:                   <none>
+Annotations:              cloud.google.com/neg: {"ingress":true}
+Selector:                 app=myapp1
+Type:                     LoadBalancer
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.80.8.68
+IPs:                      10.80.8.68
+LoadBalancer Ingress:     34.27.220.151
+Port:                     http  80/TCP
+TargetPort:               80/TCP
+NodePort:                 http  31895/TCP
+Endpoints:                10.76.0.30:80,10.76.2.38:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason                Age    From                Message
+  ----    ------                ----   ----                -------
+  Normal  EnsuringLoadBalancer  3m19s  service-controller  Ensuring load balancer
+  Normal  EnsuredLoadBalancer   2m39s  service-controller  Ensured load balancer
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ curl http://34.27.220.151
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(153, 204, 255);">
+      <h1>Welcome to Sara GKE</h1>
+      <p>Google Kubernetes Engine</p>
+      <p>Application Version: V1.0</p>
+      <p>Color code is suggested by Mr. Anirudh Sinha</p>
+   </body>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ kubectl exec -it curl-pod -- /bin/sh
+~ $ curl http://10.80.8.68/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(153, 204, 255);">
+      <h1>Welcome to Sara GKE</h1>
+      <p>Google Kubernetes Engine</p>
+      <p>Application Version: V1.0</p>
+      <p>Color code is suggested by Mr. Anirudh Sinha</p>
+   </body>
+</html>~ $
+~ $
+~ $ curl http://34.27.220.151
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(153, 204, 255);">
+      <h1>Welcome to Sara GKE</h1>
+      <p>Google Kubernetes Engine</p>
+      <p>Application Version: V1.0</p>
+      <p>Color code is suggested by Mr. Anirudh Sinha</p>
+   </body>
+</html>~ $
+~ $
+~ $ exit
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ cp /mnt/c/Users/Rahul/Downloads/docker_artifact_image_location.png .
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$

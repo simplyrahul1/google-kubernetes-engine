@@ -16,7 +16,7 @@ spec:
       containers:
         - name: myapp1-container
           #image: us-central1-docker.pkg.dev/<GCP-PROJECT-ID>/<ARTIFACT-REPO>/myapp1:v1
-          image: us-central1-docker.pkg.dev/kdaida123/gke-artifact-repo1/myapp1:v1
+          image: us-central1-docker.pkg.dev/expanded-origin-395402/gke-artifact-repo1/sara-simplywebpage:v1.0
           ports: 
             - containerPort: 80  
     
