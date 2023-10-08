@@ -1,0 +1,9 @@
+# https://cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balance-ingress
+
+gcloud compute networks subnets create proxy-only-subnet \
+    --purpose=REGIONAL_MANAGED_PROXY \
+    --role=ACTIVE \
+    --region=us-central1 \
+    --network=lb-network \
+    --range=10.129.0.0/23
+
