@@ -8,7 +8,7 @@ metadata:
     # Static IP for Ingress Service
     kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"   
     # External DNS - For creating a Record Set in Google Cloud Cloud DNS
-    external-dns.alpha.kubernetes.io/hostname: cloudarmor-ingress.kalyanreddydaida.com
+    external-dns.alpha.kubernetes.io/hostname: sara-cloudarmor-ingress.rahulsinha.info
 spec:          
   defaultBackend:
     service:

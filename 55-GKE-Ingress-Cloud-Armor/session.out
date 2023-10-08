@@ -1,0 +1,277 @@
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ ls kube-manifests/
+01-kubernetes-deployment.yaml  02-kubernetes-NodePort-service.yaml  03-ingress.yaml  04-backendconfig.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ cat kube-manifests/01-kubernetes-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-armor-demo-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloud-armor-demo
+  template:
+    metadata:
+      labels:
+        app: cloud-armor-demo
+    spec:
+      containers:
+        - name: cloud-armor-demo
+          image: stacksimplify/kubenginx:1.0.0
+          ports:
+            - containerPort: 80
+          # Readiness Probe (https://cloud.google.com/kubernetes-engine/docs/concepts/ingress#def_inf_hc)
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+
+
+   simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ cat kube-manifests/02-kubernetes-NodePort-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-armor-demo-nodeport-service
+  annotations:
+    #cloud.google.com/backend-config: '{"ports": {"80":"my-backendconfig"}}'
+    cloud.google.com/backend-config: '{"default": "my-backendconfig"}'
+spec:
+  type: NodePort
+  selector:
+    app: cloud-armor-demo
+  ports:
+    - port: 80
+      targetPort: 80simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ cat kube-manifests/03-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-cloud-armor-demo
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: cloudarmor-ingress.kalyanreddydaida.com
+spec:
+  defaultBackend:
+    service:
+      name: cloud-armor-demo-nodeport-service
+      port:
+        number: 80
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ vim kube-manifests/03-ingress.yaml
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ cat kube-manifests/04-backendconfig.yaml
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: my-backendconfig
+spec:
+  timeoutSec: 42 # Backend service timeout: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#timeout
+  connectionDraining: # Connection draining timeout: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#draining_timeout
+    drainingTimeoutSec: 62
+  logging: # HTTP access logging: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#http_logging
+    enable: true
+    sampleRate: 1.0
+  securityPolicy:
+    name: "cloud-armor-policy-1"
+
+# sampleRate: Specify a value from 0.0 through 1.0, where 0.0 means no packets are logged
+# and 1.0 means 100% of packets are logged. This field is only relevant if enable is set
+# to true. sampleRate is an optional field, but if it's configured then enable: true must
+# also be set or else it is interpreted as enable: false.    simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ cat kube-manifests/03-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-cloud-armor-demo
+  annotations:
+    # External Load Balancer
+    kubernetes.io/ingress.class: "gce"
+    # Static IP for Ingress Service
+    kubernetes.io/ingress.global-static-ip-name: "gke-ingress-extip1"
+    # External DNS - For creating a Record Set in Google Cloud Cloud DNS
+    external-dns.alpha.kubernetes.io/hostname: sara-cloudarmor-ingress.rahulsinha.info
+spec:
+  defaultBackend:
+    service:
+      name: cloud-armor-demo-nodeport-service
+      port:
+        number: 80
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ l
+README.md  kube-manifests/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ ls
+README.md  kube-manifests
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ kubectl get pdso
+^C
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ kubectl get pods
+NAME                                     READY   STATUS    RESTARTS         AGE
+app1-nginx-deployment-544dfb8c8f-jfrt2   1/1     Running   0                38m
+app2-nginx-deployment-7c46c8bb8c-nkd9h   1/1     Running   0                38m
+app3-nginx-deployment-5778df6d5f-5cvnd   1/1     Running   0                38m
+curl-pod                                 1/1     Running   19 (4m28s ago)   3h14m
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ d ../54-GKE-Ingress-InternalLB/
+d: command not found
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ cd ../54-GKE-Ingress-InternalLB/
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/54-GKE-Ingress-InternalLB$ kubectl delete -f 01-kube-manifests/
+deployment.apps "app1-nginx-deployment" deleted
+service "app1-nginx-nodeport-service" deleted
+deployment.apps "app2-nginx-deployment" deleted
+service "app2-nginx-nodeport-service" deleted
+deployment.apps "app3-nginx-deployment" deleted
+service "app3-nginx-nodeport-service" deleted
+ingress.networking.k8s.io "ingress-internal-lb" deleted
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/54-GKE-Ingress-InternalLB$ cd -
+/home/simplyrahul/gke/github/55-GKE-Ingress-Cloud-Armor
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ kubectl apply -f kube-manifests/
+deployment.apps/cloud-armor-demo-deployment created
+service/cloud-armor-demo-nodeport-service created
+Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
+ingress.networking.k8s.io/ingress-cloud-armor-demo created
+backendconfig.cloud.google.com/my-backendconfig created
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ for i in deploy pods svc ingress backendconfig ; do echo "kubectl get ${i} -o wide --show-labels" && kubectl get ${i} -o wide --show-labels
+&& echo "" ; done
+kubectl get deploy -o wide --show-labels
+NAME                          READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS         IMAGES                          SELECTOR               LABELS
+cloud-armor-demo-deployment   2/2     2            2           87s   cloud-armor-demo   stacksimplify/kubenginx:1.0.0   app=cloud-armor-demo   <none>
+
+kubectl get pods -o wide --show-labels
+NAME                                           READY   STATUS    RESTARTS         AGE     IP           NODE                                                  NOMINATED NODE   READINESS GATES   LABELS
+cloud-armor-demo-deployment-6dfff75559-6zxv7   1/1     Running   0                90s     10.76.0.29   gke-private-standard-22a-default-pool-b8a9f9fd-1hff   <none>           <none>            app=cloud-armor-demo,pod-template-hash=6dfff75559
+cloud-armor-demo-deployment-6dfff75559-tn4kw   1/1     Running   0                90s     10.76.2.37   gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            app=cloud-armor-demo,pod-template-hash=6dfff75559
+curl-pod                                       1/1     Running   20 (4m45s ago)   3h25m   10.76.2.36   gke-private-standard-22a-default-pool-76d79b51-6f20   <none>           <none>            <none>
+
+kubectl get svc -o wide --show-labels
+NAME                                TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE   SELECTOR               LABELS
+cloud-armor-demo-nodeport-service   NodePort    10.80.4.180   <none>        80:30386/TCP   94s   app=cloud-armor-demo   <none>
+kubernetes                          ClusterIP   10.80.0.1     <none>        443/TCP        47d   <none>                 component=apiserver,provider=kubernetes
+
+kubectl get ingress -o wide --show-labels
+NAME                       CLASS    HOSTS   ADDRESS       PORTS   AGE   LABELS
+ingress-cloud-armor-demo   <none>   *       34.36.100.7   80      96s   <none>
+
+kubectl get backendconfig -o wide --show-labels
+NAME               AGE   LABELS
+my-backendconfig   99s   <none>
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ kubectl describe ingress ingress-cloud-armor-demo
+Name:             ingress-cloud-armor-demo
+Labels:           <none>
+Namespace:        default
+Address:          34.36.100.7
+Ingress Class:    <none>
+Default backend:  cloud-armor-demo-nodeport-service:80 (10.76.0.29:80,10.76.2.37:80)
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *           *     cloud-armor-demo-nodeport-service:80 (10.76.0.29:80,10.76.2.37:80)
+Annotations:  external-dns.alpha.kubernetes.io/hostname: sara-cloudarmor-ingress.rahulsinha.info
+              ingress.kubernetes.io/backends: {"k8s1-3b22a415-default-cloud-armor-demo-nodeport-serv-8-4e895448":"Unknown"}
+              ingress.kubernetes.io/forwarding-rule: k8s2-fr-jdj5k2n0-default-ingress-cloud-armor-demo-uyhfsqgj
+              ingress.kubernetes.io/target-proxy: k8s2-tp-jdj5k2n0-default-ingress-cloud-armor-demo-uyhfsqgj
+              ingress.kubernetes.io/url-map: k8s2-um-jdj5k2n0-default-ingress-cloud-armor-demo-uyhfsqgj
+              kubernetes.io/ingress.class: gce
+              kubernetes.io/ingress.global-static-ip-name: gke-ingress-extip1
+Events:
+  Type     Reason     Age                    From                     Message
+  ----     ------     ----                   ----                     -------
+  Warning  Translate  2m19s (x7 over 2m19s)  loadbalancer-controller  Translation failed: invalid ingress spec: error getting BackendConfig for port "&ServiceBackendPort{Name:,Number:80,}" on service "default/cloud-armor-demo-nodeport-service", err: no BackendConfig for service port exists.
+  Normal   Sync       78s                    loadbalancer-controller  UrlMap "k8s2-um-jdj5k2n0-default-ingress-cloud-armor-demo-uyhfsqgj" created
+  Normal   Sync       76s                    loadbalancer-controller  TargetProxy "k8s2-tp-jdj5k2n0-default-ingress-cloud-armor-demo-uyhfsqgj" created
+  Normal   Sync       62s                    loadbalancer-controller  ForwardingRule "k8s2-fr-jdj5k2n0-default-ingress-cloud-armor-demo-uyhfsqgj" created
+  Normal   IPChanged  62s                    loadbalancer-controller  IP is now 34.36.100.7
+  Normal   Sync       61s (x4 over 2m19s)    loadbalancer-controller  Scheduled for sync
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ nslookup sara-cloudarmor-ingress.rahulsinha.info
+Server:         172.23.192.1
+Address:        172.23.192.1#53
+
+Non-authoritative answer:
+Name:   sara-cloudarmor-ingress.rahulsinha.info
+Address: 34.36.100.7
+
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ kubectl describe backendconfig my-backendconfig
+Name:         my-backendconfig
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  cloud.google.com/v1
+Kind:         BackendConfig
+Metadata:
+  Creation Timestamp:  2023-10-08T10:45:48Z
+  Generation:          1
+  Resource Version:    46591531
+  UID:                 9db7bf72-e82a-4fd8-a12f-248d53860cee
+Spec:
+  Connection Draining:
+    Draining Timeout Sec:  62
+  Logging:
+    Enable:       true
+    Sample Rate:  1
+  Security Policy:
+    Name:       cloud-armor-policy-1
+  Timeout Sec:  42
+Events:         <none>
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ curl http://34.36.100.7
+curl: (56) Recv failure: Connection reset by peer
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ curl http://34.36.100.7/
+curl: (52) Empty reply from server
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ curl -v http://34.36.100.7/
+*   Trying 34.36.100.7:80...
+* TCP_NODELAY set
+* Connected to 34.36.100.7 (34.36.100.7) port 80 (#0)
+> GET / HTTP/1.1
+> Host: 34.36.100.7
+> User-Agent: curl/7.68.0
+> Accept: */*
+>
+* Recv failure: Connection reset by peer
+* Closing connection 0
+curl: (56) Recv failure: Connection reset by peer
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ curl ifconfig.me && echo ""
+103.252.203.101
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ curl -v http://34.36.100.7/
+*   Trying 34.36.100.7:80...
+* TCP_NODELAY set
+* Connected to 34.36.100.7 (34.36.100.7) port 80 (#0)
+> GET / HTTP/1.1
+> Host: 34.36.100.7
+> User-Agent: curl/7.68.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< Server: nginx/1.17.10
+< Date: Sun, 08 Oct 2023 10:52:28 GMT
+< Content-Type: text/html
+< Content-Length: 218
+< Last-Modified: Sun, 17 May 2020 04:14:23 GMT
+< ETag: "5ec0ba1f-da"
+< Accept-Ranges: bytes
+< Via: 1.1 google
+<
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+* Connection #0 to host 34.36.100.7 left intact
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ curl http://34.36.100.7/
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$ vim session.out
+simplyrahul@DESKTOP-C4GRDQ2:~/gke/github/55-GKE-Ingress-Cloud-Armor$
