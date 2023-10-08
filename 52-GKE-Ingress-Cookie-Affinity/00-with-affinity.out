@@ -1,0 +1,107 @@
+rahul@DESKTOP-C4GRDQ2:~$ curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-s46cl
+
+rahul@DESKTOP-C4GRDQ2:~$ curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-r2zk2
+rahul@DESKTOP-C4GRDQ2:~$
+
+--
+
+PS C:\Users\Rahul> curl http://sara-ingress-without-clientip-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment2-6d79b774bf-btcdk
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 77
+                    Cache-Control: max-age=86400,public
+                    Content-Type: text/plain; charset=utf-8
+                    Date: Sat, 07 Oct 2023 15:15:47 GMT
+                    Via: 1.1 google
+
+                    Hello, world!
+                    Version: 1.0.0
+                    ...
+Forms             : {}
+Headers           : {[Content-Length, 77], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sat, 07 Oct 2023 15:15:47 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 77
+
+
+
+PS C:\Users\Rahul> curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : Hello, world!
+                    Version: 1.0.0
+                    Hostname: cdn-demo-deployment-79d9dc75df-7hqhs
+
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 76
+                    Cache-Control: max-age=86400,public
+                    Content-Type: text/plain; charset=utf-8
+                    Date: Sun, 08 Oct 2023 02:32:56 GMT
+                    Set-Cookie: GCLB=CPzor8ORm4iamAE; path=/; HttpOn...
+Forms             : {}
+Headers           : {[Content-Length, 76], [Cache-Control, max-age=86400,public], [Content-Type, text/plain; charset=utf-8], [Date, Sun, 08 Oct 2023 02:32:56 GMT]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 76
+
+
+
+PS C:\Users\Rahul>
+
+--
+
+Microsoft Windows [Version 10.0.22621.2283]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\Rahul>curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-r2zk2
+
+C:\Users\Rahul>curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-r2zk2
+
+C:\Users\Rahul>curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-s46cl
+
+C:\Users\Rahul>curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-7hqhs
+
+C:\Users\Rahul>curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-xwslv
+
+C:\Users\Rahul>curl http://sara-ingress-with-cookie-affinity.rahulsinha.info
+Hello, world!
+Version: 1.0.0
+Hostname: cdn-demo-deployment-79d9dc75df-r2zk2
+
+C:\Users\Rahul>
+
+
