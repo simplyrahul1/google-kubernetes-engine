@@ -1,0 +1,139 @@
+
+rahul@DESKTOP-C4GRDQ2:~/gke$ mkdir github
+rahul@DESKTOP-C4GRDQ2:~/gke$ cd github/
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ ls -ltr
+total 0
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ git init
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: is subject to change. To configure the initial branch name to use in all
+hint: of your new repositories, which will suppress this warning, call:
+hint:
+hint:   git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint:   git branch -m <name>
+Initialized empty Git repository in /home/rahul/gke/github/.git/
+
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ git remote -v
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ git remote add origin git@github.com:simplyrahul1/google-kubernetes-engine.git -m main
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ git remote set-url origin git@github.com:simplyrahul1/google-kubernetes-engine.git
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ git remote -v
+origin  git@github.com:simplyrahul1/google-kubernetes-engine.git (fetch)
+origin  git@github.com:simplyrahul1/google-kubernetes-engine.git (push)
+
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ ls
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ git pull
+remote: Enumerating objects: 861, done.
+remote: Counting objects: 100% (348/348), done.
+remote: Compressing objects: 100% (206/206), done.
+remote: Total 861 (delta 176), reused 307 (delta 141), pack-reused 513
+Receiving objects: 100% (861/861), 17.94 MiB | 5.81 MiB/s, done.
+Resolving deltas: 100% (380/380), done.
+From github.com:simplyrahul1/google-kubernetes-engine
+ * [new branch]      main       -> origin/main
+ * [new branch]      master     -> origin/master
+There is no tracking information for the current branch.
+Please specify which branch you want to merge with.
+See git-pull(1) for details.
+
+    git pull <remote> <branch>
+
+If you wish to set tracking information for this branch you can do so with:
+
+    git branch --set-upstream-to=origin/<branch> master
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ git pull origin main
+From github.com:simplyrahul1/google-kubernetes-engine
+ * branch            main       -> FETCH_HEAD
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ ls
+01-Create-GCP-Account                              26-GKE-PD-Volume-Snapshots-and-Restore          51-GKE-Ingress-ClientIP-Affinity
+02-Create-GKE-Cluster                              27-GKE-PD-Volume-Clone                          52-GKE-Ingress-Cookie-Affinity
+03-gcloud-cli-install-macos                        28-GKE-Storage-with-GCP-CloudSQL-Public         53-GKE-Ingress-HealthCheck-with-backendConfig
+04-gcloud-cli-install-windowsos                    29-GKE-Storage-with-GCP-CloudSQL-Private        54-GKE-Ingress-InternalLB
+05-Docker-For-Beginners                            30-GCP-CloudSQL-Private-NO-ExternalNameService  55-GKE-Ingress-Cloud-Armor
+06-kubectl-imperative-k8s-pods                     31-GKE-FileStore-default-StorageClass           56-GKE-Artifact-Registry
+07-kubectl-declarative-k8s-ReplicaSets             32-GKE-FileStore-custom-StorageClass            57-GKE-Continuous-Integration
+08-kubectl-imperative-k8s-deployment-CREATE        33-GKE-FileStore-Backup-and-Restore             58-GKE-Continuous-Delivery-with-CloudBuild
+09-kubectl-imperative-k8s-deployment-UPDATE        34-GKE-Ingress-Basics                           59-Kubernetes-liveness-probe
+10-kubectl-imperative-k8s-deployment-ROLLBACK      35-GKE-Ingress-Context-Path-Routing             60-Kubernetes-Startup-Probe
+11-kubectl-imperative-k8s-deployment-PAUSE-RESUME  36-GKE-Ingress-Custom-Health-Check              61-Kubernetes-Readiness-Probe
+12-kubectl-imperative-k8s-services                 37-Google-Cloud-Domains                         62-Kubernetes-Requests-and-Limits
+13-YAML-Basics                                     38-GKE-Ingress-ExternalIP                       63-GKE-Cluster-Autoscaling
+14-yaml-declarative-k8s-pods                       39-GKE-Ingress-Google-Managed-SSL               64-Kubernetes-Namespaces
+15-yaml-declarative-k8s-replicasets                40-GKE-Ingress-Google-Managed-SSL-Redirect      65-Kubernetes-Namespaces-ResourceQuota
+16-yaml-declarative-k8s-deployments                41-GKE-Workload-Identity                        66-Kubernetes-Namespaces-LimitRange
+17-yaml-declarative-k8s-services                   42-GKE-ExternalDNS-Install                      67-GKE-Horizontal-Pod-Autoscaler
+18-GKE-NodePort-Service                            43-GKE-ExternalDNS-Ingress-Demo                 68-GKE-AutoPilot-Cluster
+19-GKE-Headless-Service                            44-GKE-ExternalDNS-Service-Demo                 69-Access-To-Multiple-Clusters
+20-GKE-Private-Cluster                             45-GKE-Ingress-NameBasedVhost-Routing           README.md
+21-GKE-PD-existing-SC-standard-rwo                 46-GKE-Ingress-SSL-Policy                       course-presentation
+22-GKE-PD-existing-SC-premium-rwo                  47-GKE-Ingress-with-Identity-Aware-Proxy        git-deploy.sh
+23-GKE-PD-Custom-StorageClass                      48-GKE-Ingress-SelfSigned-SSL                   images
+24-GKE-PD-preexisting-PD                           49-GKE-Ingress-Preshared-SSL
+25-GKE-PD-Regional-PD                              50-GKE-Ingress-Cloud-CDN
+rahul@DESKTOP-C4GRDQ2:~/gke/github$ cd 56-GKE-Artifact-Registry/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ cp /tmp/rahuludayshankarsinha_* .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ ls -ltr
+total 528
+-rw-r--r-- 1 rahul rahul  38486 Oct 11 07:52 session.out
+-rwxr-xr-x 1 rahul rahul  97932 Oct 11 07:52 docker_artifact_image_location.png
+-rw-r--r-- 1 rahul rahul   4751 Oct 11 07:52 README.md
+drwxr-xr-x 2 rahul rahul   4096 Oct 11 07:52 02-kube-manifests
+drwxr-xr-x 2 rahul rahul   4096 Oct 11 07:52 01-Docker-Image
+-rwxr-xr-x 1 rahul rahul 285206 Oct 11 07:52 webpage-color-code-anirudh-sinha.png
+-rw-r--r-- 1 rahul rahul   6197 Oct 11 07:52 rahuludayshankarsinha_session.out
+-rwxr-xr-x 1 rahul rahul  88958 Oct 11 07:52 rahuludayshankarsinha_gcloud_docker_artifact_repo_list.png
+
+
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ git add -A .
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ git commit -am"gcloud init, create docker image, push to gcloud docker repo"
+[master 0113fa4] gcloud init, create docker image, push to gcloud docker repo
+ 2 files changed, 164 insertions(+)
+ create mode 100755 56-GKE-Artifact-Registry/rahuludayshankarsinha_gcloud_docker_artifact_repo_list.png
+ create mode 100644 56-GKE-Artifact-Registry/rahuludayshankarsinha_session.out
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ git push
+fatal: The current branch master has no upstream branch.
+To push the current branch and set the remote as upstream, use
+
+    git push --set-upstream origin master
+
+
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ git remote -v
+origin  git@github.com:simplyrahul1/google-kubernetes-engine.git (fetch)
+origin  git@github.com:simplyrahul1/google-kubernetes-engine.git (push)
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ git branch -a
+* master
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main
+  remotes/origin/master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ git branch --set-upstream-to origin/main
+Branch 'master' set up to track remote branch 'main' from 'origin'.
+
+
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ git branch -a
+* master
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main
+  remotes/origin/master
+  
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$ git push origin HEAD:main
+Enumerating objects: 7, done.
+Counting objects: 100% (7/7), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (5/5), 75.28 KiB | 25.09 MiB/s, done.
+Total 5 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To github.com:simplyrahul1/google-kubernetes-engine.git
+   d9859ec..0113fa4  HEAD -> main
+rahul@DESKTOP-C4GRDQ2:~/gke/github/56-GKE-Artifact-Registry$
