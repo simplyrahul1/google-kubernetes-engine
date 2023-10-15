@@ -16,7 +16,8 @@ spec: # Dictionary
       containers: # List
         - name: myapp1-container
           #image: us-central1-docker.pkg.dev/kdaida123/myapps-repository/myapp1:d1c3b88
-          image: us-central1-docker.pkg.dev/kdaida123/myapps-repository/myapp1:3d5c45b
+          #image: us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:30e9601
+          image: us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:23322a7
           ports: 
             - containerPort: 80  
     

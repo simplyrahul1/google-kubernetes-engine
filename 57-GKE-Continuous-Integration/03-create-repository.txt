@@ -1,0 +1,39 @@
+gcloud artifacts repositories create sara-myapps-repository \
+  --repository-format=docker \
+  --location=us-central1 
+
+
+-
+
+rahul@DESKTOP-C4GRDQ2:~$ gcloud artifacts repositories list
+Listing items under project sara-project-401601, across all locations.
+
+                                                                                   ARTIFACT_REGISTRY
+REPOSITORY                     FORMAT  MODE                 DESCRIPTION                    LOCATION     LABELS  ENCRYPTION          CREATE_TIME          UPDATE_TIME          SIZE (MB)
+sara-gke-docker-artifact-repo  DOCKER  STANDARD_REPOSITORY  sara-gke-docker-artifact-repo  us-central1          Google-managed key  2023-10-11T07:12:27  2023-10-11T07:34:37  67.214
+rahul@DESKTOP-C4GRDQ2:~$ cd gke/github/57-GKE-Continuous-Integration/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ ls
+01-SSH-Keys  02-Docker-Image  03-cloudbuild-yaml  04-kube-manifests  README.md
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vim 03-create-repository.txt
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ cat 03-create-repository.txt
+gcloud artifacts repositories create sara-myapps-repository \
+  --repository-format=docker \
+  --location=us-central1
+
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ gcloud artifacts repositories create sara-myapps-repository \
+  --repository-format=docker \
+  --location=us-central1
+Create request issued for: [sara-myapps-repository]
+Waiting for operation [projects/sara-project-401601/locations/us-central1/operations/d6e3dad3-2f66-4fa2-a6c2-8a4659ac8d35] to complete...done.
+Created repository [sara-myapps-repository].
+
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ gcloud artifacts repositories list
+Listing items under project sara-project-401601, across all locations.
+
+                                                                                   ARTIFACT_REGISTRY
+REPOSITORY                     FORMAT  MODE                 DESCRIPTION                    LOCATION     LABELS  ENCRYPTION          CREATE_TIME          UPDATE_TIME          SIZE (MB)
+sara-gke-docker-artifact-repo  DOCKER  STANDARD_REPOSITORY  sara-gke-docker-artifact-repo  us-central1          Google-managed key  2023-10-11T07:12:27  2023-10-11T07:34:37  67.214
+sara-myapps-repository         DOCKER  STANDARD_REPOSITORY                                 us-central1          Google-managed key  2023-10-15T10:51:22  2023-10-15T10:51:22  0
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$

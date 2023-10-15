@@ -1,0 +1,876 @@
+rahul@DESKTOP-C4GRDQ2:~$ gcloud services enable container.googleapis.com \
+    cloudbuild.googleapis.com \
+    sourcerepo.googleapis.com \
+    artifactregistry.googleapis.com
+Operation "operations/acf.p2-496061125126-9dbcd3ca-de50-43e0-968a-6798f55b82a8" finished successfully.
+
+
+Updates are available for some Google Cloud CLI components.  To install them,
+please run:
+  $ gcloud components update
+
+rahul@DESKTOP-C4GRDQ2:~$ gcloud artifacts repositories list
+Listing items under project sara-project-401601, across all locations.
+
+                                                                                   ARTIFACT_REGISTRY
+REPOSITORY                     FORMAT  MODE                 DESCRIPTION                    LOCATION     LABELS  ENCRYPTION          CREATE_TIME          UPDATE_TIME          SIZE (MB)
+sara-gke-docker-artifact-repo  DOCKER  STANDARD_REPOSITORY  sara-gke-docker-artifact-repo  us-central1          Google-managed key  2023-10-11T07:12:27  2023-10-11T07:34:37  67.214
+rahul@DESKTOP-C4GRDQ2:~$ cd gke/github/57-GKE-Continuous-Integration/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ ls
+01-SSH-Keys  02-Docker-Image  03-cloudbuild-yaml  04-kube-manifests  README.md
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vim 03-create-repository.txt
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ cat 03-create-repository.txt
+gcloud artifacts repositories create sara-myapps-repository \
+  --repository-format=docker \
+  --location=us-central1
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ gcloud artifacts repositories create sara-myapps-repository \
+  --repository-format=docker \
+  --location=us-central1
+Create request issued for: [sara-myapps-repository]
+Waiting for operation [projects/sara-project-401601/locations/us-central1/operations/d6e3dad3-2f66-4fa2-a6c2-8a4659ac8d35] to complete...done.
+Created repository [sara-myapps-repository].
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ gcloud artifacts repositories list
+Listing items under project sara-project-401601, across all locations.
+
+                                                                                   ARTIFACT_REGISTRY
+REPOSITORY                     FORMAT  MODE                 DESCRIPTION                    LOCATION     LABELS  ENCRYPTION          CREATE_TIME          UPDATE_TIME          SIZE (MB)
+sara-gke-docker-artifact-repo  DOCKER  STANDARD_REPOSITORY  sara-gke-docker-artifact-repo  us-central1          Google-managed key  2023-10-11T07:12:27  2023-10-11T07:34:37  67.214
+sara-myapps-repository         DOCKER  STANDARD_REPOSITORY                                 us-central1          Google-managed key  2023-10-15T10:51:22  2023-10-15T10:51:22  0
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vim 03-create-repository.txt
+
+--
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ cd 01-SSH-Keys/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ ls -ltr
+total 8
+-rw-r--r-- 1 rahul rahul 104 Oct 11 07:52 id_gcp_cloud_source.pub
+-rw-r--r-- 1 rahul rahul 419 Oct 11 07:52 id_gcp_cloud_source
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ mkdir kalyan
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ mv * kalyan/
+mv: cannot move 'kalyan' to a subdirectory of itself, 'kalyan/kalyan'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ ssh-key
+ssh-keygen       ssh-keygen.exe   ssh-keyscan      ssh-keyscan.exe
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ ssh-key
+ssh-keygen       ssh-keygen.exe   ssh-keyscan      ssh-keyscan.exe
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ ssh-keygen --help
+unknown option -- -
+usage: ssh-keygen [-q] [-a rounds] [-b bits] [-C comment] [-f output_keyfile]
+                  [-m format] [-N new_passphrase] [-O option]
+                  [-t dsa | ecdsa | ecdsa-sk | ed25519 | ed25519-sk | rsa]
+                  [-w provider] [-Z cipher]
+       ssh-keygen -p [-a rounds] [-f keyfile] [-m format] [-N new_passphrase]
+                   [-P old_passphrase] [-Z cipher]
+       ssh-keygen -i [-f input_keyfile] [-m key_format]
+       ssh-keygen -e [-f input_keyfile] [-m key_format]
+       ssh-keygen -y [-f input_keyfile]
+       ssh-keygen -c [-a rounds] [-C comment] [-f keyfile] [-P passphrase]
+       ssh-keygen -l [-v] [-E fingerprint_hash] [-f input_keyfile]
+       ssh-keygen -B [-f input_keyfile]
+       ssh-keygen -D pkcs11
+       ssh-keygen -F hostname [-lv] [-f known_hosts_file]
+       ssh-keygen -H [-f known_hosts_file]
+       ssh-keygen -K [-a rounds] [-w provider]
+       ssh-keygen -R hostname [-f known_hosts_file]
+       ssh-keygen -r hostname [-g] [-f input_keyfile]
+       ssh-keygen -M generate [-O option] output_file
+       ssh-keygen -M screen [-f input_file] [-O option] output_file
+       ssh-keygen -I certificate_identity -s ca_key [-hU] [-D pkcs11_provider]
+                  [-n principals] [-O option] [-V validity_interval]
+                  [-z serial_number] file ...
+       ssh-keygen -L [-f input_keyfile]
+       ssh-keygen -A [-a rounds] [-f prefix_path]
+       ssh-keygen -k -f krl_file [-u] [-s ca_public] [-z version_number]
+                  file ...
+       ssh-keygen -Q [-l] -f krl_file [file ...]
+       ssh-keygen -Y find-principals -s signature_file -f allowed_signers_file
+       ssh-keygen -Y match-principals -I signer_identity -f allowed_signers_file
+       ssh-keygen -Y check-novalidate -n namespace -s signature_file
+       ssh-keygen -Y sign -f key_file -n namespace file [-O option] ...
+       ssh-keygen -Y verify -f allowed_signers_file -I signer_identity
+                  -n namespace -s signature_file [-r krl_file] [-O option]
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ ssh-keygen -t ed25519 -C rahuludayshankarsinha@gmail.com
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/rahul/.ssh/id_ed25519): ^C
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ pwd
+/home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ ssh-keygen -t ed25519 -C rahuludayshankarsinha@gmail.com
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/rahul/.ssh/id_ed25519): /home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys
+/home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys already exists.
+Overwrite (y/n)? ^C
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ ls -ltra
+total 12
+drwxr-xr-x 6 rahul rahul 4096 Oct 15 11:15 ..
+drwxr-xr-x 2 rahul rahul 4096 Oct 15 11:16 kalyan
+drwxr-xr-x 3 rahul rahul 4096 Oct 15 11:16 .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ mkdir sara-ssh-keys
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ cd sara
+-bash: cd: sara: No such file or directory
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ cd sara-ssh-keys/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ pwd
+/home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ ssh-keygen -t ed25519 -C rahuludayshankarsinha@gmail.com
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/rahul/.ssh/id_ed25519): /home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys
+/home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys already exists.
+Overwrite (y/n)? y
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Saving key "/home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys" failed: Is a directory
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ ssh-keygen -t ed25519 -C rahuludayshankarsinha@gmail.com
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/rahul/.ssh/id_ed25519): /home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys/id_gcp_cloud_source
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys/id_gcp_cloud_source
+Your public key has been saved in /home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys/id_gcp_cloud_source.pub
+The key fingerprint is:
+SHA256:5rNhBiHHsEwce/22NAQO8NY3cGPKaYfi/sQJoUvtYWE rahuludayshankarsinha@gmail.com
+The key's randomart image is:
++--[ED25519 256]--+
+|   .=o. o +      |
+|   o.* * O .     |
+|    = E X =      |
+|     X * = .     |
+|    o B S =      |
+|   . = B + o     |
+|    . o X .      |
+|       = +       |
+|        o        |
++----[SHA256]-----+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ ls -ltr
+total 8
+-rw-r--r-- 1 rahul rahul 113 Oct 15 11:21 id_gcp_cloud_source.pub
+-rw------- 1 rahul rahul 432 Oct 15 11:21 id_gcp_cloud_source
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ cat id_gcp_cloud_source
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBlyN4+E7dSa85jKQtWG0ugaHZw9T4Se6MWDc71YXlTrAAAAKhRKnbkUSp2
+5AAAAAtzc2gtZWQyNTUxOQAAACBlyN4+E7dSa85jKQtWG0ugaHZw9T4Se6MWDc71YXlTrA
+AAAECbBaLTfKoDF6ue3wh0wzIM9LskuAAbpO0N+U37FKonF2XI3j4Tt1JrzmMpC1YbS6Bo
+dnD1PhJ7oxYNzvVheVOsAAAAH3JhaHVsdWRheXNoYW5rYXJzaW5oYUBnbWFpbC5jb20BAg
+MEBQY=
+-----END OPENSSH PRIVATE KEY-----
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ cat id_gcp_cloud_source.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGXI3j4Tt1JrzmMpC1YbS6BodnD1PhJ7oxYNzvVheVOs rahuludayshankarsinha@gmail.com
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ cd ..
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ cd ..
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ ls
+01-SSH-Keys  02-Docker-Image  03-cloudbuild-yaml  03-create-repository.txt  04-kube-manifests  README.md  session.out
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ cd 01-SSH-Keys/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ mkdir google-repo
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ cd google-repo/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ git clone ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+Cloning into 'sara-repo'...
+The authenticity of host '[source.developers.google.com]:2022 ([74.125.24.82]:2022)' can't be established.
+ECDSA key fingerprint is SHA256:AGvEpqYNMqsRNIviwyk4J4HM0lEylomDBKOWZsBn434.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '[source.developers.google.com]:2022' (ECDSA) to the list of known hosts.
+rahuludayshankarsinha@gmail.com@source.developers.google.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ git version
+git version 2.34.1
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ ls $HOME/.ssh
+agent.env  id_ed25519  id_ed25519.pub  id_rsa  id_rsa.pub  known_hosts  known_hosts.old
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ ls -ltr $HOME/.ssh
+total 28
+-rw-r--r-- 1 rahul rahul  575 Aug 14 21:57 id_rsa.pub
+-rw------- 1 rahul rahul 2610 Aug 14 21:57 id_rsa
+-rw------- 1 rahul rahul  411 Oct 10 11:05 id_ed25519
+-rw-r--r-- 1 rahul rahul  103 Oct 10 11:06 id_ed25519.pub
+-rw-r--r-- 1 rahul rahul  142 Oct 10 11:10 known_hosts.old
+-rw------- 1 rahul rahul  127 Oct 15 10:19 agent.env
+-rw------- 1 rahul rahul 1200 Oct 15 11:32 known_hosts
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ cat $HOME/.ssh/config
+cat: /home/rahul/.ssh/config: No such file or directory
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ cd ../sara-ssh-keys/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ ls -ltr
+total 8
+-rw-r--r-- 1 rahul rahul 113 Oct 15 11:21 id_gcp_cloud_source.pub
+-rw------- 1 rahul rahul 432 Oct 15 11:21 id_gcp_cloud_source
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ cp id_gcp_cloud_source $HOME/.ssh
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ ls -ltr $HOME/.ssh
+total 32
+-rw-r--r-- 1 rahul rahul  575 Aug 14 21:57 id_rsa.pub
+-rw------- 1 rahul rahul 2610 Aug 14 21:57 id_rsa
+-rw------- 1 rahul rahul  411 Oct 10 11:05 id_ed25519
+-rw-r--r-- 1 rahul rahul  103 Oct 10 11:06 id_ed25519.pub
+-rw-r--r-- 1 rahul rahul  142 Oct 10 11:10 known_hosts.old
+-rw------- 1 rahul rahul  127 Oct 15 10:19 agent.env
+-rw------- 1 rahul rahul 1200 Oct 15 11:32 known_hosts
+-rw------- 1 rahul rahul  432 Oct 15 11:34 id_gcp_cloud_source
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ vim $HOME/.ssh/config
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ cp $HOME/.ssh/config $HOME/.ssh/config_with_cloud_source_key
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ git config --list
+user.email=simplyrahul@gmail.com
+user.name=simplyrahul1
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+remote.origin.url=git@github.com:simplyrahul1/google-kubernetes-engine.git
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+branch.master.remote=origin
+branch.master.merge=refs/heads/main
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ gcloud source repos list
+REPO_NAME  PROJECT_ID           URL
+sara-repo  sara-project-401601  https://source.developers.google.com/p/sara-project-401601/r/sara-repo
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ ls
+id_gcp_cloud_source  id_gcp_cloud_source.pub
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/sara-ssh-keys$ cd ..
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ ls
+google-repo  kalyan  sara-ssh-keys
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ cd google-repo/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ ls -ltr
+total 0
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ git clone ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+Cloning into 'sara-repo'...
+/home/rahul/.ssh/config: line 3: Bad configuration option: usekeychain
+/home/rahul/.ssh/config: terminating, 1 bad configuration options
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ ls $HOME
+git_token.txt  github  gke  kubectl
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ ls $HOME/.ssh
+agent.env  config  config_with_cloud_source_key  id_ed25519  id_ed25519.pub  id_gcp_cloud_source  id_rsa  id_rsa.pub  known_hosts  known_hosts.old
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ cat $HOME/.ssh/config
+Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_gcp_cloud_source
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ vim $HOME/.ssh/config
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ cat $HOME/.ssh/config
+Host *
+  IgnoreUnknown AddKeysToAgent,UseKeychain
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_gcp_cloud_source
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ git clone ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+Cloning into 'sara-repo'...
+warning: You appear to have cloned an empty repository.
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ ls -ltra
+total 12
+drwxr-xr-x 5 rahul rahul 4096 Oct 15 11:32 ..
+drwxr-xr-x 3 rahul rahul 4096 Oct 15 11:44 sara-repo
+drwxr-xr-x 3 rahul rahul 4096 Oct 15 11:44 .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo$ cd sara-repo/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ ls -ltra
+total 12
+drwxr-xr-x 3 rahul rahul 4096 Oct 15 11:44 ..
+drwxr-xr-x 3 rahul rahul 4096 Oct 15 11:44 .
+drwxr-xr-x 7 rahul rahul 4096 Oct 15 11:44 .git
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ vim README.md
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push -u origin master
+error: src refspec master does not match any
+error: failed to push some refs to 'ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push -u origin main
+error: src refspec main does not match any
+error: failed to push some refs to 'ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git config
+usage: git config [<options>]
+
+Config file location
+    --global              use global config file
+    --system              use system config file
+    --local               use repository config file
+    --worktree            use per-worktree config file
+    -f, --file <file>     use given config file
+    --blob <blob-id>      read config from given blob object
+
+Action
+    --get                 get value: name [value-pattern]
+    --get-all             get all values: key [value-pattern]
+    --get-regexp          get values for regexp: name-regex [value-pattern]
+    --get-urlmatch        get value specific for the URL: section[.var] URL
+    --replace-all         replace all matching variables: name value [value-pattern]
+    --add                 add a new variable: name value
+    --unset               remove a variable: name [value-pattern]
+    --unset-all           remove all matches: name [value-pattern]
+    --rename-section      rename section: old-name new-name
+    --remove-section      remove a section: name
+    -l, --list            list all
+    --fixed-value         use string equality when comparing values to 'value-pattern'
+    -e, --edit            open an editor
+    --get-color           find the color configured: slot [default]
+    --get-colorbool       find the color setting: slot [stdout-is-tty]
+
+Type
+    -t, --type <>         value is given this type
+    --bool                value is "true" or "false"
+    --int                 value is decimal number
+    --bool-or-int         value is --bool or --int
+    --bool-or-str         value is --bool or string
+    --path                value is a path (file or directory name)
+    --expiry-date         value is an expiry date
+
+Other
+    -z, --null            terminate values with NUL byte
+    --name-only           show variable names only
+    --includes            respect include directives on lookup
+    --show-origin         show origin of config (file, standard input, blob, command line)
+    --show-scope          show scope of config (worktree, local, global, system, command)
+    --default <value>     with --get, use default value when missing entry
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git config --local --list
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+remote.origin.url=ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+branch.master.remote=origin
+branch.master.merge=refs/heads/master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git config  --list
+user.email=simplyrahul@gmail.com
+user.name=simplyrahul1
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+remote.origin.url=ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+branch.master.remote=origin
+branch.master.merge=refs/heads/master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git config --global user.name "Rahul Udayshankar Sinha"
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git config --global user.email "rahuludayshankarsinha@gmail.com"
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git config --local --list
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+remote.origin.url=ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+branch.master.remote=origin
+branch.master.merge=refs/heads/master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git config  --list
+user.email=rahuludayshankarsinha@gmail.com
+user.name=Rahul Udayshankar Sinha
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+remote.origin.url=ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+branch.master.remote=origin
+branch.master.merge=refs/heads/master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push -u origin main
+error: src refspec main does not match any
+error: failed to push some refs to 'ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git add -A .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push -u origin main
+error: src refspec main does not match any
+error: failed to push some refs to 'ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git init
+Reinitialized existing Git repository in /home/rahul/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo/.git/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git add -A .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push -u origin main
+error: src refspec main does not match any
+error: failed to push some refs to 'ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git remote --list
+error: unknown option `list'
+usage: git remote [-v | --verbose]
+   or: git remote add [-t <branch>] [-m <master>] [-f] [--tags | --no-tags] [--mirror=<fetch|push>] <name> <url>
+   or: git remote rename <old> <new>
+   or: git remote remove <name>
+   or: git remote set-head <name> (-a | --auto | -d | --delete | <branch>)
+   or: git remote [-v | --verbose] show [-n] <name>
+   or: git remote prune [-n | --dry-run] <name>
+   or: git remote [-v | --verbose] update [-p | --prune] [(<group> | <remote>)...]
+   or: git remote set-branches [--add] <name> <branch>...
+   or: git remote get-url [--push] [--all] <name>
+   or: git remote set-url [--push] <name> <newurl> [<oldurl>]
+   or: git remote set-url --add <name> <newurl>
+   or: git remote set-url --delete <name> <url>
+
+    -v, --verbose         be verbose; must be placed before a subcommand
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git remote --v
+origin  ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo (fetch)
+origin  ssh://rahuludayshankarsinha@gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo (push)
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git commit -am"first dummy commit"
+[master (root-commit) ce34087] first dummy commit
+ 1 file changed, 33 insertions(+)
+ create mode 100644 README.md
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push -u origin main
+error: src refspec main does not match any
+error: failed to push some refs to 'ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push
+Enumerating objects: 3, done.
+Counting objects: 100% (3/3), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 841 bytes | 841.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+remote: Waiting for private key checker: 1/1 objects left
+To ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+ * [new branch]      master -> master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git log --online
+fatal: unrecognized argument: --online
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git log --oneline
+ce34087 (HEAD -> master, origin/master) first dummy commit
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cp ../../
+google-repo/   kalyan/        sara-ssh-keys/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cp ../../../
+01-SSH-Keys/              02-Docker-Image/          03-cloudbuild-yaml/       03-create-repository.txt  04-kube-manifests/        README.md                 session.out
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cp ../../../02-Docker-Image/
+Dockerfile  index.html
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cp ../../../02-Docker-Image/Dockerfile .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cp ../../../02-Docker-Image/index.html .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git add -A .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git commit -am"Adding Dockerfile and index.html"
+[master 7758528] Adding Dockerfile and index.html
+ 2 files changed, 10 insertions(+)
+ create mode 100644 Dockerfile
+ create mode 100644 index.html
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (4/4), 560 bytes | 560.00 KiB/s, done.
+Total 4 (delta 0), reused 0 (delta 0), pack-reused 0
+To ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+   ce34087..7758528  master -> master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git rev-parse HEAD
+775852840f89de5266cd5ec140390275b1538e49
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git rev-parse --short=7 HEAD
+7758528
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ #gcloud builds submit --tag="us-central1-docker.pkg.dev/${PROJECT_ID}/${$APP_ARTIFACT_REPO}/myapp1:${COMMIT_ID}" .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ COMMIT_ID=$(git rev-parse --short=7 HEAD)
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ echo $COMMIT_ID
+7758528
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ gcloud config list core/project
+[core]
+project = sara-project-401601
+
+Your active configuration is: [default]
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ gcloud config list core/project | grep project | awk '{print $3}'
+
+Your active configuration is: [default]
+sara-project-401601
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ #PROJECT_ID=$(
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ gcloud config list project
+[core]
+project = sara-project-401601
+
+Your active configuration is: [default]
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ gcloud config list project --quiet
+[core]
+project = sara-project-401601
+
+Your active configuration is: [default]
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ PROJECT_ID="sara-project-401601"
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ gcloud artifacts repositories list --limit=5
+Listing items under project sara-project-401601, across all locations.
+
+                                                                                   ARTIFACT_REGISTRY
+REPOSITORY                     FORMAT  MODE                 DESCRIPTION                    LOCATION     LABELS  ENCRYPTION          CREATE_TIME          UPDATE_TIME          SIZE (MB)
+sara-gke-docker-artifact-repo  DOCKER  STANDARD_REPOSITORY  sara-gke-docker-artifact-repo  us-central1          Google-managed key  2023-10-11T07:12:27  2023-10-11T07:34:37  67.214
+sara-myapps-repository         DOCKER  STANDARD_REPOSITORY                                 us-central1          Google-managed key  2023-10-15T10:51:22  2023-10-15T10:51:22  0
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ APP_ARTIFACT_REPO="sara-myapps-repository"
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ gcloud builds submit --tag="us-central1-docker.pkg.dev/${PROJECT_ID}/${$APP_ARTIFACT_REP
+O}/sara-myapp:${COMMIT_ID}" .
+-bash: us-central1-docker.pkg.dev/${PROJECT_ID}/${$APP_ARTIFACT_REPO}/sara-myapp:${COMMIT_ID}: bad substitution
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ echo ${PROJECT_ID}
+sara-project-401601
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ gcloud builds submit --tag="us-central1-docker.pkg.dev/${PROJECT_ID}/${APP_ARTIFACT_REPO
+}/sara-myapp:${COMMIT_ID}" .
+Creating temporary tarball archive of 3 file(s) totalling 1.5 KiB before compression.
+Uploading tarball of [.] to [gs://sara-project-401601_cloudbuild/source/1697351622.816157-846b015cebd345b988aaf33b23291534.tgz]
+Created [https://cloudbuild.googleapis.com/v1/projects/sara-project-401601/locations/global/builds/8bd114bf-a96e-43e7-8eb4-bbf91879e487].
+Logs are available at [ https://console.cloud.google.com/cloud-build/builds/8bd114bf-a96e-43e7-8eb4-bbf91879e487?project=496061125126 ].
+----------------------------------------------------------------------------------- REMOTE BUILD OUTPUT ------------------------------------------------------------------------------------
+starting build "8bd114bf-a96e-43e7-8eb4-bbf91879e487"
+
+FETCHSOURCE
+Fetching storage object: gs://sara-project-401601_cloudbuild/source/1697351622.816157-846b015cebd345b988aaf33b23291534.tgz#1697351625252747
+Copying gs://sara-project-401601_cloudbuild/source/1697351622.816157-846b015cebd345b988aaf33b23291534.tgz#1697351625252747...
+/ [1 files][  1.0 KiB/  1.0 KiB]
+Operation completed over 1 objects/1.0 KiB.
+BUILD
+Already have image (with digest): gcr.io/cloud-builders/docker
+Sending build context to Docker daemon   5.12kB
+Step 1/2 : FROM nginx
+latest: Pulling from library/nginx
+a378f10b3218: Pulling fs layer
+4dfff0708538: Pulling fs layer
+2135e49ace4b: Pulling fs layer
+c843f6b280ce: Pulling fs layer
+6f35ab6f1400: Pulling fs layer
+6c538b49fa4a: Pulling fs layer
+d57731fb9008: Pulling fs layer
+c843f6b280ce: Waiting
+6f35ab6f1400: Waiting
+6c538b49fa4a: Waiting
+d57731fb9008: Waiting
+2135e49ace4b: Download complete
+c843f6b280ce: Verifying Checksum
+c843f6b280ce: Download complete
+a378f10b3218: Verifying Checksum
+a378f10b3218: Download complete
+4dfff0708538: Verifying Checksum
+4dfff0708538: Download complete
+6c538b49fa4a: Verifying Checksum
+6c538b49fa4a: Download complete
+6f35ab6f1400: Verifying Checksum
+6f35ab6f1400: Download complete
+d57731fb9008: Verifying Checksum
+d57731fb9008: Download complete
+a378f10b3218: Pull complete
+4dfff0708538: Pull complete
+2135e49ace4b: Pull complete
+c843f6b280ce: Pull complete
+6f35ab6f1400: Pull complete
+6c538b49fa4a: Pull complete
+d57731fb9008: Pull complete
+Digest: sha256:b4af4f8b6470febf45dc10f564551af682a802eda1743055a7dfc8332dffa595
+Status: Downloaded newer image for nginx:latest
+ ---> bc649bab30d1
+Step 2/2 : COPY index.html /usr/share/nginx/html
+ ---> e9ce261cc1bd
+Successfully built e9ce261cc1bd
+Successfully tagged us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:7758528
+PUSH
+Pushing us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:7758528
+The push refers to repository [us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp]
+1dfd5ecd6bd9: Preparing
+3c7f79e64c24: Preparing
+ff24e13e73c7: Preparing
+b0b61abb5846: Preparing
+2187753852c0: Preparing
+ad5d551c7fa1: Preparing
+e53d016bbab1: Preparing
+cb4596cc1454: Preparing
+ad5d551c7fa1: Waiting
+e53d016bbab1: Waiting
+cb4596cc1454: Waiting
+1dfd5ecd6bd9: Pushed
+b0b61abb5846: Pushed
+3c7f79e64c24: Pushed
+ff24e13e73c7: Pushed
+2187753852c0: Pushed
+ad5d551c7fa1: Pushed
+cb4596cc1454: Pushed
+e53d016bbab1: Pushed
+7758528: digest: sha256:e09510a8338da1c649545a5a38d309a4b14bf259876848df0cb8a68ad22cf4ef size: 1985
+DONE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ID                                    CREATE_TIME                DURATION  SOURCE                                                                                             IMAGES                                                                                    STATUS
+8bd114bf-a96e-43e7-8eb4-bbf91879e487  2023-10-15T06:33:46+00:00  23S       gs://sara-project-401601_cloudbuild/source/1697351622.816157-846b015cebd345b988aaf33b23291534.tgz  us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:7758528  SUCCESS
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cp ../../../03-c
+03-cloudbuild-yaml/       03-create-repository.txt
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cp ../../../03-cloudbuild-yaml/cloudbuild.yaml .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git add -A .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git commit -am"adding cloudbuild.yaml"
+[master ae02bbe] adding cloudbuild.yaml
+ 1 file changed, 18 insertions(+)
+ create mode 100644 cloudbuild.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 621 bytes | 621.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+remote: Waiting for private key checker: 1/1 objects left
+To ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+   7758528..ae02bbe  master -> master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ ls -ltr
+total 16
+-rw-r--r-- 1 rahul rahul 1315 Oct 15 11:47 README.md
+-rw-r--r-- 1 rahul rahul   48 Oct 15 14:17 Dockerfile
+-rw-r--r-- 1 rahul rahul  209 Oct 15 14:17 index.html
+-rw-r--r-- 1 rahul rahul  502 Oct 15 14:37 cloudbuild.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ vim index.html
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git commit -am"updated index.html for ci trigger"
+[master 2ba9f87] updated index.html for ci trigger
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 336 bytes | 336.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2)
+remote: Waiting for private key checker: 1/1 objects left
+To ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+   ae02bbe..2ba9f87  master -> master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ vim cloudbuild.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ history | grep "="
+  124  gcloud artifacts repositories create sara-myapps-repository   --repository-format=docker   --location=us-central1
+  207  git rev-parse --short=7 HEAD
+  208  #gcloud builds submit --tag="us-central1-docker.pkg.dev/${PROJECT_ID}/${$APP_ARTIFACT_REPO}/myapp1:${COMMIT_ID}" .
+  209  COMMIT_ID=$(git rev-parse --short=7 HEAD)
+  213  #PROJECT_ID=$(
+  216  PROJECT_ID="sara-project-401601"
+  217  gcloud artifacts repositories list --limit=5
+  218  APP_ARTIFACT_REPO="sara-myapps-repository"
+  219  gcloud builds submit --tag="us-central1-docker.pkg.dev/${PROJECT_ID}/${$APP_ARTIFACT_REPO}/sara-myapp:${COMMIT_ID}" .
+  221  gcloud builds submit --tag="us-central1-docker.pkg.dev/${PROJECT_ID}/${APP_ARTIFACT_REPO}/sara-myapp:${COMMIT_ID}" .
+  231  history | grep "="
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ vim cloudbuild.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git commit -am"updated cloudbuild with sara values"
+[master 30e9601] updated cloudbuild with sara values
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 470 bytes | 470.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2)
+remote: Waiting for private key checker: 1/1 objects left
+To ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+   2ba9f87..30e9601  master -> master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cd ../..
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys$ cd ..
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ ls -ltr
+total 40
+-rw-r--r-- 1 rahul rahul 13520 Oct 11 07:52 README.md
+drwxr-xr-x 2 rahul rahul  4096 Oct 11 07:52 04-kube-manifests
+drwxr-xr-x 2 rahul rahul  4096 Oct 11 07:52 03-cloudbuild-yaml
+drwxr-xr-x 2 rahul rahul  4096 Oct 11 07:52 02-Docker-Image
+-rw-r--r-- 1 rahul rahul  2557 Oct 15 10:54 03-create-repository.txt
+-rw-r--r-- 1 rahul rahul  2860 Oct 15 11:15 session.out
+drwxr-xr-x 5 rahul rahul  4096 Oct 15 11:32 01-SSH-Keys
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ cd 04-kube-manifests/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/04-kube-manifests$ ls
+01-kubernetes-deployment.yaml  02-kubernetes-loadBalancer-service.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/04-kube-manifests$ vim 01-kubernetes-deployment.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/04-kube-manifests$ vim 02-kubernetes-loadBalancer-service.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/04-kube-manifests$ cd ..
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl apply -f 04-kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get all
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-7d57c7486d-4pg5k   1/1     Running   0          28s
+
+NAME                        TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+service/kubernetes          ClusterIP      10.80.0.1     <none>        443/TCP        5d5h
+service/myapp1-lb-service   LoadBalancer   10.80.9.140   <pending>     80:31435/TCP   28s
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   1/1     1            1           30s
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-7d57c7486d   1         1         1       30s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   1/1     1            1           48s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7d57c7486d-4pg5k   1/1     Running   0          58s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get svc
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1     <none>         443/TCP        5d5h
+myapp1-lb-service   LoadBalancer   10.80.9.140   34.16.36.163   80:31435/TCP   69s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ ls -ltr
+total 40
+-rw-r--r-- 1 rahul rahul 13520 Oct 11 07:52 README.md
+drwxr-xr-x 2 rahul rahul  4096 Oct 11 07:52 03-cloudbuild-yaml
+drwxr-xr-x 2 rahul rahul  4096 Oct 11 07:52 02-Docker-Image
+-rw-r--r-- 1 rahul rahul  2557 Oct 15 10:54 03-create-repository.txt
+-rw-r--r-- 1 rahul rahul  2860 Oct 15 11:15 session.out
+drwxr-xr-x 5 rahul rahul  4096 Oct 15 11:32 01-SSH-Keys
+drwxr-xr-x 2 rahul rahul  4096 Oct 15 14:55 04-kube-manifests
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vi 01-SSH-Keys/
+google-repo/   kalyan/        sara-ssh-keys/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vi 01-SSH-Keys/google-repo/sara-repo/
+.git/            Dockerfile       README.md        cloudbuild.yaml  index.html
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vi 01-SSH-Keys/google-repo/sara-repo/index.html
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ cd 01-SSH-Keys/google-repo/sara-repo
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git commit -am"color update"
+[master 23322a7] color update
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 407 bytes | 407.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2)
+remote: Waiting for private key checker: 1/1 objects left
+To ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+   30e9601..23322a7  master -> master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cd -
+/home/rahul/gke/github/57-GKE-Continuous-Integration
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vim 04-kube-manifests/01-kubernetes-deployment.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl rollout restart deployment myapp1-deployment
+deployment.apps/myapp1-deployment restarted
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   1/1     1            1           7m12s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6d98d4955c-rc6vf   1/1     Running   0          20s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get svc
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1     <none>         443/TCP        5d5h
+myapp1-lb-service   LoadBalancer   10.80.9.140   34.16.36.163   80:31435/TCP   7m26s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl describe pods myapp1-deployment-6d98d4955c-rc6vf
+Name:             myapp1-deployment-6d98d4955c-rc6vf
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-df7770d2-l11r/10.128.0.18
+Start Time:       Sun, 15 Oct 2023 15:03:20 +0800
+Labels:           app=myapp1
+                  pod-template-hash=6d98d4955c
+Annotations:      kubectl.kubernetes.io/restartedAt: 2023-10-15T15:03:20+08:00
+Status:           Running
+IP:               10.84.1.6
+IPs:
+  IP:           10.84.1.6
+Controlled By:  ReplicaSet/myapp1-deployment-6d98d4955c
+Containers:
+  myapp1-container:
+    Container ID:   containerd://343d63c18faa0e49f522116fb0a06f16da23fc70ef413d6bcd4506c94c724794
+    Image:          us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:30e9601
+    Image ID:       us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp@sha256:9518d47d6e3ba641abe64bc34adc27983127e28ecff71c3a76cbccfc9db412fa
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 15 Oct 2023 15:03:21 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-qpfh7 (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-qpfh7:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  53s   default-scheduler  Successfully assigned default/myapp1-deployment-6d98d4955c-rc6vf to gke-sara-gke-cluster-default-pool-df7770d2-l11r
+  Normal  Pulled     52s   kubelet            Container image "us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:30e9601" already present on machine
+  Normal  Created    52s   kubelet            Created container myapp1-container
+  Normal  Started    52s   kubelet            Started container myapp1-container
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get svc
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1     <none>         443/TCP        5d5h
+myapp1-lb-service   LoadBalancer   10.80.9.140   34.16.36.163   80:31435/TCP   8m15s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vim 04-kube-manifests/01-kubernetes-deployment.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl apply -f 04-kube-manifests/
+deployment.apps/myapp1-deployment configured
+service/myapp1-lb-service unchanged
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl rollout restart deployment myapp1-deployment
+deployment.apps/myapp1-deployment restarted
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get pods
+NAME                                 READY   STATUS        RESTARTS   AGE
+myapp1-deployment-6d98d4955c-rc6vf   1/1     Terminating   0          3m17s
+myapp1-deployment-fd6df5fbc-x62x2    1/1     Running       0          14s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl describe pods myapp1-deployment-fd6df5fbc-x62x2
+Name:             myapp1-deployment-fd6df5fbc-x62x2
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-b30cb3e3-1crl/10.128.0.17
+Start Time:       Sun, 15 Oct 2023 15:06:23 +0800
+Labels:           app=myapp1
+                  pod-template-hash=fd6df5fbc
+Annotations:      kubectl.kubernetes.io/restartedAt: 2023-10-15T15:06:23+08:00
+Status:           Running
+IP:               10.84.2.9
+IPs:
+  IP:           10.84.2.9
+Controlled By:  ReplicaSet/myapp1-deployment-fd6df5fbc
+Containers:
+  myapp1-container:
+    Container ID:   containerd://761f6b533182f1d12ccccf19b8e35c52e73eee8e5f36fa035c55cf955d2cfc21
+    Image:          us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:23322a7
+    Image ID:       us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp@sha256:23188bb62862c93b8b446d1ec2e91ed91fa7862fdae912a1d75fdf5132e3b7ed
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 15 Oct 2023 15:06:29 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-675sb (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-675sb:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  39s   default-scheduler  Successfully assigned default/myapp1-deployment-fd6df5fbc-x62x2 to gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+  Normal  Pulling    38s   kubelet            Pulling image "us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:23322a7"
+  Normal  Pulled     33s   kubelet            Successfully pulled image "us-central1-docker.pkg.dev/sara-project-401601/sara-myapps-repository/sara-myapp:23322a7" in 4.906790773s (4.906806153s including waiting)
+  Normal  Created    33s   kubelet            Created container myapp1-container
+  Normal  Started    33s   kubelet            Started container myapp1-container
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ kubectl get svc
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1     <none>         443/TCP        5d5h
+myapp1-lb-service   LoadBalancer   10.80.9.140   34.16.36.163   80:31435/TCP   10m
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ cd 01-SSH-Keys/google-repo/sara-repo
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ ls -ltr
+total 16
+-rw-r--r-- 1 rahul rahul 1315 Oct 15 11:47 README.md
+-rw-r--r-- 1 rahul rahul   48 Oct 15 14:17 Dockerfile
+-rw-r--r-- 1 rahul rahul  669 Oct 15 14:48 cloudbuild.yaml
+-rw-r--r-- 1 rahul rahul  293 Oct 15 15:00 index.html
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ vim index.html
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git commit -am"added approval"
+[master b49acc1] added approval
+ 1 file changed, 1 insertion(+)
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 319 bytes | 319.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2)
+remote: Waiting for private key checker: 1/1 objects left
+To ssh://gmail.com@source.developers.google.com:2022/p/sara-project-401601/r/sara-repo
+   23322a7..b49acc1  master -> master
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration/01-SSH-Keys/google-repo/sara-repo$ cd -
+/home/rahul/gke/github/57-GKE-Continuous-Integration
+rahul@DESKTOP-C4GRDQ2:~/gke/github/57-GKE-Continuous-Integration$ vim session.out
