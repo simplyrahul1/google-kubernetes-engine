@@ -1,0 +1,216 @@
+rahul@DESKTOP-C4GRDQ2:~$ cd gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ PROJECT_ID="$(gcloud config get-value project)"
+echo ${PROJECT_ID}
+sara-project-401601
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ # Get Google Cloud Project Number
+PROJECT_NUMBER="$(gcloud projects describe ${PROJECT_ID} --format='get(projectNumber)')"
+echo ${PROJECT_NUMBER}
+496061125126
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ # Associate Kubernetes Engine Developer IAM Role to Cloud Build
+gcloud projects add-iam-policy-binding ${PROJECT_NUMBER} \
+    --member=serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com \
+    --role=roles/container.developer
+Updated IAM policy for project [496061125126].
+bindings:
+- members:
+  - serviceAccount:service-496061125126@gcp-sa-artifactregistry.iam.gserviceaccount.com
+  role: roles/artifactregistry.serviceAgent
+- members:
+  - serviceAccount:496061125126@cloudbuild.gserviceaccount.com
+  role: roles/cloudbuild.builds.builder
+- members:
+  - serviceAccount:service-496061125126@gcp-sa-cloudbuild.iam.gserviceaccount.com
+  role: roles/cloudbuild.serviceAgent
+- members:
+  - serviceAccount:service-496061125126@compute-system.iam.gserviceaccount.com
+  role: roles/compute.serviceAgent
+- members:
+  - serviceAccount:496061125126@cloudbuild.gserviceaccount.com
+  role: roles/container.developer
+- members:
+  - serviceAccount:service-496061125126@container-engine-robot.iam.gserviceaccount.com
+  role: roles/container.serviceAgent
+- members:
+  - serviceAccount:service-496061125126@containerregistry.iam.gserviceaccount.com
+  role: roles/containerregistry.ServiceAgent
+- members:
+  - serviceAccount:496061125126-compute@developer.gserviceaccount.com
+  - serviceAccount:496061125126@cloudservices.gserviceaccount.com
+  role: roles/editor
+- members:
+  - user:rahuludayshankarsinha@gmail.com
+  role: roles/owner
+- members:
+  - serviceAccount:service-496061125126@gcp-sa-pubsub.iam.gserviceaccount.com
+  role: roles/pubsub.serviceAgent
+etag: BwYH72tWEHs=
+version: 1
+
+
+Updates are available for some Google Cloud CLI components.  To install them,
+please run:
+  $ gcloud components update
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ ls
+01-myapp1-k8s-repo  02-Source-Writer-IAM-Role  03-myapp1-app-repo  README.md
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ ls 01-myapp1-k8s-repo/
+cloudbuild-delivery.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ vim 01-myapp1-k8s-repo/cloudbuild-delivery.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ cat 01-myapp1-k8s-repo/cloudbuild-delivery.yaml
+# [START cloudbuild-delivery]
+steps:
+# This step deploys the new version of our container image
+# in the "standard-cluster-private-1" Google Kubernetes Engine cluster.
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: Deploy
+  args:
+  - 'apply'
+  - '-f'
+  - 'kubernetes.yaml'
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  #- 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=sara-gke-cluster' # Provide GKE Cluster Name
+
+# This step copies the applied manifest to the production branch
+# The COMMIT_SHA variable is automatically
+# replaced by Cloud Build.
+- name: 'gcr.io/cloud-builders/git'
+  id: Copy to production branch
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    set -x && \
+    # Configure Git to create commits with Cloud Build's service account
+    git config user.email $(gcloud auth list --filter=status:ACTIVE --format='value(account)') && \
+    # Switch to the production branch and copy the kubernetes.yaml file from the candidate branch
+    git fetch origin production && git checkout production && \
+    git checkout $COMMIT_SHA kubernetes.yaml && \
+    # Commit the kubernetes.yaml file with a descriptive commit message
+    git commit -m "Manifest from commit $COMMIT_SHA
+    $(git log --format=%B -n 1 $COMMIT_SHA)" && \
+    # Push the changes back to Cloud Source Repository
+    git push origin production
+# [END cloudbuild-delivery]
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ mkdir course-repo
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild$ cd course-repo/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo$ gcloud source repos list
+REPO_NAME  PROJECT_ID           URL
+sara-repo  sara-project-401601  https://source.developers.google.com/p/sara-project-401601/r/sara-repo
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo$ gcloud source repos create sara-k8s-repo
+Created [sara-k8s-repo].
+WARNING: You may be billed for this repository. See https://cloud.google.com/source-repositories/docs/pricing for details.
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo$ gcloud source repos clone sara-k8s-repo
+Cloning into '/home/rahul/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo'...
+warning: You appear to have cloned an empty repository.
+Project [sara-project-401601] repository [sara-k8s-repo] was cloned to [/home/rahul/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo].
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo$ ls
+sara-k8s-repo
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo$ cd sara-k8s-repo/
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ cp ../../01-myapp1-k8s-repo/cloudbuild-delivery.yaml .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ git add -A .
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ git commit -am"adding cloudbuild delivery file for k8s deployment"
+[master (root-commit) b730ee7] adding cloudbuild delivery file for k8s deployment
+ 1 file changed, 36 insertions(+)
+ create mode 100644 cloudbuild-delivery.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ git checkout -b candidate
+Switched to a new branch 'candidate'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ git push origin candidate
+Enumerating objects: 3, done.
+Counting objects: 100% (3/3), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 958 bytes | 958.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+remote: Waiting for private key checker: 1/1 objects left
+To https://source.developers.google.com/p/sara-project-401601/r/sara-k8s-repo
+ * [new branch]      candidate -> candidate
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ git checkout -b production
+Switched to a new branch 'production'
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ git push origin production
+Total 0 (delta 0), reused 0 (delta 0), pack-reused 0
+To https://source.developers.google.com/p/sara-project-401601/r/sara-k8s-repo
+ * [new branch]      production -> production
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ # Get current project PROJECT_ID
+PROJECT_ID="$(gcloud config get-value project)"
+echo ${PROJECT_ID}
+
+# GET GCP PROJECT NUMBER
+PROJECT_NUMBER="$(gcloud projects describe ${PROJECT_ID} --format='get(projectNumber)')"
+echo ${PROJECT_NUMBER}
+
+sara-project-401601
+496061125126
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ vim ../../02-Source-Writer-IAM-Role/myapp1-k8s-repo-policy.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ vim ../../02-Source-Writer-IAM-Role/myapp1-k8s-repo-policy.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ cat ../../02-Source-Writer-IAM-Role/myapp1-k8s-repo-policy.yaml
+bindings:
+- members:
+  - serviceAccount:496061125126@cloudbuild.gserviceaccount.com
+  role: roles/source.writer
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ gcloud source repos set-iam-policy sara-k8s-repo ../../02-Source-Writer-IAM-Role/myapp1-k8s-repo-policy.yaml
+Updated IAM policy for repo [sara-k8s-repo].
+bindings:
+- members:
+  - serviceAccount:496061125126@cloudbuild.gserviceaccount.com
+  role: roles/source.writer
+etag: BwYH78fIfXI=
+version: 1
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ vim ../../03-myapp1-app-repo/
+Dockerfile                  README.md                   cloudbuild-trigger-cd.yaml  cloudbuild.yaml             index.html                  kubernetes.yaml.tpl
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ vim ../../03-myapp1-app-repo/Dockerfile
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ cat ../../03-myapp1-app-repo/Dockerfile
+FROM nginx
+COPY index.html /usr/share/nginx/htmlrahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ cat ../../03-myapp1-app-repo/index.html
+<!DOCTYPE html>
+<html>
+   <body style="background-color:rgb(196, 84, 74);">
+      <h1>Welcome to StackSimplify</h1>
+      <p>Google Kubernetes Engine</p>
+      <p>Application Version: V101</p>
+   </body>
+</html>rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ cat ../../03-myapp1-app-repo/kubernetes.yaml.tpl
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp1-deployment
+  labels:
+    app: myapp1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp1
+  template:
+    metadata:
+      labels:
+        app: myapp1
+    spec:
+      containers:
+      - name: myapp1
+        image: us-central1-docker.pkg.dev/GOOGLE_CLOUD_PROJECT/myapps-repository/myapp1:COMMIT_SHA
+        ports:
+        - containerPort: 80
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: myapp1-lb-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: myapp1
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ vim ../../03-myapp1-app-repo/cloudbuild
+cloudbuild-trigger-cd.yaml  cloudbuild.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ vim ../../03-myapp1-app-repo/cloudbuild.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/58-GKE-Continuous-Delivery-with-CloudBuild/course-repo/sara-k8s-repo$ vim ../../session.out
