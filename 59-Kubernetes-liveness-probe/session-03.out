@@ -1,0 +1,135 @@
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ ls 03-liveness-probe-TCP-Request/
+01-persistent-volume-claim.yaml   03-mysql-deployment.yaml         05-UserMgmtWebApp-Deployment.yaml            07-kubernetes-secret.yaml
+02-UserManagement-ConfigMap.yaml  04-mysql-clusterip-service.yaml  06-UserMgmtWebApp-LoadBalancer-Service.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ cat 03-liveness-probe-TCP-Request/05-UserMgmtWebApp-Deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usermgmt-webapp
+  labels:
+    app: usermgmt-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: usermgmt-webapp
+  template:
+    metadata:
+      labels:
+        app: usermgmt-webapp
+    spec:
+      initContainers:
+        - name: init-db
+          image: busybox:1.31
+          command: ['sh', '-c', 'echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";']
+      containers:
+        - name: usermgmt-webapp
+          image: stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOSTNAME
+              value: "mysql"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: "webappdb"
+            - name: DB_USERNAME
+              value: "root"
+            #- name: DB_PASSWORD
+            #  value: "dbpassword11"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-db-password
+                  key: db-password
+          # Liveness Probe TCP request
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60 # initialDelaySeconds field tells  the kubelet that it should wait 60 seconds before performing the first probe.
+            periodSeconds: 10 # periodSeconds field specifies kubelet should perform a liveness probe every 10 seconds.
+            failureThreshold: 3 # Default Value
+            successThreshold: 1 # Default value
+
+
+# Types of Liveness Probes we can define
+# 1. Linux Command
+# 2. HTTP Request
+# 3. TCP Ping
+
+# What happens ??
+# 1. The kubelet will run the first liveness TCP probe 60 seconds after the
+# container starts.
+# 2. This will attempt to connect to the UMS container on port 8080.
+# If the liveness probe fails, the container will be restarted.rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl apply -f 03-liveness-probe-TCP-Request/
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+secret/mysql-db-password created
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get svc
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+kubernetes                   ClusterIP      10.80.0.1     <none>        443/TCP        9d
+mysql                        ClusterIP      None          <none>        3306/TCP       16s
+usermgmt-webapp-lb-service   LoadBalancer   10.80.10.58   <pending>     80:32244/TCP   15s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl describe deployment usermgmt-webapp
+Name:                   usermgmt-webapp
+Namespace:              default
+CreationTimestamp:      Thu, 19 Oct 2023 23:29:19 +0800
+Labels:                 app=usermgmt-webapp
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=usermgmt-webapp
+Replicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=usermgmt-webapp
+  Init Containers:
+   init-db:
+    Image:      busybox:1.31
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";
+    Environment:  <none>
+    Mounts:       <none>
+  Containers:
+   usermgmt-webapp:
+    Image:      stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+    Port:       8080/TCP
+    Host Port:  0/TCP
+    Liveness:   tcp-socket :8080 delay=60s timeout=1s period=10s #success=1 #failure=3
+    Environment:
+      DB_HOSTNAME:  mysql
+      DB_PORT:      3306
+      DB_NAME:      webappdb
+      DB_USERNAME:  root
+      DB_PASSWORD:  <set to the key 'db-password' in secret 'mysql-db-password'>  Optional: false
+    Mounts:         <none>
+  Volumes:          <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   usermgmt-webapp-7b5f5d6fc (1/1 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  52s   deployment-controller  Scaled up replica set usermgmt-webapp-7b5f5d6fc to 1
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get svc
+NAME                         TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)        AGE
+kubernetes                   ClusterIP      10.80.0.1     <none>           443/TCP        9d
+mysql                        ClusterIP      None          <none>           3306/TCP       91s
+usermgmt-webapp-lb-service   LoadBalancer   10.80.10.58   34.118.207.155   80:32244/TCP   90s
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ vim session-03.out
