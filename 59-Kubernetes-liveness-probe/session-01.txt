@@ -1,0 +1,664 @@
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ ls
+01-liveness-probe-linux-command  02-liveness-probe-HTTP-Request  03-liveness-probe-TCP-Request  README.md
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ ls 01-liveness-probe-linux-command/
+01-persistent-volume-claim.yaml   03-mysql-deployment.yaml         05-UserMgmtWebApp-Deployment.yaml            07-kubernetes-secret.yaml
+02-UserManagement-ConfigMap.yaml  04-mysql-clusterip-service.yaml  06-UserMgmtWebApp-LoadBalancer-Service.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ cat 01-liveness-probe-linux-command/01-persistent-volume-claim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard-rwo
+  resources:
+    requests:
+      storage: 4Gi
+
+# NEED FOR PVC
+# 1. Dynamic volume provisioning allows storage volumes to be created
+# on-demand.
+
+# 2. Without dynamic provisioning, cluster administrators have to manually
+# make calls to their cloud or storage provider to create new storage
+# volumes, and then create PersistentVolume objects to represent them in k8s
+
+# 3. The dynamic provisioning feature eliminates the need for cluster
+# administrators to pre-provision storage. Instead, it automatically
+# provisions storage when it is requested by users.
+
+# 4. PVC: Users request dynamically provisioned storage by including
+# a storage class in their PersistentVolumeClaim
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ cat 01-liveness-probe-linux-command/02-UserManagement-ConfigMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: usermanagement-dbcreation-script
+data:
+  mysql_usermgmt.sql: |-
+    DROP DATABASE IF EXISTS webappdb;
+    CREATE DATABASE webappdb;
+
+
+# CONFIG MAP
+# 1. A ConfigMap is an API object used to store non-confidential data in
+# key-value pairs.
+
+# 2. Pods can consume ConfigMaps as
+## 2.1: environment variables,
+## 2.2: command-line arguments,
+## 2.3: or as configuration files in a volume.
+## We are going to use this in our MySQL k8s Deployment
+
+# 3. YAML Notation
+## YAML Notation: |-: "strip": remove the line feed, remove the trailing blank lines.
+## Additional YAML Notation Reference: https://stackoverflow.com/questions/3790454/how-do-i-break-a-string-in-yaml-over-multiple-linesrahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ cat 01-liveness-probe-linux-command/03-mysql-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate # terminates all the pods and replaces them with the new version.
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          #env:
+          #  - name: MYSQL_ROOT_PASSWORD
+          #    value: dbpassword11
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-db-password
+                  key: db-password
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+            - name: usermanagement-dbcreation-script
+              mountPath: /docker-entrypoint-initdb.d #https://hub.docker.com/_/mysql Refer Initializing a fresh instance
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+        - name: usermanagement-dbcreation-script
+          configMap:
+            name: usermanagement-dbcreation-script
+
+
+# VERY IMPORTANT POINTS ABOUT CONTAINERS AND POD VOLUMES:
+## 1. On-disk files in a container are ephemeral
+## 2. One problem is the loss of files when a container crashes.
+## 3. Kubernetes Volumes solves above two as these volumes are configured to POD and not container.
+## Only they can be mounted in Container
+## 4. Using Compute Enginer Persistent Disk CSI Driver is a super generalized approach
+## for having Persistent Volumes for workloads in Kubernetes
+
+
+## ENVIRONMENT VARIABLES
+# 1. When you create a Pod, you can set environment variables for the
+# containers that run in the Pod.
+# 2. To set environment variables, include the env or envFrom field in
+# the configuration file.
+
+
+## DEPLOYMENT STRATEGIES
+# 1. Rolling deployment: This strategy  replaces pods running the old version of the application with the new version, one by one, without downtime to the cluster.
+# 2. Recreate: This strategy terminates all the pods and replaces them with the new version.
+# 3. Ramped slow rollout: This strategy  rolls out replicas of the new version, while in parallel, shutting down old replicas.
+# 4. Best-effort controlled rollout: This strategy  specifies a “max unavailable” parameter which indicates what percentage of existing pods can be unavailable during the upgrade, enabling the rollout to happen much more quickly.
+# 5. Canary Deployment: This strategy  uses a progressive delivery approach, with one version of the application serving maximum users, and another, newer version serving a small set of test users. The test deployment is rolled out to more users if it is successful.rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ cat 01-liveness-probe-linux-command/04-mysql-clusterip-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+  clusterIP: None # This means we are going to use Pod IP    rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ cat 01-liveness-probe-linux-command/05-UserMgmtWebApp-Deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usermgmt-webapp
+  labels:
+    app: usermgmt-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: usermgmt-webapp
+  template:
+    metadata:
+      labels:
+        app: usermgmt-webapp
+    spec:
+      initContainers:
+        - name: init-db
+          image: busybox:1.31
+          command: ['sh', '-c', 'echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";']
+      containers:
+        - name: usermgmt-webapp
+          image: stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOSTNAME
+              value: "mysql"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: "webappdb"
+            - name: DB_USERNAME
+              value: "root"
+            #- name: DB_PASSWORD
+            #  value: "dbpassword11"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-db-password
+                  key: db-password
+          # Liveness Probe Linux Command
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - nc -z localhost 8080
+            initialDelaySeconds: 60 # initialDelaySeconds field tells  the kubelet that it should wait 60 seconds before performing the first probe.
+            periodSeconds: 10 # periodSeconds field specifies kubelet should perform a liveness probe every 10 seconds.
+            failureThreshold: 3 # Default Value
+            successThreshold: 1 # Default value
+
+
+# Types of Liveness Probes we can define
+# 1. Linux Command
+# 2. HTTP Request
+# 3. TCP Ping
+
+# What happens ??
+# 1. To perform a probe, the kubelet executes the command
+# Command: /bin/sh -c - nc -z localhost 8080 in the target container.
+# 2. If the command succeeds, it returns 0, and the kubelet considers the
+# container to be alive and healthy.
+# 3. If the command returns a non-zero value, the kubelet kills the
+# container and restarts it.
+
+# More Details
+# 1. failureThreshold: When a probe fails, Kubernetes will try failureThreshold
+# times before giving up. Giving up in case of liveness probe means
+# restarting the container. In case of readiness probe the Pod will be
+# marked Unready. Defaults to 3. Minimum value is 1.
+
+# 2. successThreshold: Minimum consecutive successes for the probe to be
+# considered successful after having failed. Defaults to 1.
+# Must be 1 for liveness and startup Probes. Minimum value is 1.
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ cat 01-liveness-probe-linux-command/06-UserMgmtWebApp-LoadBalancer-Service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: usermgmt-webapp-lb-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: usermgmt-webapp
+  ports:
+    - port: 80 # Service Port
+      targetPort: 8080 # Container Portrahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ cat 01-liveness-probe-linux-command/07-kubernetes-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-db-password
+#type: Opaque means that from kubernetes's point of view the contents of this Secret is unstructured.
+#It can contain arbitrary key-value pairs.
+type: Opaque
+data:
+  # Output of echo -n 'dbpassword11' | base64
+  db-password: ZGJwYXNzd29yZDExrahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl apply -f 01-liveness-probe-linux-command/
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+secret/mysql-db-password created
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get all
+NAME                                 READY   STATUS    RESTARTS   AGE
+pod/mysql-7b4bcc58fd-dc94b           1/1     Running   0          21m
+pod/usermgmt-webapp-dbdf88bb-hsm9d   1/1     Running   0          21m
+
+NAME                                 TYPE           CLUSTER-IP   EXTERNAL-IP    PORT(S)        AGE
+service/kubernetes                   ClusterIP      10.80.0.1    <none>         443/TCP        8d
+service/mysql                        ClusterIP      None         <none>         3306/TCP       21m
+service/usermgmt-webapp-lb-service   LoadBalancer   10.80.5.69   35.188.26.81   80:30210/TCP   21m
+
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/mysql             1/1     1            1           21m
+deployment.apps/usermgmt-webapp   1/1     1            1           21m
+
+NAME                                       DESIRED   CURRENT   READY   AGE
+replicaset.apps/mysql-7b4bcc58fd           1         1         1       21m
+replicaset.apps/usermgmt-webapp-dbdf88bb   1         1         1       21m
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get deploy --show-lables -o wide
+error: unknown flag: --show-lables
+See 'kubectl get --help' for usage.
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get deploy --show-labels -o wide
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS        IMAGES                                             SELECTOR              LABELS
+mysql             1/1     1            1           23m   mysql             mysql:8.0                                          app=mysql             <none>
+usermgmt-webapp   1/1     1            1           23m   usermgmt-webapp   stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB   app=usermgmt-webapp   app=usermgmt-webapp
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get pods --show-labels -o wide
+NAME                             READY   STATUS    RESTARTS   AGE   IP          NODE                                              NOMINATED NODE   READINESS GATES   LABELS
+mysql-7b4bcc58fd-dc94b           1/1     Running   0          23m   10.84.1.6   gke-sara-gke-cluster-default-pool-df7770d2-l11r   <none>           <none>            app=mysql,pod-template-hash=7b4bcc58fd
+usermgmt-webapp-dbdf88bb-hsm9d   1/1     Running   0          23m   10.84.1.5   gke-sara-gke-cluster-default-pool-df7770d2-l11r   <none>           <none>            app=usermgmt-webapp,pod-template-hash=dbdf88bb
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get svc --show-labels -o wide
+NAME                         TYPE           CLUSTER-IP   EXTERNAL-IP    PORT(S)        AGE   SELECTOR              LABELS
+kubernetes                   ClusterIP      10.80.0.1    <none>         443/TCP        8d    <none>                component=apiserver,provider=kubernetes
+mysql                        ClusterIP      None         <none>         3306/TCP       23m   app=mysql             <none>
+usermgmt-webapp-lb-service   LoadBalancer   10.80.5.69   35.188.26.81   80:30210/TCP   23m   app=usermgmt-webapp   <none>
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get secret --show-labels -o wide
+NAME                TYPE     DATA   AGE   LABELS
+mysql-db-password   Opaque   1      24m   <none>
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl describe secret mysql-db-password
+Name:         mysql-db-password
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+db-password:  12 bytes
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl describe pods usermgmt-webapp-dbdf88bb-hsm9d
+Name:             usermgmt-webapp-dbdf88bb-hsm9d
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-df7770d2-l11r/10.128.0.21
+Start Time:       Thu, 19 Oct 2023 08:14:08 +0800
+Labels:           app=usermgmt-webapp
+                  pod-template-hash=dbdf88bb
+Annotations:      <none>
+Status:           Running
+IP:               10.84.1.5
+IPs:
+  IP:           10.84.1.5
+Controlled By:  ReplicaSet/usermgmt-webapp-dbdf88bb
+Init Containers:
+  init-db:
+    Container ID:  containerd://cf027011e0430bfcdd2f1d27b1fb0d9e1c75b6e4106ce3ddac1b18109e9bd971
+    Image:         busybox:1.31
+    Image ID:      docker.io/library/busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Thu, 19 Oct 2023 08:14:09 +0800
+      Finished:     Thu, 19 Oct 2023 08:14:53 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-cqpxf (ro)
+Containers:
+  usermgmt-webapp:
+    Container ID:   containerd://c7d9f3fe49b273c01e00714bd2e26b20e6ee221d396184cac36f52e79a7fc685
+    Image:          stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+    Image ID:       docker.io/stacksimplify/kube-usermgmt-webapp@sha256:41b45003c6b6eee62a288151cedf9f3675c14b940866edc63e9c6ea2b027fab4
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Thu, 19 Oct 2023 08:15:01 +0800
+    Ready:          True
+    Restart Count:  0
+    Liveness:       exec [/bin/sh -c nc -z localhost 8080] delay=60s timeout=1s period=10s #success=1 #failure=3
+    Environment:
+      DB_HOSTNAME:  mysql
+      DB_PORT:      3306
+      DB_NAME:      webappdb
+      DB_USERNAME:  root
+      DB_PASSWORD:  <set to the key 'db-password' in secret 'mysql-db-password'>  Optional: false
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-cqpxf (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-cqpxf:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  25m   default-scheduler  Successfully assigned default/usermgmt-webapp-dbdf88bb-hsm9d to gke-sara-gke-cluster-default-pool-df7770d2-l11r
+  Normal  Pulling    25m   kubelet            Pulling image "busybox:1.31"
+  Normal  Pulled     25m   kubelet            Successfully pulled image "busybox:1.31" in 916.303049ms (916.320174ms including waiting)
+  Normal  Created    25m   kubelet            Created container init-db
+  Normal  Started    25m   kubelet            Started container init-db
+  Normal  Pulling    24m   kubelet            Pulling image "stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB"
+  Normal  Pulled     24m   kubelet            Successfully pulled image "stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB" in 7.13638454s (7.136396055s including waiting)
+  Normal  Created    24m   kubelet            Created container usermgmt-webapp
+  Normal  Started    24m   kubelet            Started container usermgmt-webapp
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ curl http://35.188.26.81
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ curl -v http://35.188.26.81
+*   Trying 35.188.26.81:80...
+* Connected to 35.188.26.81 (35.188.26.81) port 80 (#0)
+> GET / HTTP/1.1
+> Host: 35.188.26.81
+> User-Agent: curl/7.81.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 302 Found
+< Server: Apache-Coyote/1.1
+< Set-Cookie: JSESSIONID=54B427D5C670DCFDC182E18461973DAF; Path=/; HttpOnly
+< X-Content-Type-Options: nosniff
+< X-XSS-Protection: 1; mode=block
+< Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+< Pragma: no-cache
+< Expires: 0
+< Location: http://35.188.26.81/login
+< Content-Length: 0
+< Date: Thu, 19 Oct 2023 00:40:17 GMT
+<
+* Connection #0 to host 35.188.26.81 left intact
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl logs -f usermgmt-webapp-dbdf88bb-hsm9d
+Defaulted container "usermgmt-webapp" out of: usermgmt-webapp, init-db (init)
+19-Oct-2023 00:15:02.216 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server version:        Apache Tomcat/8.0.51
+19-Oct-2023 00:15:02.220 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server built:          Apr 9 2018 21:20:15 UTC
+19-Oct-2023 00:15:02.221 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server number:         8.0.51.0
+19-Oct-2023 00:15:02.221 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Name:               Linux
+19-Oct-2023 00:15:02.221 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Version:            5.15.0-1036-gke
+19-Oct-2023 00:15:02.222 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Architecture:          amd64
+19-Oct-2023 00:15:02.222 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Java Home:             /usr/lib/jvm/java-1.8-openjdk/jre
+19-Oct-2023 00:15:02.223 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Version:           1.8.0_151-b12
+19-Oct-2023 00:15:02.224 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Vendor:            Oracle Corporation
+19-Oct-2023 00:15:02.224 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:         /usr/local/tomcat
+19-Oct-2023 00:15:02.224 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:         /usr/local/tomcat
+19-Oct-2023 00:15:02.225 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.config.file=/usr/local/tomcat/conf/logging.properties
+19-Oct-2023 00:15:02.226 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+19-Oct-2023 00:15:02.227 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djdk.tls.ephemeralDHKeySize=2048
+19-Oct-2023 00:15:02.227 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+19-Oct-2023 00:15:02.228 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dignore.endorsed.dirs=
+19-Oct-2023 00:15:02.228 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.base=/usr/local/tomcat
+19-Oct-2023 00:15:02.229 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.home=/usr/local/tomcat
+19-Oct-2023 00:15:02.230 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.io.tmpdir=/usr/local/tomcat/temp
+19-Oct-2023 00:15:02.230 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent Loaded APR based Apache Tomcat Native library 1.2.16 using APR version 1.6.3.
+19-Oct-2023 00:15:02.231 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
+19-Oct-2023 00:15:02.235 INFO [main] org.apache.catalina.core.AprLifecycleListener.initializeSSL OpenSSL successfully initialized (OpenSSL 1.0.2o  27 Mar 2018)
+19-Oct-2023 00:15:02.446 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["http-apr-8080"]
+19-Oct-2023 00:15:02.461 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["ajp-apr-8009"]
+19-Oct-2023 00:15:02.464 INFO [main] org.apache.catalina.startup.Catalina.load Initialization processed in 953 ms
+19-Oct-2023 00:15:02.506 INFO [main] org.apache.catalina.core.StandardService.startInternal Starting service Catalina
+19-Oct-2023 00:15:02.507 INFO [main] org.apache.catalina.core.StandardEngine.startInternal Starting Servlet Engine: Apache Tomcat/8.0.51
+19-Oct-2023 00:15:02.547 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive /usr/local/tomcat/webapps/ROOT.war
+19-Oct-2023 00:15:07.197 INFO [localhost-startStop-1] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v2.1.6.RELEASE)
+
+2023-10-19 00:15:09.001  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : Starting SpringbootSecurityInternalApplication v1.0.0-MySQLDB on usermgmt-webapp-dbdf88bb-hsm9d with PID 1 (/usr/local/tomcat/webapps/ROOT/WEB-INF/classes started by root in /usr/local/tomcat)
+2023-10-19 00:15:09.033  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : No active profile set, falling back to default profiles: default
+2023-10-19 00:15:11.728  INFO 1 --- [ost-startStop-1] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 2609 ms
+Loading class `com.mysql.jdbc.Driver'. This is deprecated. The new driver class is `com.mysql.cj.jdbc.Driver'. The driver is automatically registered via the SPI and manual loading of the driver class is generally unnecessary.
+2023-10-19 00:15:13.359  INFO 1 --- [ost-startStop-1] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+        name: default
+        ...]
+2023-10-19 00:15:13.486  INFO 1 --- [ost-startStop-1] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.10.Final}
+2023-10-19 00:15:13.489  INFO 1 --- [ost-startStop-1] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2023-10-19 00:15:13.725  INFO 1 --- [ost-startStop-1] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2023-10-19 00:15:13.987  INFO 1 --- [ost-startStop-1] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL57Dialect
+2023-10-19 00:15:18.158  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : Started SpringbootSecurityInternalApplication in 10.583 seconds (JVM running for 16.881)
+19-Oct-2023 00:15:18.199 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deployment of web application archive /usr/local/tomcat/webapps/ROOT.war has finished in 15,651 ms
+19-Oct-2023 00:15:18.207 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-apr-8080"]
+19-Oct-2023 00:15:18.218 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["ajp-apr-8009"]
+19-Oct-2023 00:15:18.227 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 15762 ms
+2023-10-19 00:36:00.485  INFO 1 --- [apr-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2023-10-19 00:36:00.501  INFO 1 --- [apr-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 16 ms
+2023-10-19 00:36:21.827  INFO 1 --- [apr-8080-exec-7] c.s.r.services.CustomUserDetailsService  : In CustomUserDetailsService class
+2023-10-19 00:36:21.869  INFO 1 --- [apr-8080-exec-7] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2023-10-19 00:36:22.302  INFO 1 --- [apr-8080-exec-7] c.s.r.services.CustomUserDetails         : Retruning role details from CustomUserDetails class
+2023-10-19 00:36:22.303  INFO 1 --- [apr-8080-exec-7] c.s.r.services.CustomUserDetails         : Role Details: {}[ROLE_ADMIN]
+^C
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get pods
+NAME                             READY   STATUS    RESTARTS   AGE
+mysql-7b4bcc58fd-dc94b           1/1     Running   0          29m
+usermgmt-webapp-dbdf88bb-hsm9d   1/1     Running   0          28m
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl logs -f mysql-7b4bcc58fd-dc94b
+2023-10-19 00:14:35+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0.34-1.el8 started.
+2023-10-19 00:14:35+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2023-10-19 00:14:35+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0.34-1.el8 started.
+2023-10-19 00:14:35+00:00 [Note] [Entrypoint]: Initializing database files
+2023-10-19T00:14:35.581225Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2023-10-19T00:14:35.581322Z 0 [System] [MY-013169] [Server] /usr/sbin/mysqld (mysqld 8.0.34) initializing of server in progress as process 80
+2023-10-19T00:14:35.591205Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2023-10-19T00:14:36.862455Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2023-10-19T00:14:39.411030Z 6 [Warning] [MY-010453] [Server] root@localhost is created with an empty password ! Please consider switching off the --initialize-insecure option.
+2023-10-19 00:14:44+00:00 [Note] [Entrypoint]: Database files initialized
+2023-10-19 00:14:44+00:00 [Note] [Entrypoint]: Starting temporary server
+2023-10-19T00:14:45.090823Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2023-10-19T00:14:45.093713Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.34) starting as process 122
+2023-10-19T00:14:45.116267Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2023-10-19T00:14:45.505171Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2023-10-19T00:14:46.354510Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2023-10-19T00:14:46.354555Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2023-10-19T00:14:46.457732Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2023-10-19T00:14:46.481654Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Socket: /var/run/mysqld/mysqlx.sock
+2023-10-19T00:14:46.481821Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.34'  socket: '/var/run/mysqld/mysqld.sock'  port: 0  MySQL Community Server - GPL.
+2023-10-19 00:14:46+00:00 [Note] [Entrypoint]: Temporary server started.
+'/var/lib/mysql/mysql.sock' -> '/var/run/mysqld/mysqld.sock'
+Warning: Unable to load '/usr/share/zoneinfo/iso3166.tab' as time zone. Skipping it.
+Warning: Unable to load '/usr/share/zoneinfo/leap-seconds.list' as time zone. Skipping it.
+Warning: Unable to load '/usr/share/zoneinfo/leapseconds' as time zone. Skipping it.
+Warning: Unable to load '/usr/share/zoneinfo/tzdata.zi' as time zone. Skipping it.
+Warning: Unable to load '/usr/share/zoneinfo/zone.tab' as time zone. Skipping it.
+Warning: Unable to load '/usr/share/zoneinfo/zone1970.tab' as time zone. Skipping it.
+
+2023-10-19 00:14:49+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/mysql_usermgmt.sql
+
+
+2023-10-19 00:14:49+00:00 [Note] [Entrypoint]: Stopping temporary server
+2023-10-19T00:14:49.825088Z 11 [System] [MY-013172] [Server] Received SHUTDOWN from user root. Shutting down mysqld (Version: 8.0.34).
+2023-10-19T00:14:51.221658Z 0 [System] [MY-010910] [Server] /usr/sbin/mysqld: Shutdown complete (mysqld 8.0.34)  MySQL Community Server - GPL.
+2023-10-19 00:14:51+00:00 [Note] [Entrypoint]: Temporary server stopped
+
+2023-10-19 00:14:51+00:00 [Note] [Entrypoint]: MySQL init process done. Ready for start up.
+
+2023-10-19T00:14:52.161365Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2023-10-19T00:14:52.163734Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.34) starting as process 1
+2023-10-19T00:14:52.171518Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2023-10-19T00:14:52.569523Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2023-10-19T00:14:52.862699Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2023-10-19T00:14:52.862745Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2023-10-19T00:14:52.866074Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2023-10-19T00:14:52.894747Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
+2023-10-19T00:14:52.894765Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.34'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+^C
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl logs usermgmt-webapp-dbdf88bb-hsm9d
+Defaulted container "usermgmt-webapp" out of: usermgmt-webapp, init-db (init)
+19-Oct-2023 00:15:02.216 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server version:        Apache Tomcat/8.0.51
+19-Oct-2023 00:15:02.220 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server built:          Apr 9 2018 21:20:15 UTC
+19-Oct-2023 00:15:02.221 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server number:         8.0.51.0
+19-Oct-2023 00:15:02.221 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Name:               Linux
+19-Oct-2023 00:15:02.221 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Version:            5.15.0-1036-gke
+19-Oct-2023 00:15:02.222 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Architecture:          amd64
+19-Oct-2023 00:15:02.222 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Java Home:             /usr/lib/jvm/java-1.8-openjdk/jre
+19-Oct-2023 00:15:02.223 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Version:           1.8.0_151-b12
+19-Oct-2023 00:15:02.224 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Vendor:            Oracle Corporation
+19-Oct-2023 00:15:02.224 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:         /usr/local/tomcat
+19-Oct-2023 00:15:02.224 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:         /usr/local/tomcat
+19-Oct-2023 00:15:02.225 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.config.file=/usr/local/tomcat/conf/logging.properties
+19-Oct-2023 00:15:02.226 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+19-Oct-2023 00:15:02.227 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djdk.tls.ephemeralDHKeySize=2048
+19-Oct-2023 00:15:02.227 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+19-Oct-2023 00:15:02.228 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dignore.endorsed.dirs=
+19-Oct-2023 00:15:02.228 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.base=/usr/local/tomcat
+19-Oct-2023 00:15:02.229 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.home=/usr/local/tomcat
+19-Oct-2023 00:15:02.230 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.io.tmpdir=/usr/local/tomcat/temp
+19-Oct-2023 00:15:02.230 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent Loaded APR based Apache Tomcat Native library 1.2.16 using APR version 1.6.3.
+19-Oct-2023 00:15:02.231 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
+19-Oct-2023 00:15:02.235 INFO [main] org.apache.catalina.core.AprLifecycleListener.initializeSSL OpenSSL successfully initialized (OpenSSL 1.0.2o  27 Mar 2018)
+19-Oct-2023 00:15:02.446 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["http-apr-8080"]
+19-Oct-2023 00:15:02.461 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["ajp-apr-8009"]
+19-Oct-2023 00:15:02.464 INFO [main] org.apache.catalina.startup.Catalina.load Initialization processed in 953 ms
+19-Oct-2023 00:15:02.506 INFO [main] org.apache.catalina.core.StandardService.startInternal Starting service Catalina
+19-Oct-2023 00:15:02.507 INFO [main] org.apache.catalina.core.StandardEngine.startInternal Starting Servlet Engine: Apache Tomcat/8.0.51
+19-Oct-2023 00:15:02.547 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive /usr/local/tomcat/webapps/ROOT.war
+19-Oct-2023 00:15:07.197 INFO [localhost-startStop-1] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v2.1.6.RELEASE)
+
+2023-10-19 00:15:09.001  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : Starting SpringbootSecurityInternalApplication v1.0.0-MySQLDB on usermgmt-webapp-dbdf88bb-hsm9d with PID 1 (/usr/local/tomcat/webapps/ROOT/WEB-INF/classes started by root in /usr/local/tomcat)
+2023-10-19 00:15:09.033  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : No active profile set, falling back to default profiles: default
+2023-10-19 00:15:11.728  INFO 1 --- [ost-startStop-1] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 2609 ms
+Loading class `com.mysql.jdbc.Driver'. This is deprecated. The new driver class is `com.mysql.cj.jdbc.Driver'. The driver is automatically registered via the SPI and manual loading of the driver class is generally unnecessary.
+2023-10-19 00:15:13.359  INFO 1 --- [ost-startStop-1] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+        name: default
+        ...]
+2023-10-19 00:15:13.486  INFO 1 --- [ost-startStop-1] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.10.Final}
+2023-10-19 00:15:13.489  INFO 1 --- [ost-startStop-1] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2023-10-19 00:15:13.725  INFO 1 --- [ost-startStop-1] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2023-10-19 00:15:13.987  INFO 1 --- [ost-startStop-1] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL57Dialect
+2023-10-19 00:15:18.158  INFO 1 --- [ost-startStop-1] .r.SpringbootSecurityInternalApplication : Started SpringbootSecurityInternalApplication in 10.583 seconds (JVM running for 16.881)
+19-Oct-2023 00:15:18.199 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deployment of web application archive /usr/local/tomcat/webapps/ROOT.war has finished in 15,651 ms
+19-Oct-2023 00:15:18.207 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-apr-8080"]
+19-Oct-2023 00:15:18.218 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["ajp-apr-8009"]
+19-Oct-2023 00:15:18.227 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 15762 ms
+2023-10-19 00:36:00.485  INFO 1 --- [apr-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2023-10-19 00:36:00.501  INFO 1 --- [apr-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 16 ms
+2023-10-19 00:36:21.827  INFO 1 --- [apr-8080-exec-7] c.s.r.services.CustomUserDetailsService  : In CustomUserDetailsService class
+2023-10-19 00:36:21.869  INFO 1 --- [apr-8080-exec-7] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2023-10-19 00:36:22.302  INFO 1 --- [apr-8080-exec-7] c.s.r.services.CustomUserDetails         : Retruning role details from CustomUserDetails class
+2023-10-19 00:36:22.303  INFO 1 --- [apr-8080-exec-7] c.s.r.services.CustomUserDetails         : Role Details: {}[ROLE_ADMIN]
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-a468f4c6-76fc-4aa2-9a04-d937e2584a5a   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            30m
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-a468f4c6-76fc-4aa2-9a04-d937e2584a5a   4Gi        RWO            standard-rwo   30m
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl describe pvc mysql-pv-claim
+Name:          mysql-pv-claim
+Namespace:     default
+StorageClass:  standard-rwo
+Status:        Bound
+Volume:        pvc-a468f4c6-76fc-4aa2-9a04-d937e2584a5a
+Labels:        <none>
+Annotations:   pv.kubernetes.io/bind-completed: yes
+               pv.kubernetes.io/bound-by-controller: yes
+               volume.beta.kubernetes.io/storage-provisioner: pd.csi.storage.gke.io
+               volume.kubernetes.io/selected-node: gke-sara-gke-cluster-default-pool-df7770d2-l11r
+               volume.kubernetes.io/storage-provisioner: pd.csi.storage.gke.io
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:      4Gi
+Access Modes:  RWO
+VolumeMode:    Filesystem
+Used By:       mysql-7b4bcc58fd-dc94b
+Events:
+  Type    Reason                 Age                From                                                                                              Message
+  ----    ------                 ----               ----                                                                                              -------
+  Normal  WaitForFirstConsumer   30m                persistentvolume-controller                                                                       waiting for first consumer to be created before binding
+  Normal  Provisioning           30m                pd.csi.storage.gke.io_gke-976ed87f89184273bb76-8f28-620c-vm_a495c7fc-ac62-41c8-a7fb-5a99bb0bad40  External provisioner is provisioning volume for claim "default/mysql-pv-claim"
+  Normal  ExternalProvisioning   30m (x3 over 30m)  persistentvolume-controller                                                                       waiting for a volume to be created, either by external provisioner "pd.csi.storage.gke.io" or manually created by system administrator
+  Normal  ProvisioningSucceeded  30m                pd.csi.storage.gke.io_gke-976ed87f89184273bb76-8f28-620c-vm_a495c7fc-ac62-41c8-a7fb-5a99bb0bad40  Successfully provisioned volume pvc-a468f4c6-76fc-4aa2-9a04-d937e2584a5a
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl describe pv pvc-a468f4c6-76fc-4aa2-9a04-d937e2584a5a
+Name:              pvc-a468f4c6-76fc-4aa2-9a04-d937e2584a5a
+Labels:            <none>
+Annotations:       pv.kubernetes.io/provisioned-by: pd.csi.storage.gke.io
+                   volume.kubernetes.io/provisioner-deletion-secret-name:
+                   volume.kubernetes.io/provisioner-deletion-secret-namespace:
+Finalizers:        [kubernetes.io/pv-protection external-attacher/pd-csi-storage-gke-io]
+StorageClass:      standard-rwo
+Status:            Bound
+Claim:             default/mysql-pv-claim
+Reclaim Policy:    Delete
+Access Modes:      RWO
+VolumeMode:        Filesystem
+Capacity:          4Gi
+Node Affinity:
+  Required Terms:
+    Term 0:        topology.gke.io/zone in [us-central1-a]
+Message:
+Source:
+    Type:              CSI (a Container Storage Interface (CSI) volume source)
+    Driver:            pd.csi.storage.gke.io
+    FSType:            ext4
+    VolumeHandle:      projects/sara-project-401601/zones/us-central1-a/disks/pvc-a468f4c6-76fc-4aa2-9a04-d937e2584a5a
+    ReadOnly:          false
+    VolumeAttributes:      storage.kubernetes.io/csiProvisionerIdentity=1696995876596-4-pd.csi.storage.gke.io
+Events:                <none>
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   8d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   8d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   8d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   8d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   8d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   8d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   8d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   8d
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ kubectl describe sc standard-rwo
+Name:                  standard-rwo
+IsDefaultClass:        Yes
+Annotations:           components.gke.io/component-name=pdcsi,components.gke.io/component-version=0.16.14,components.gke.io/layer=addon,storageclass.kubernetes.io/is-default-class=true
+Provisioner:           pd.csi.storage.gke.io
+Parameters:            type=pd-balanced
+AllowVolumeExpansion:  True
+MountOptions:          <none>
+ReclaimPolicy:         Delete
+VolumeBindingMode:     WaitForFirstConsumer
+Events:                <none>
+rahul@DESKTOP-C4GRDQ2:~/gke/github/59-Kubernetes-liveness-probe$ vim session-01.txt
