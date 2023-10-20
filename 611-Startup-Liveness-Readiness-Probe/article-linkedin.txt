@@ -1,0 +1,66 @@
+Navigating Kubernetes Probes: Startup, Liveness, Readiness, and Init Containers
+In the world of managing applications, Kubernetes is a real champ. It uses checks, like Startup, Liveness, Readiness Probes, and Init Containers, to make sure everything runs smoothly. Let's break down each one and see how they work.
+Init Containers: Getting Things Ready in the Background - init container link
+Before the main application starts, Init Containers get things all set up. They do tasks like getting important files or preparing the environment. If they have trouble, Kubernetes keeps trying until they get it right. This makes sure the main app starts in the best possible way.
+Startup Probe: Making Sure Everything Starts Right - probe link
+This check is like a first look to see if an application starts properly after it's set up or restarted. It's super important for apps that need extra time to get going. If there's a problem, Kubernetes helps by giving it another try.
+Liveness Probe: Keeping an Eye on the App's Health
+Once an application is up and running, the Liveness Probe keeps watch. It checks to see if the app is still doing its job. If something goes wrong and the app stops working, Kubernetes steps in. It figures out the issue, stops the app, and starts it up again. This means only healthy versions of the app stay in action.
+Readiness Probe: Ready to Take on Requests
+This check looks at whether the app is ready to handle requests. It's really important for apps that take a while to get going or need specific conditions to work well. If the app isn't quite ready, Kubernetes sends requests somewhere else, making sure users get the best experience and things run smoothly.
+The Order Things Happen
+Knowing the order of how these checks and Init Containers work is super important.
+1. Init Containers:
+Perform tasks crucial for preparing the environment before the main application starts.
+Retry until successful, ensuring an optimized setup for the main container.
+#initContainers - Specialized containers that run before app containers in a Pod 
+initContainers:
+  - name: init-db
+    image: busybox:1.31
+    command: ['sh', '-c', 'echo -e "Check availability of MySQL Server "; while ! nc -z mysql 3306; do sleep 1; printf "-"; done; echo -e "  >> Looks like MySQL Database Server has started";']
+2. Startup Probe:
+Activates when the container starts or restarts.
+Validates that the application initializes correctly before moving on to other robes.
+# Startup Probe - Wait for 5 minutes till the application starts            
+startupProbe:
+  httpGet:
+    path: /login
+    port: 8080
+  initialDelaySeconds: 60              
+  periodSeconds: 10            
+  failureThreshold: 30  # 5 min (30 * 10 = 300s) to finish its startup.
+  succe
+3. Readiness Probe:
+Kicks in after the Startup Probe gives the green light.
+Ensures that the application is prepared to handle incoming requests.
+# Readiness Probe HTTP Request            
+readinessProbe:
+  httpGet:
+    path: /login
+    port: 8080
+    httpHeaders:
+      - name: Custom-Header
+        value: Awesome   
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
+4. Liveness Probe:
+Commences after both the Startup and Readiness Probes succeed.
+Monitors the application's ongoing health and responsiveness.
+Keeps an eye on the app's health and restarts it if needed.
+# Liveness Probe HTTP Request
+livenessProbe:
+  exec:
+    command: 
+       - /bin/sh
+       - -c 
+       - nc -z localhost 8080
+  initialDelaySeconds: 60 # Wait 60s before performing the first probe. 
+  periodSeconds: 10 # Perform a liveness probe every 10 seconds. 
+  failureThreshold: 3
+  successThreshold: 1
+In Conclusion
+With Startup, Liveness, Readiness Probes, and behind-the-scenes help from Init Containers, Kubernetes helps make sure your applications stay healthy and do their job.
+Understanding how they work and the order they happen helps to fine-tune the application for the best performance. Getting these checks and Init Containers right is a big part of making sure your applications start up smoothly and stay responsive to user requests.
+
