@@ -1,0 +1,296 @@
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ ls
+README.md  kube-manifests-readiness-probe
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ ls kube-manifests-readiness-probe/
+01-persistent-volume-claim.yaml   03-mysql-deployment.yaml         05-UserMgmtWebApp-Deployment.yaml            07-kubernetes-secret.yaml
+02-UserManagement-ConfigMap.yaml  04-mysql-clusterip-service.yaml  06-UserMgmtWebApp-LoadBalancer-Service.yaml
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ cat kube-manifests-readiness-probe/05-UserMgmtWebApp-Deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usermgmt-webapp
+  labels:
+    app: usermgmt-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: usermgmt-webapp
+  template:
+    metadata:
+      labels:
+        app: usermgmt-webapp
+    spec:
+      initContainers:
+        - name: init-db
+          image: busybox:1.31
+          command: ['sh', '-c', 'echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";']
+      containers:
+        - name: usermgmt-webapp
+          image: stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOSTNAME
+              value: "mysql"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: "webappdb"
+            - name: DB_USERNAME
+              value: "root"
+            #- name: DB_PASSWORD
+            #  value: "dbpassword11"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-db-password
+                  key: db-password
+          # Liveness Probe HTTP Request
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+              httpHeaders:
+              - name: Custom-Header
+                value: Awesome
+            initialDelaySeconds: 120 # initialDelaySeconds field tells  the kubelet that it should wait 120 seconds before performing the first probe.
+            periodSeconds: 10 # periodSeconds field specifies kubelet should perform a liveness probe every 10 seconds.
+            failureThreshold: 3 # Default Value
+            successThreshold: 1 # Default value
+          # Readiness Probe HTTP Request
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+              httpHeaders:
+              - name: Custom-Header
+                value: Awesome
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 3 # Default Value
+            successThreshold: 1 # Default value
+
+# Understand Readiness Probe ?
+# 1. Sometimes, applications are temporarily unable to serve traffic.
+# 2. For example, an application might need to load large data or configuration
+# files during startup, or depend on external services after startup.
+# 3. In such cases, you don't want to kill the application, but you don't
+#  want to send it requests either.
+# 4. Kubernetes provides readiness probes to detect and mitigate these
+# situations.
+# 5. A pod with containers reporting that they are not ready does not
+# receive traffic through Kubernetes Services.
+# 6. Readiness probes runs on the container during its whole lifecycle.
+# 7. Liveness probes do not wait for readiness probes to succeed.
+# 8. If you want to wait before executing a liveness probe you should use
+# initialDelaySeconds or a startupProbe.
+# 9. Readiness and liveness probes can be used in parallel for the same
+# container.
+# 10. Using both can ensure that traffic does not reach a container that
+# is not ready for it, and that containers are restarted when they fail.
+
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ ls
+README.md  kube-manifests-readiness-probe
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ kubectl apply -f kube-manifests-readiness-probe/
+persistentvolumeclaim/mysql-pv-claim created
+configmap/usermanagement-dbcreation-script created
+deployment.apps/mysql created
+service/mysql created
+deployment.apps/usermgmt-webapp created
+service/usermgmt-webapp-lb-service created
+secret/mysql-db-password created
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ for i in sc pv pvc deploy pods cm svc secret ; do echo "kubectl get $i" && kubectl get $i && echo " "; done
+kubectl get sc
+NAME                        PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+enterprise-multishare-rwx   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   10d
+enterprise-rwx              filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   10d
+premium-rwo                 pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   10d
+premium-rwx                 filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   10d
+standard                    kubernetes.io/gce-pd           Delete          Immediate              true                   10d
+standard-rwo (default)      pd.csi.storage.gke.io          Delete          WaitForFirstConsumer   true                   10d
+standard-rwx                filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   10d
+zonal-rwx                   filestore.csi.storage.gke.io   Delete          WaitForFirstConsumer   true                   10d
+
+kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-0ed26dbe-510d-4248-ae7a-f46f3144ea73   4Gi        RWO            Delete           Bound    default/mysql-pv-claim   standard-rwo            77m
+
+kubectl get pvc
+NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pv-claim   Bound    pvc-0ed26dbe-510d-4248-ae7a-f46f3144ea73   4Gi        RWO            standard-rwo   77m
+
+kubectl get deploy
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+mysql             1/1     1            1           77m
+usermgmt-webapp   1/1     1            1           77m
+
+kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+mysql-7b4bcc58fd-46kpv             1/1     Running   0          77m
+usermgmt-webapp-579d67d4fb-q9tjg   1/1     Running   0          77m
+
+kubectl get cm
+NAME                               DATA   AGE
+kube-root-ca.crt                   1      10d
+usermanagement-dbcreation-script   1      77m
+
+kubectl get svc
+NAME                         TYPE           CLUSTER-IP   EXTERNAL-IP    PORT(S)        AGE
+kubernetes                   ClusterIP      10.80.0.1    <none>         443/TCP        10d
+mysql                        ClusterIP      None         <none>         3306/TCP       77m
+usermgmt-webapp-lb-service   LoadBalancer   10.80.6.2    34.42.76.166   80:31171/TCP   77m
+
+kubectl get secret
+NAME                TYPE     DATA   AGE
+mysql-db-password   Opaque   1      77m
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ kubectl get pods usermgmt-webapp-579d67d4fb-q9tjg
+NAME                               READY   STATUS    RESTARTS   AGE
+usermgmt-webapp-579d67d4fb-q9tjg   1/1     Running   0          101m
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ kubectl describe pods usermgmt-webapp-579d67d4fb-q9tjg
+Name:             usermgmt-webapp-579d67d4fb-q9tjg
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-df7770d2-l11r/10.128.0.21
+Start Time:       Fri, 20 Oct 2023 08:46:59 +0800
+Labels:           app=usermgmt-webapp
+                  pod-template-hash=579d67d4fb
+Annotations:      <none>
+Status:           Running
+IP:               10.84.1.14
+IPs:
+  IP:           10.84.1.14
+Controlled By:  ReplicaSet/usermgmt-webapp-579d67d4fb
+Init Containers:
+  init-db:
+    Container ID:  containerd://f4cc3f9e41fefc0ae8ac83a6b7a13251d40eee5f39751058f38db484da451fda
+    Image:         busybox:1.31
+    Image ID:      docker.io/library/busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Fri, 20 Oct 2023 08:46:59 +0800
+      Finished:     Fri, 20 Oct 2023 08:47:27 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vthxl (ro)
+Containers:
+  usermgmt-webapp:
+    Container ID:   containerd://f6f51104d0e9dd2b9e401be4d90ae341e19554a2f02ccd762a67bdc8bfa23888
+    Image:          stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+    Image ID:       docker.io/stacksimplify/kube-usermgmt-webapp@sha256:41b45003c6b6eee62a288151cedf9f3675c14b940866edc63e9c6ea2b027fab4
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Fri, 20 Oct 2023 08:47:28 +0800
+    Ready:          True
+    Restart Count:  0
+    Liveness:       http-get http://:8080/login delay=120s timeout=1s period=10s #success=1 #failure=3
+    Readiness:      http-get http://:8080/login delay=60s timeout=1s period=10s #success=1 #failure=3
+    Environment:
+      DB_HOSTNAME:  mysql
+      DB_PORT:      3306
+      DB_NAME:      webappdb
+      DB_USERNAME:  root
+      DB_PASSWORD:  <set to the key 'db-password' in secret 'mysql-db-password'>  Optional: false
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vthxl (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  kube-api-access-vthxl:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:                      <none>
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ kubectl describe deploy usermgmt-webapp
+Name:                   usermgmt-webapp
+Namespace:              default
+CreationTimestamp:      Fri, 20 Oct 2023 08:46:59 +0800
+Labels:                 app=usermgmt-webapp
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=usermgmt-webapp
+Replicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=usermgmt-webapp
+  Init Containers:
+   init-db:
+    Image:      busybox:1.31
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      echo -e "Checking for the availability of MySQL Server deployment"; while ! nc -z mysql 3306; do sleep 1; printf "-"; done; echo -e "  >> MySQL DB Server has started";
+    Environment:  <none>
+    Mounts:       <none>
+  Containers:
+   usermgmt-webapp:
+    Image:      stacksimplify/kube-usermgmt-webapp:1.0.0-MySQLDB
+    Port:       8080/TCP
+    Host Port:  0/TCP
+    Liveness:   http-get http://:8080/login delay=120s timeout=1s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/login delay=60s timeout=1s period=10s #success=1 #failure=3
+    Environment:
+      DB_HOSTNAME:  mysql
+      DB_PORT:      3306
+      DB_NAME:      webappdb
+      DB_USERNAME:  root
+      DB_PASSWORD:  <set to the key 'db-password' in secret 'mysql-db-password'>  Optional: false
+    Mounts:         <none>
+  Volumes:          <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   usermgmt-webapp-579d67d4fb (1/1 replicas created)
+Events:          <none>
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ kubectl get svc
+NAME                         TYPE           CLUSTER-IP   EXTERNAL-IP    PORT(S)        AGE
+kubernetes                   ClusterIP      10.80.0.1    <none>         443/TCP        10d
+mysql                        ClusterIP      None         <none>         3306/TCP       104m
+usermgmt-webapp-lb-service   LoadBalancer   10.80.6.2    34.42.76.166   80:31171/TCP   104m
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ reply=$(curl -s -o /dev/null -w %{http_code} http://34.42.76.166/)
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ echo $reply
+302
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ curl -i http://34.42.76.166/
+HTTP/1.1 302 Found
+Server: Apache-Coyote/1.1
+Set-Cookie: JSESSIONID=F8D6FF1DEE485C6D9F1E539E54AFD854; Path=/; HttpOnly
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+Location: http://34.42.76.166/login
+Content-Length: 0
+Date: Fri, 20 Oct 2023 02:39:57 GMT
+
+rahul@DESKTOP-C4GRDQ2:~/gke/github/61-Kubernetes-Readiness-Probe$ vim session.out
