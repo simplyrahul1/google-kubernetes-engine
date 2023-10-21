@@ -1,1 +1,1056 @@
-one line
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ ls
+kubectl  kubectl.sha256  kube-manifests  README.md  session.out
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ ls kube-manifests/
+01-kubernetes-deployment.yaml  02-kubernetes-loadbalancer-service.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 5 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "200m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              cpu: "400m"  # 1000m is equal to 1 VCPU core                                               
+    rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ cat kube-manifests/02-kubernetes-loadbalancer-service.yaml 
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-lb-service
+spec:
+  type: LoadBalancer # ClusterIP, # NodePort
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   0/5     5            0           65s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-2fzgl   0/1     Pending   0          72s
+myapp1-deployment-6fb8d677d4-bd75n   0/1     Pending   0          72s
+myapp1-deployment-6fb8d677d4-cdgq9   0/1     Pending   0          72s
+myapp1-deployment-6fb8d677d4-d5cxg   0/1     Pending   0          72s
+myapp1-deployment-6fb8d677d4-l9rd5   0/1     Pending   0          72s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get svc
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1     <none>           443/TCP        11d
+myapp1-lb-service   LoadBalancer   10.80.8.163   34.123.249.125   80:30902/TCP   89s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe 
+error: You must specify the type of resource to describe. Use "kubectl api-resources" for a complete list of supported resources.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe myapp1-deployment-6fb8d677d4-2fzgl
+error: the server doesn't have a resource type "myapp1-deployment-6fb8d677d4-2fzgl"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe pods myapp1-deployment-6fb8d677d4-2fzgl
+Name:             myapp1-deployment-6fb8d677d4-2fzgl
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=6fb8d677d4
+Annotations:      cloud.google.com/cluster_autoscaler_unhelpable_since: 2023-10-21T22:28:18+0000
+                  cloud.google.com/cluster_autoscaler_unhelpable_until: Inf
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-6fb8d677d4
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-qf79v (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-qf79v:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason             Age                    From                Message
+  ----     ------             ----                   ----                -------
+  Normal   NotTriggerScaleUp  2m12s                  cluster-autoscaler  pod didn't trigger scale-up (it wouldn't fit if a new node is added):
+  Warning  FailedScheduling   2m11s (x2 over 2m14s)  default-scheduler   0/3 nodes are available: 3 Insufficient cpu. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod..
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   0/5     5            0           2m58s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment configured
+service/myapp1-lb-service unchanged
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   1/2     2            1           4m33s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5c7b7b6698-bxxtg   1/1     Running   0          11s
+myapp1-deployment-5c7b7b6698-w5xt9   1/1     Running   0          17s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe myapp1-deployment
+error: the server doesn't have a resource type "myapp1-deployment"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe deploy myapp1-deployment
+Name:                   myapp1-deployment
+Namespace:              default
+CreationTimestamp:      Sun, 22 Oct 2023 06:28:14 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 2
+Selector:               app=myapp1
+Replicas:               2 desired | 2 updated | 2 total | 2 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=myapp1
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     60m
+      memory:  32Mi
+    Requests:
+      cpu:        50m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  myapp1-deployment-6fb8d677d4 (0/0 replicas created)
+NewReplicaSet:   myapp1-deployment-5c7b7b6698 (2/2 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  9m29s  deployment-controller  Scaled up replica set myapp1-deployment-6fb8d677d4 to 5
+  Normal  ScalingReplicaSet  5m5s   deployment-controller  Scaled down replica set myapp1-deployment-6fb8d677d4 to 2 from 5
+  Normal  ScalingReplicaSet  5m5s   deployment-controller  Scaled up replica set myapp1-deployment-5c7b7b6698 to 1
+  Normal  ScalingReplicaSet  4m59s  deployment-controller  Scaled down replica set myapp1-deployment-6fb8d677d4 to 1 from 2
+  Normal  ScalingReplicaSet  4m59s  deployment-controller  Scaled up replica set myapp1-deployment-5c7b7b6698 to 2 from 1
+  Normal  ScalingReplicaSet  4m48s  deployment-controller  Scaled down replica set myapp1-deployment-6fb8d677d4 to 0 from 1
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5c7b7b6698-bxxtg   1/1     Running   0          5m38s
+myapp1-deployment-5c7b7b6698-w5xt9   1/1     Running   0          5m44s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe pods myapp1-deployment-5c7b7b6698-bxxtg
+Name:             myapp1-deployment-5c7b7b6698-bxxtg
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-cthb/10.128.0.10
+Start Time:       Sun, 22 Oct 2023 06:32:45 +0800
+Labels:           app=myapp1
+                  pod-template-hash=5c7b7b6698
+Annotations:      <none>
+Status:           Running
+IP:               10.84.0.22
+IPs:
+  IP:           10.84.0.22
+Controlled By:  ReplicaSet/myapp1-deployment-5c7b7b6698
+Containers:
+  myapp1-container:
+    Container ID:   containerd://7ef1baaef86f5fd309da7c6f5821bf0d2c5e038ee8d533eb0926eb0488185334
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 06:32:54 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     60m
+      memory:  32Mi
+    Requests:
+      cpu:        50m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ljrp9 (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-ljrp9:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  5m58s  default-scheduler  Successfully assigned default/myapp1-deployment-5c7b7b6698-bxxtg to gke-sara-gke-cluster-default-pool-99c59557-cthb
+  Normal  Pulling    5m53s  kubelet            Pulling image "stacksimplify/kubenginx:1.0.0"
+  Normal  Pulled     5m49s  kubelet            Successfully pulled image "stacksimplify/kubenginx:1.0.0" in 4.070408346s (4.070474476s including waiting)
+  Normal  Created    5m48s  kubelet            Created container myapp1-container
+  Normal  Started    5m48s  kubelet            Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 2 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "16Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "32Mi"
+              cpu: "60m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl top pods
+NAME                                 CPU(cores)   MEMORY(bytes)   
+myapp1-deployment-5c7b7b6698-bxxtg   0m           1Mi             
+myapp1-deployment-5c7b7b6698-w5xt9   0m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl top pod myapp1-deployment-5c7b7b6698-bxxtg
+NAME                                 CPU(cores)   MEMORY(bytes)   
+myapp1-deployment-5c7b7b6698-bxxtg   0m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl exec -it myapp1-deployment-5c7b7b6698-bxxtg -- /bin/bash
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# top
+bash: top: command not found
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# cat /sys/fs/cgroup/cpu   
+cpu.idle               cpu.pressure           cpu.uclamp.min         cpuset.cpus            cpuset.mems
+cpu.max                cpu.stat               cpu.weight             cpuset.cpus.effective  cpuset.mems.effective
+cpu.max.burst          cpu.uclamp.max         cpu.weight.nice        cpuset.cpus.partition  
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# cat /sys/fs/cgroup/cpu/cpu.stat
+cat: /sys/fs/cgroup/cpu/cpu.stat: No such file or directory
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# ls -l/sys/fs/cgroup/cpu/cpu.stat
+ls: invalid option -- '/'
+Try 'ls --help' for more information.
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# ls -l/ sys/fs/cgroup/cpu/cpu.stat
+ls: invalid option -- '/'
+Try 'ls --help' for more information.
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# ls -l /sys/fs/cgroup/cpu/cpu.stat
+ls: cannot access '/sys/fs/cgroup/cpu/cpu.stat': No such file or directory
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# ls -l /sys/fs/cgroup/cpu/        
+ls: cannot access '/sys/fs/cgroup/cpu/': No such file or directory
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# ls -l /sys/fs/cgroup/    
+total 0
+-r--r--r-- 1 root root 0 Oct 21 22:32 cgroup.controllers
+-r--r--r-- 1 root root 0 Oct 21 22:32 cgroup.events
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cgroup.freeze
+--w------- 1 root root 0 Oct 21 22:32 cgroup.kill
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cgroup.max.depth
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cgroup.max.descendants
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cgroup.procs
+-r--r--r-- 1 root root 0 Oct 21 22:32 cgroup.stat
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cgroup.subtree_control
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cgroup.threads
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cgroup.type
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpu.idle
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpu.max
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpu.max.burst
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpu.pressure
+-r--r--r-- 1 root root 0 Oct 21 22:32 cpu.stat
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpu.uclamp.max
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpu.uclamp.min
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpu.weight
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpu.weight.nice
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpuset.cpus
+-r--r--r-- 1 root root 0 Oct 21 22:32 cpuset.cpus.effective
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpuset.cpus.partition
+-rw-r--r-- 1 root root 0 Oct 21 22:32 cpuset.mems
+-r--r--r-- 1 root root 0 Oct 21 22:32 cpuset.mems.effective
+-r--r--r-- 1 root root 0 Oct 21 22:32 hugetlb.1GB.current
+-r--r--r-- 1 root root 0 Oct 21 22:32 hugetlb.1GB.events
+-r--r--r-- 1 root root 0 Oct 21 22:32 hugetlb.1GB.events.local
+-rw-r--r-- 1 root root 0 Oct 21 22:32 hugetlb.1GB.max
+-r--r--r-- 1 root root 0 Oct 21 22:32 hugetlb.1GB.rsvd.current
+-rw-r--r-- 1 root root 0 Oct 21 22:32 hugetlb.1GB.rsvd.max
+-r--r--r-- 1 root root 0 Oct 21 22:32 hugetlb.2MB.current
+-r--r--r-- 1 root root 0 Oct 21 22:32 hugetlb.2MB.events
+-r--r--r-- 1 root root 0 Oct 21 22:32 hugetlb.2MB.events.local
+-rw-r--r-- 1 root root 0 Oct 21 22:32 hugetlb.2MB.max
+-r--r--r-- 1 root root 0 Oct 21 22:32 hugetlb.2MB.rsvd.current
+-rw-r--r-- 1 root root 0 Oct 21 22:32 hugetlb.2MB.rsvd.max
+-rw-r--r-- 1 root root 0 Oct 21 22:32 io.max
+-rw-r--r-- 1 root root 0 Oct 21 22:32 io.pressure
+-rw-r--r-- 1 root root 0 Oct 21 22:32 io.prio.class
+-r--r--r-- 1 root root 0 Oct 21 22:32 io.stat
+-rw-r--r-- 1 root root 0 Oct 21 22:32 io.weight
+-r--r--r-- 1 root root 0 Oct 21 22:32 memory.current
+-r--r--r-- 1 root root 0 Oct 21 22:32 memory.events
+-r--r--r-- 1 root root 0 Oct 21 22:32 memory.events.local
+-rw-r--r-- 1 root root 0 Oct 21 22:32 memory.high
+-rw-r--r-- 1 root root 0 Oct 21 22:32 memory.low
+-rw-r--r-- 1 root root 0 Oct 21 22:32 memory.max
+-rw-r--r-- 1 root root 0 Oct 21 22:32 memory.min
+-r--r--r-- 1 root root 0 Oct 21 22:32 memory.numa_stat
+-rw-r--r-- 1 root root 0 Oct 21 22:32 memory.oom.group
+-rw-r--r-- 1 root root 0 Oct 21 22:32 memory.pressure
+-r--r--r-- 1 root root 0 Oct 21 22:32 memory.stat
+-r--r--r-- 1 root root 0 Oct 21 22:32 memory.swap.current
+-r--r--r-- 1 root root 0 Oct 21 22:32 memory.swap.events
+-rw-r--r-- 1 root root 0 Oct 21 22:32 memory.swap.high
+-rw-r--r-- 1 root root 0 Oct 21 22:32 memory.swap.max
+-r--r--r-- 1 root root 0 Oct 21 22:32 misc.current
+-rw-r--r-- 1 root root 0 Oct 21 22:32 misc.max
+-r--r--r-- 1 root root 0 Oct 21 22:32 pids.current
+-r--r--r-- 1 root root 0 Oct 21 22:32 pids.events
+-rw-r--r-- 1 root root 0 Oct 21 22:32 pids.max
+-r--r--r-- 1 root root 0 Oct 21 22:32 rdma.current
+-rw-r--r-- 1 root root 0 Oct 21 22:32 rdma.max
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# cat  /sys/fs/cgroup/cpu.stat 
+usage_usec 65964
+user_usec 17621
+system_usec 48342
+nr_periods 38
+nr_throttled 2
+throttled_usec 81945
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# cat  /sys/fs/cgroup/cpu.max  
+6000 100000
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# cat  /sys/fs/cgroup/memory.stat
+anon 2060288
+file 2232320
+kernel_stack 49152
+pagetables 159744
+percpu 0
+sock 0
+shmem 4096
+file_mapped 1310720
+file_dirty 0
+file_writeback 0
+swapcached 0
+anon_thp 0
+file_thp 0
+shmem_thp 0
+inactive_anon 2027520
+active_anon 12288
+inactive_file 8192
+active_file 2220032
+unevictable 0
+slab_reclaimable 217232
+slab_unreclaimable 154400
+slab 371632
+workingset_refault_anon 0
+workingset_refault_file 530
+workingset_activate_anon 0
+workingset_activate_file 529
+workingset_restore_anon 0
+workingset_restore_file 0
+workingset_nodereclaim 0
+pgfault 3609
+pgmajfault 24
+pgrefill 0
+pgscan 0
+pgsteal 0
+pgactivate 0
+pgdeactivate 0
+pglazyfree 0
+pglazyfreed 0
+thp_fault_alloc 0
+thp_collapse_alloc 0
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# cat  /sys/fs/cgroup/memory.current 
+5156864
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# free 
+bash: free: command not found
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# cat /etc/os-release 
+PRETTY_NAME="Debian GNU/Linux 10 (buster)"
+NAME="Debian GNU/Linux"
+VERSION_ID="10"
+VERSION="10 (buster)"
+VERSION_CODENAME=buster
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt-get install top
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+E: Unable to locate package top
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt-get install htop
+Reading package lists... Done
+Building dependency tree        
+Reading state information... Done
+E: Unable to locate package htop
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# curl ifconfig.me
+bash: curl: command not found
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt search htop
+Sorting... Done
+Full Text Search... Done
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt-cache search htop
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt info htop
+N: Unable to locate package htop
+N: Unable to locate package htop
+E: No packages found
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt update
+Get:1 http://deb.debian.org/debian buster InRelease [122 kB]
+Get:2 http://security.debian.org/debian-security buster/updates InRelease [34.8 kB]
+Get:3 http://deb.debian.org/debian buster-updates InRelease [56.6 kB]
+Get:4 http://security.debian.org/debian-security buster/updates/main amd64 Packages [562 kB]
+Get:5 http://deb.debian.org/debian buster/main amd64 Packages [7909 kB]                                                         
+Get:6 http://deb.debian.org/debian buster-updates/main amd64 Packages [8788 B]                                                  
+Fetched 8693 kB in 29s (296 kB/s)                                                                                               
+Killedg package lists... 70%
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# sudo pkg update
+bash: sudo: command not found
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# pkg update
+bash: pkg: command not found
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt install htop
+Killedg package lists... 73%
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt update
+Hit:1 http://security.debian.org/debian-security buster/updates InRelease
+Hit:2 http://deb.debian.org/debian buster InRelease
+Hit:3 http://deb.debian.org/debian buster-updates InRelease
+Killedg package lists... 67%                      
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          20G  5.6G   14G  29% /
+tmpfs            64M     0   64M   0% /dev
+/dev/root        20G  5.6G   14G  29% /etc/hosts
+shm              64M     0   64M   0% /dev/shm
+tmpfs            32M   12K   32M   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs           2.0G     0  2.0G   0% /proc/acpi
+tmpfs           2.0G     0  2.0G   0% /proc/scsi
+tmpfs           2.0G     0  2.0G   0% /sys/firmware
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt-get update
+Hit:1 http://security.debian.org/debian-security buster/updates InRelease
+Hit:2 http://deb.debian.org/debian buster InRelease
+Hit:3 http://deb.debian.org/debian buster-updates InRelease
+Killedg package lists... 70%
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# dpkg --clear-avail
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# sync-available
+bash: sync-available: command not found
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# apt-get update
+Hit:1 http://security.debian.org/debian-security buster/updates InRelease
+Hit:2 http://deb.debian.org/debian buster InRelease
+Hit:3 http://deb.debian.org/debian buster-updates InRelease
+Killedg package lists... 70%
+root@myapp1-deployment-5c7b7b6698-bxxtg:/# exit
+exit
+command terminated with exit code 137
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get svc
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)        AGE
+kubernetes          ClusterIP      10.80.0.1     <none>           443/TCP        11d
+myapp1-lb-service   LoadBalancer   10.80.8.163   34.123.249.125   80:30902/TCP   27m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ curl http://34.123.249.125
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d4h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get nodes -o wode
+error: unable to match a printer suitable for the output format "wode", allowed formats are: custom-columns,custom-columns-file,go-template,go-template-file,json,jsonpath,jsonpath-as-json,jsonpath-file,name,template,templatefile,wide,yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get nodes -o wide
+NAME                                              STATUS   ROLES    AGE    VERSION           INTERNAL-IP   EXTERNAL-IP    OS-IMAGE             KERNEL-VERSION    CONTAINER-RUNTIME
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100   10.128.0.10   34.69.59.203   Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100   10.128.0.17   34.31.73.205   Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d4h   v1.27.3-gke.100   10.128.0.21   34.42.83.59    Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   115m         12%    1487Mi          53%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   113m         12%    2073Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   77m          8%     1917Mi          68%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl top pods
+NAME                                 CPU(cores)   MEMORY(bytes)   
+myapp1-deployment-5c7b7b6698-bxxtg   0m           1Mi             
+myapp1-deployment-5c7b7b6698-w5xt9   1m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe nodes gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+Name:               gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+Roles:              <none>
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=e2-medium
+                    beta.kubernetes.io/os=linux
+                    cloud.google.com/gke-boot-disk=pd-standard
+                    cloud.google.com/gke-container-runtime=containerd
+                    cloud.google.com/gke-cpu-scaling-level=2
+                    cloud.google.com/gke-logging-variant=DEFAULT
+                    cloud.google.com/gke-max-pods-per-node=110
+                    cloud.google.com/gke-netd-ready=true
+                    cloud.google.com/gke-nodepool=default-pool
+                    cloud.google.com/gke-os-distribution=ubuntu
+                    cloud.google.com/gke-provisioning=spot
+                    cloud.google.com/gke-spot=true
+                    cloud.google.com/gke-stack-type=IPV4
+                    cloud.google.com/machine-family=e2
+                    cloud.google.com/private-node=false
+                    failure-domain.beta.kubernetes.io/region=us-central1
+                    failure-domain.beta.kubernetes.io/zone=us-central1-b
+                    iam.gke.io/gke-metadata-server-enabled=true
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+                    kubernetes.io/os=linux
+                    node.kubernetes.io/instance-type=e2-medium
+                    topology.gke.io/zone=us-central1-b
+                    topology.kubernetes.io/region=us-central1
+                    topology.kubernetes.io/zone=us-central1-b
+Annotations:        container.googleapis.com/instance_id: 4676315495442686480
+                    csi.volume.kubernetes.io/nodeid:
+                      {"filestore.csi.storage.gke.io":"gke-sara-gke-cluster-default-pool-b30cb3e3-1crl","pd.csi.storage.gke.io":"projects/sara-project-401601/zo...
+                    node.alpha.kubernetes.io/ttl: 0
+                    node.gke.io/last-applied-node-labels:
+                      cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,clou...
+                    node.gke.io/last-applied-node-taints: 
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Sat, 14 Oct 2023 03:41:10 +0800
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 22 Oct 2023 06:58:08 +0800
+Conditions:
+  Type                          Status  LastHeartbeatTime                 LastTransitionTime                Reason                          Message
+  ----                          ------  -----------------                 ------------------                ------                          -------
+  ReadonlyFilesystem            False   Sun, 22 Oct 2023 06:57:53 +0800   Sat, 14 Oct 2023 03:41:15 +0800   FilesystemIsNotReadOnly         Filesystem is not read-only
+  CorruptDockerOverlay2         False   Sun, 22 Oct 2023 06:57:53 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoCorruptDockerOverlay2         docker overlay2 is functioning properly
+  FrequentUnregisterNetDevice   False   Sun, 22 Oct 2023 06:57:53 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoFrequentUnregisterNetDevice   node is functioning properly
+  FrequentKubeletRestart        False   Sun, 22 Oct 2023 06:57:53 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoFrequentKubeletRestart        kubelet is functioning properly
+  FrequentDockerRestart         False   Sun, 22 Oct 2023 06:57:53 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoFrequentDockerRestart         docker is functioning properly
+  FrequentContainerdRestart     False   Sun, 22 Oct 2023 06:57:53 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoFrequentContainerdRestart     containerd is functioning properly
+  KernelDeadlock                False   Sun, 22 Oct 2023 06:57:53 +0800   Sat, 14 Oct 2023 03:41:15 +0800   KernelHasNoDeadlock             kernel has no deadlock
+  NetworkUnavailable            False   Sat, 14 Oct 2023 03:41:11 +0800   Sat, 14 Oct 2023 03:41:10 +0800   RouteCreated                    NodeController create implicit route
+  MemoryPressure                False   Sun, 22 Oct 2023 06:54:27 +0800   Sat, 14 Oct 2023 03:41:07 +0800   KubeletHasSufficientMemory      kubelet has sufficient memory available
+  DiskPressure                  False   Sun, 22 Oct 2023 06:54:27 +0800   Sat, 14 Oct 2023 03:41:07 +0800   KubeletHasNoDiskPressure        kubelet has no disk pressure
+  PIDPressure                   False   Sun, 22 Oct 2023 06:54:27 +0800   Sat, 14 Oct 2023 03:41:07 +0800   KubeletHasSufficientPID         kubelet has sufficient PID available
+  Ready                         True    Sun, 22 Oct 2023 06:54:27 +0800   Sat, 14 Oct 2023 03:41:18 +0800   KubeletReady                    kubelet is posting ready status. AppArmor enabled
+Addresses:
+  InternalIP:  10.128.0.17
+  ExternalIP:  34.31.73.205
+  Hostname:    gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+Capacity:
+  cpu:                2
+  ephemeral-storage:  20134592Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             4002564Ki
+  pods:               110
+Allocatable:
+  cpu:                940m
+  ephemeral-storage:  7818621717
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             2856708Ki
+  pods:               110
+System Info:
+  Machine ID:                 435218568f1f248d950dd0eb022c6d69
+  System UUID:                43521856-8f1f-248d-950d-d0eb022c6d69
+  Boot ID:                    e34f9a4f-8ac0-4d41-9b65-f18bafee80d3
+  Kernel Version:             5.15.0-1036-gke
+  OS Image:                   Ubuntu 22.04.2 LTS
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  containerd://1.7.0
+  Kubelet Version:            v1.27.3-gke.100
+  Kube-Proxy Version:         v1.27.3-gke.100
+PodCIDR:                      10.84.2.0/24
+PodCIDRs:                     10.84.2.0/24
+ProviderID:                   gce://sara-project-401601/us-central1-b/gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+Non-terminated Pods:          (14 in total)
+  Namespace                   Name                                                          CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                                          ------------  ----------  ---------------  -------------  ---
+  cnrm-system                 cnrm-deletiondefender-0                                       250m (26%)    0 (0%)      1Gi (36%)        1Gi (36%)      8d
+  cnrm-system                 cnrm-resource-stats-recorder-748ddcdbfd-h2l5r                 20m (2%)      0 (0%)      64Mi (2%)        64Mi (2%)      8d
+  gmp-system                  collector-vcwfc                                               5m (0%)       0 (0%)      36M (1%)         3032M (103%)   8d
+  gmp-system                  rule-evaluator-54f66874f5-z2fbw                               2m (0%)       0 (0%)      20M (0%)         1032M (35%)    8d
+  kube-system                 filestore-node-5ljsf                                          20m (2%)      0 (0%)      130Mi (4%)       0 (0%)         8d
+  kube-system                 fluentbit-gke-5l2g5                                           100m (10%)    0 (0%)      200Mi (7%)       500Mi (17%)    8d
+  kube-system                 gke-metadata-server-wxths                                     100m (10%)    0 (0%)      100Mi (3%)       100Mi (3%)     8d
+  kube-system                 gke-metrics-agent-rxkbf                                       14m (1%)      0 (0%)      160Mi (5%)       160Mi (5%)     8d
+  kube-system                 konnectivity-agent-bfd86b98f-5hkgl                            10m (1%)      0 (0%)      30Mi (1%)        125Mi (4%)     3d6h
+  kube-system                 konnectivity-agent-bfd86b98f-m4lm8                            10m (1%)      0 (0%)      30Mi (1%)        125Mi (4%)     8d
+  kube-system                 kube-dns-5bfd847c64-4xlrt                                     260m (27%)    0 (0%)      110Mi (3%)       210Mi (7%)     8d
+  kube-system                 kube-proxy-gke-sara-gke-cluster-default-pool-b30cb3e3-1crl    100m (10%)    0 (0%)      0 (0%)           0 (0%)         8d
+  kube-system                 netd-kwvcd                                                    2m (0%)       0 (0%)      30Mi (1%)        0 (0%)         8d
+  kube-system                 pdcsi-node-2jbfj                                              10m (1%)      0 (0%)      20Mi (0%)        100Mi (3%)     8d
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests          Limits
+  --------           --------          ------
+  cpu                903m (96%)        0 (0%)
+  memory             2046197248 (69%)  6434542Ki (225%)
+  ephemeral-storage  0 (0%)            0 (0%)
+  hugepages-1Gi      0 (0%)            0 (0%)
+  hugepages-2Mi      0 (0%)            0 (0%)
+Events:              <none>
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5c7b7b6698-bxxtg   1/1     Running   0          27m
+myapp1-deployment-5c7b7b6698-w5xt9   1/1     Running   0          27m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d5h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   130m         13%    1537Mi          55%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   103m         10%    2067Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   86m          9%     1920Mi          68%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe nodes gke-sara-gke-cluster-default-pool-99c59557-cthb
+Name:               gke-sara-gke-cluster-default-pool-99c59557-cthb
+Roles:              <none>
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=e2-medium
+                    beta.kubernetes.io/os=linux
+                    cloud.google.com/gke-boot-disk=pd-standard
+                    cloud.google.com/gke-container-runtime=containerd
+                    cloud.google.com/gke-cpu-scaling-level=2
+                    cloud.google.com/gke-logging-variant=DEFAULT
+                    cloud.google.com/gke-max-pods-per-node=110
+                    cloud.google.com/gke-netd-ready=true
+                    cloud.google.com/gke-nodepool=default-pool
+                    cloud.google.com/gke-os-distribution=ubuntu
+                    cloud.google.com/gke-provisioning=spot
+                    cloud.google.com/gke-spot=true
+                    cloud.google.com/gke-stack-type=IPV4
+                    cloud.google.com/machine-family=e2
+                    cloud.google.com/private-node=false
+                    failure-domain.beta.kubernetes.io/region=us-central1
+                    failure-domain.beta.kubernetes.io/zone=us-central1-c
+                    iam.gke.io/gke-metadata-server-enabled=true
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-99c59557-cthb
+                    kubernetes.io/os=linux
+                    node.kubernetes.io/instance-type=e2-medium
+                    topology.gke.io/zone=us-central1-c
+                    topology.kubernetes.io/region=us-central1
+                    topology.kubernetes.io/zone=us-central1-c
+Annotations:        container.googleapis.com/instance_id: 2204397538390839728
+                    csi.volume.kubernetes.io/nodeid:
+                      {"filestore.csi.storage.gke.io":"gke-sara-gke-cluster-default-pool-99c59557-cthb","pd.csi.storage.gke.io":"projects/sara-project-401601/zo...
+                    node.alpha.kubernetes.io/ttl: 0
+                    node.gke.io/last-applied-node-labels:
+                      cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,clou...
+                    node.gke.io/last-applied-node-taints: 
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Wed, 11 Oct 2023 04:10:09 +0800
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  gke-sara-gke-cluster-default-pool-99c59557-cthb
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 22 Oct 2023 07:00:57 +0800
+Conditions:
+  Type                          Status  LastHeartbeatTime                 LastTransitionTime                Reason                          Message
+  ----                          ------  -----------------                 ------------------                ------                          -------
+  FrequentDockerRestart         False   Sun, 22 Oct 2023 07:00:18 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoFrequentDockerRestart         docker is functioning properly
+  FrequentContainerdRestart     False   Sun, 22 Oct 2023 07:00:18 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoFrequentContainerdRestart     containerd is functioning properly
+  FrequentUnregisterNetDevice   False   Sun, 22 Oct 2023 07:00:18 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoFrequentUnregisterNetDevice   node is functioning properly
+  KernelDeadlock                False   Sun, 22 Oct 2023 07:00:18 +0800   Wed, 11 Oct 2023 04:10:14 +0800   KernelHasNoDeadlock             kernel has no deadlock
+  ReadonlyFilesystem            False   Sun, 22 Oct 2023 07:00:18 +0800   Wed, 11 Oct 2023 04:10:14 +0800   FilesystemIsNotReadOnly         Filesystem is not read-only
+  CorruptDockerOverlay2         False   Sun, 22 Oct 2023 07:00:18 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoCorruptDockerOverlay2         docker overlay2 is functioning properly
+  FrequentKubeletRestart        False   Sun, 22 Oct 2023 07:00:18 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoFrequentKubeletRestart        kubelet is functioning properly
+  NetworkUnavailable            False   Wed, 11 Oct 2023 04:10:10 +0800   Wed, 11 Oct 2023 04:10:10 +0800   RouteCreated                    NodeController create implicit route
+  MemoryPressure                False   Sun, 22 Oct 2023 06:58:54 +0800   Wed, 11 Oct 2023 04:10:08 +0800   KubeletHasSufficientMemory      kubelet has sufficient memory available
+  DiskPressure                  False   Sun, 22 Oct 2023 06:58:54 +0800   Wed, 11 Oct 2023 04:10:08 +0800   KubeletHasNoDiskPressure        kubelet has no disk pressure
+  PIDPressure                   False   Sun, 22 Oct 2023 06:58:54 +0800   Wed, 11 Oct 2023 04:10:08 +0800   KubeletHasSufficientPID         kubelet has sufficient PID available
+  Ready                         True    Sun, 22 Oct 2023 06:58:54 +0800   Wed, 11 Oct 2023 04:10:18 +0800   KubeletReady                    kubelet is posting ready status. AppArmor enabled
+Addresses:
+  InternalIP:  10.128.0.10
+  ExternalIP:  34.69.59.203
+  Hostname:    gke-sara-gke-cluster-default-pool-99c59557-cthb
+Capacity:
+  cpu:                2
+  ephemeral-storage:  20134592Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             4002572Ki
+  pods:               110
+Allocatable:
+  cpu:                940m
+  ephemeral-storage:  7818621717
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             2856716Ki
+  pods:               110
+System Info:
+  Machine ID:                      d28d240c6264a92665bb5cd2b21cda63
+  System UUID:                     d28d240c-6264-a926-65bb-5cd2b21cda63
+  Boot ID:                         b86fafbe-4e22-4f22-a0d5-e7baccb917f8
+  Kernel Version:                  5.15.0-1036-gke
+  OS Image:                        Ubuntu 22.04.2 LTS
+  Operating System:                linux
+  Architecture:                    amd64
+  Container Runtime Version:       containerd://1.7.0
+  Kubelet Version:                 v1.27.3-gke.100
+  Kube-Proxy Version:              v1.27.3-gke.100
+PodCIDR:                           10.84.0.0/24
+PodCIDRs:                          10.84.0.0/24
+ProviderID:                        gce://sara-project-401601/us-central1-c/gke-sara-gke-cluster-default-pool-99c59557-cthb
+Non-terminated Pods:               (19 in total)
+  Namespace                        Name                                                          CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                        ----                                                          ------------  ----------  ---------------  -------------  ---
+  configconnector-operator-system  configconnector-operator-0                                    100m (10%)    0 (0%)      512Mi (18%)      1Gi (36%)      10d
+  default                          myapp1-deployment-5c7b7b6698-bxxtg                            50m (5%)      60m (6%)    16Mi (0%)        32Mi (1%)      28m
+  gmp-system                       alertmanager-0                                                2m (0%)       0 (0%)      20M (0%)         160M (5%)      10d
+  gmp-system                       collector-ssrwf                                               5m (0%)       0 (0%)      36M (1%)         3032M (103%)   11d
+  gmp-system                       gmp-operator-84c7f7b854-84d5j                                 1m (0%)       0 (0%)      16M (0%)         2G (68%)       10d
+  kube-system                      event-exporter-gke-7bf6c99dcb-cslkt                           3m (0%)       0 (0%)      100Mi (3%)       0 (0%)         10d
+  kube-system                      filestore-node-h7kl6                                          20m (2%)      0 (0%)      130Mi (4%)       0 (0%)         11d
+  kube-system                      fluentbit-gke-48b8c                                           100m (10%)    0 (0%)      200Mi (7%)       500Mi (17%)    11d
+  kube-system                      gke-metadata-server-ngs2r                                     100m (10%)    0 (0%)      100Mi (3%)       100Mi (3%)     11d
+  kube-system                      gke-metrics-agent-drbp9                                       14m (1%)      0 (0%)      160Mi (5%)       160Mi (5%)     11d
+  kube-system                      konnectivity-agent-autoscaler-5d9dbcc6d8-hmsqv                10m (1%)      0 (0%)      10M (0%)         0 (0%)         10d
+  kube-system                      konnectivity-agent-bfd86b98f-mnlc8                            10m (1%)      0 (0%)      30Mi (1%)        125Mi (4%)     10d
+  kube-system                      kube-dns-5bfd847c64-97lbj                                     260m (27%)    0 (0%)      110Mi (3%)       210Mi (7%)     10d
+  kube-system                      kube-dns-autoscaler-84b8db4dc7-9nvsk                          20m (2%)      0 (0%)      10Mi (0%)        0 (0%)         10d
+  kube-system                      kube-proxy-gke-sara-gke-cluster-default-pool-99c59557-cthb    100m (10%)    0 (0%)      0 (0%)           0 (0%)         11d
+  kube-system                      l7-default-backend-d86c96845-sq5qk                            10m (1%)      0 (0%)      20Mi (0%)        0 (0%)         10d
+  kube-system                      metrics-server-v0.5.2-6bf74b5d5f-m27fb                        48m (5%)      43m (4%)    105Mi (3%)       355Mi (12%)    10d
+  kube-system                      netd-6bch6                                                    2m (0%)       0 (0%)      30Mi (1%)        0 (0%)         11d
+  kube-system                      pdcsi-node-w28dt                                              10m (1%)      0 (0%)      20Mi (0%)        100Mi (3%)     11d
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests          Limits
+  --------           --------          ------
+  cpu                865m (92%)        103m (10%)
+  memory             1699952768 (58%)  7924589056 (270%)
+  ephemeral-storage  0 (0%)            0 (0%)
+  hugepages-1Gi      0 (0%)            0 (0%)
+  hugepages-2Mi      0 (0%)            0 (0%)
+Events:
+  Type     Reason      Age    From            Message
+  ----     ------      ----   ----            -------
+  Warning  OOMKilling  10m    kernel-monitor  Memory cgroup out of memory: Killed process 3190678 (apt) total-vm:46392kB, anon-rss:29920kB, file-rss:5152kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+  Warning  OOMKilling  9m10s  kernel-monitor  Memory cgroup out of memory: Killed process 3191262 (apt) total-vm:45436kB, anon-rss:29712kB, file-rss:4748kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+  Warning  OOMKilling  8m39s  kernel-monitor  Memory cgroup out of memory: Killed process 3191328 (apt) total-vm:46384kB, anon-rss:29936kB, file-rss:5024kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+  Warning  OOMKilling  6m50s  kernel-monitor  Memory cgroup out of memory: Killed process 3191924 (apt-get) total-vm:46416kB, anon-rss:29852kB, file-rss:4968kB, shmem-rss:0kB, UID:0 pgtables:128kB oom_score_adj:996
+  Warning  OOMKilling  5m16s  kernel-monitor  Memory cgroup out of memory: Killed process 3192500 (apt-get) total-vm:46416kB, anon-rss:29852kB, file-rss:5052kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d5h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5c7b7b6698-bxxtg   1/1     Running   0          29m
+myapp1-deployment-5c7b7b6698-w5xt9   1/1     Running   0          29m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get pods -o wide
+NAME                                 READY   STATUS    RESTARTS   AGE   IP           NODE                                              NOMINATED NODE   READINESS GATES
+myapp1-deployment-5c7b7b6698-bxxtg   1/1     Running   0          29m   10.84.0.22   gke-sara-gke-cluster-default-pool-99c59557-cthb   <none>           <none>
+myapp1-deployment-5c7b7b6698-w5xt9   1/1     Running   0          29m   10.84.1.19   gke-sara-gke-cluster-default-pool-df7770d2-l11r   <none>           <none>
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe nodes gke-sara-gke-cluster-default-pool-df7770d2-l11r
+Name:               gke-sara-gke-cluster-default-pool-df7770d2-l11r
+Roles:              <none>
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=e2-medium
+                    beta.kubernetes.io/os=linux
+                    cloud.google.com/gke-boot-disk=pd-standard
+                    cloud.google.com/gke-container-runtime=containerd
+                    cloud.google.com/gke-cpu-scaling-level=2
+                    cloud.google.com/gke-logging-variant=DEFAULT
+                    cloud.google.com/gke-max-pods-per-node=110
+                    cloud.google.com/gke-netd-ready=true
+                    cloud.google.com/gke-nodepool=default-pool
+                    cloud.google.com/gke-os-distribution=ubuntu
+                    cloud.google.com/gke-provisioning=spot
+                    cloud.google.com/gke-spot=true
+                    cloud.google.com/gke-stack-type=IPV4
+                    cloud.google.com/machine-family=e2
+                    cloud.google.com/private-node=false
+                    failure-domain.beta.kubernetes.io/region=us-central1
+                    failure-domain.beta.kubernetes.io/zone=us-central1-a
+                    iam.gke.io/gke-metadata-server-enabled=true
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-df7770d2-l11r
+                    kubernetes.io/os=linux
+                    node.kubernetes.io/instance-type=e2-medium
+                    topology.gke.io/zone=us-central1-a
+                    topology.kubernetes.io/region=us-central1
+                    topology.kubernetes.io/zone=us-central1-a
+Annotations:        container.googleapis.com/instance_id: 5341619278353113753
+                    csi.volume.kubernetes.io/nodeid:
+                      {"filestore.csi.storage.gke.io":"gke-sara-gke-cluster-default-pool-df7770d2-l11r","pd.csi.storage.gke.io":"projects/sara-project-401601/zo...
+                    node.alpha.kubernetes.io/ttl: 0
+                    node.gke.io/last-applied-node-labels:
+                      cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,clou...
+                    node.gke.io/last-applied-node-taints: 
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Thu, 19 Oct 2023 01:58:22 +0800
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  gke-sara-gke-cluster-default-pool-df7770d2-l11r
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 22 Oct 2023 07:02:51 +0800
+Conditions:
+  Type                          Status  LastHeartbeatTime                 LastTransitionTime                Reason                          Message
+  ----                          ------  -----------------                 ------------------                ------                          -------
+  CorruptDockerOverlay2         False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoCorruptDockerOverlay2         docker overlay2 is functioning properly
+  KernelDeadlock                False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   KernelHasNoDeadlock             kernel has no deadlock
+  ReadonlyFilesystem            False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   FilesystemIsNotReadOnly         Filesystem is not read-only
+  FrequentUnregisterNetDevice   False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoFrequentUnregisterNetDevice   node is functioning properly
+  FrequentKubeletRestart        False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoFrequentKubeletRestart        kubelet is functioning properly
+  FrequentDockerRestart         False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoFrequentDockerRestart         docker is functioning properly
+  FrequentContainerdRestart     False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoFrequentContainerdRestart     containerd is functioning properly
+  NetworkUnavailable            False   Thu, 19 Oct 2023 01:58:24 +0800   Thu, 19 Oct 2023 01:58:23 +0800   RouteCreated                    NodeController create implicit route
+  MemoryPressure                False   Sun, 22 Oct 2023 06:58:45 +0800   Thu, 19 Oct 2023 01:58:18 +0800   KubeletHasSufficientMemory      kubelet has sufficient memory available
+  DiskPressure                  False   Sun, 22 Oct 2023 06:58:45 +0800   Thu, 19 Oct 2023 01:58:18 +0800   KubeletHasNoDiskPressure        kubelet has no disk pressure
+  PIDPressure                   False   Sun, 22 Oct 2023 06:58:45 +0800   Thu, 19 Oct 2023 01:58:18 +0800   KubeletHasSufficientPID         kubelet has sufficient PID available
+  Ready                         True    Sun, 22 Oct 2023 06:58:45 +0800   Thu, 19 Oct 2023 01:58:30 +0800   KubeletReady                    kubelet is posting ready status. AppArmor enabled
+Addresses:
+  InternalIP:  10.128.0.21
+  ExternalIP:  34.42.83.59
+  Hostname:    gke-sara-gke-cluster-default-pool-df7770d2-l11r
+Capacity:
+  cpu:                2
+  ephemeral-storage:  20134592Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             4002572Ki
+  pods:               110
+Allocatable:
+  cpu:                940m
+  ephemeral-storage:  7818621717
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             2856716Ki
+  pods:               110
+System Info:
+  Machine ID:                 46228b6f0bc48ec6c5ecaaeaec4102e9
+  System UUID:                46228b6f-0bc4-8ec6-c5ec-aaeaec4102e9
+  Boot ID:                    d39b2df9-73a4-4cce-8de0-4156f6d2cf01
+  Kernel Version:             5.15.0-1036-gke
+  OS Image:                   Ubuntu 22.04.2 LTS
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  containerd://1.7.0
+  Kubelet Version:            v1.27.3-gke.100
+  Kube-Proxy Version:         v1.27.3-gke.100
+PodCIDR:                      10.84.1.0/24
+PodCIDRs:                     10.84.1.0/24
+ProviderID:                   gce://sara-project-401601/us-central1-a/gke-sara-gke-cluster-default-pool-df7770d2-l11r
+Non-terminated Pods:          (11 in total)
+  Namespace                   Name                                                          CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                                          ------------  ----------  ---------------  -------------  ---
+  cnrm-system                 cnrm-unmanaged-detector-0                                     250m (26%)    0 (0%)      512Mi (18%)      1Gi (36%)      3d6h
+  cnrm-system                 cnrm-webhook-manager-864c85fd9f-9zdvk                         250m (26%)    0 (0%)      128Mi (4%)       128Mi (4%)     3d5h
+  default                     myapp1-deployment-5c7b7b6698-w5xt9                            50m (5%)      60m (6%)    16Mi (0%)        32Mi (1%)      30m
+  gmp-system                  collector-9khfl                                               5m (0%)       0 (0%)      36M (1%)         3032M (103%)   3d5h
+  kube-system                 filestore-node-6gswk                                          20m (2%)      0 (0%)      130Mi (4%)       0 (0%)         3d5h
+  kube-system                 fluentbit-gke-dbw9t                                           100m (10%)    0 (0%)      200Mi (7%)       500Mi (17%)    3d5h
+  kube-system                 gke-metadata-server-tfw2x                                     100m (10%)    0 (0%)      100Mi (3%)       100Mi (3%)     3d5h
+  kube-system                 gke-metrics-agent-c6g6m                                       14m (1%)      0 (0%)      160Mi (5%)       160Mi (5%)     3d5h
+  kube-system                 kube-proxy-gke-sara-gke-cluster-default-pool-df7770d2-l11r    100m (10%)    0 (0%)      0 (0%)           0 (0%)         3d5h
+  kube-system                 netd-dk7lt                                                    2m (0%)       0 (0%)      30Mi (1%)        0 (0%)         3d5h
+  kube-system                 pdcsi-node-fnn7r                                              10m (1%)      0 (0%)      20Mi (0%)        100Mi (3%)     3d5h
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests          Limits
+  --------           --------          ------
+  cpu                901m (95%)        60m (6%)
+  memory             1394954496 (47%)  5175289344 (176%)
+  ephemeral-storage  0 (0%)            0 (0%)
+  hugepages-1Gi      0 (0%)            0 (0%)
+  hugepages-2Mi      0 (0%)            0 (0%)
+Events:              <none>
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5c7b7b6698-bxxtg   1/1     Running   0          30m
+myapp1-deployment-5c7b7b6698-w5xt9   1/1     Running   0          30m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl exec -it myapp1-deployment-5c7b7b6698-w5xt9 -- /bin/bash
+root@myapp1-deployment-5c7b7b6698-w5xt9:/# pkg update
+bash: pkg: command not found
+root@myapp1-deployment-5c7b7b6698-w5xt9:/# apt upadte
+E: Invalid operation upadte
+root@myapp1-deployment-5c7b7b6698-w5xt9:/# apt update
+Get:1 http://security.debian.org/debian-security buster/updates InRelease [34.8 kB]
+Get:2 http://deb.debian.org/debian buster InRelease [122 kB]
+Get:3 http://deb.debian.org/debian buster-updates InRelease [56.6 kB]
+Get:4 http://security.debian.org/debian-security buster/updates/main amd64 Packages [562 kB]
+Get:5 http://deb.debian.org/debian buster/main amd64 Packages [7909 kB]                                                         
+Get:6 http://deb.debian.org/debian buster-updates/main amd64 Packages [8788 B]                                                  
+Fetched 8693 kB in 38s (231 kB/s)                                                                                               
+Killedg package lists... 67%
+root@myapp1-deployment-5c7b7b6698-w5xt9:/# exit
+exit
+command terminated with exit code 137
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl describe nodes gke-sara-gke-cluster-default-pool-df7770d2-l11r
+Name:               gke-sara-gke-cluster-default-pool-df7770d2-l11r
+Roles:              <none>
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=e2-medium
+                    beta.kubernetes.io/os=linux
+                    cloud.google.com/gke-boot-disk=pd-standard
+                    cloud.google.com/gke-container-runtime=containerd
+                    cloud.google.com/gke-cpu-scaling-level=2
+                    cloud.google.com/gke-logging-variant=DEFAULT
+                    cloud.google.com/gke-max-pods-per-node=110
+                    cloud.google.com/gke-netd-ready=true
+                    cloud.google.com/gke-nodepool=default-pool
+                    cloud.google.com/gke-os-distribution=ubuntu
+                    cloud.google.com/gke-provisioning=spot
+                    cloud.google.com/gke-spot=true
+                    cloud.google.com/gke-stack-type=IPV4
+                    cloud.google.com/machine-family=e2
+                    cloud.google.com/private-node=false
+                    failure-domain.beta.kubernetes.io/region=us-central1
+                    failure-domain.beta.kubernetes.io/zone=us-central1-a
+                    iam.gke.io/gke-metadata-server-enabled=true
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-df7770d2-l11r
+                    kubernetes.io/os=linux
+                    node.kubernetes.io/instance-type=e2-medium
+                    topology.gke.io/zone=us-central1-a
+                    topology.kubernetes.io/region=us-central1
+                    topology.kubernetes.io/zone=us-central1-a
+Annotations:        container.googleapis.com/instance_id: 5341619278353113753
+                    csi.volume.kubernetes.io/nodeid:
+                      {"filestore.csi.storage.gke.io":"gke-sara-gke-cluster-default-pool-df7770d2-l11r","pd.csi.storage.gke.io":"projects/sara-project-401601/zo...
+                    node.alpha.kubernetes.io/ttl: 0
+                    node.gke.io/last-applied-node-labels:
+                      cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,clou...
+                    node.gke.io/last-applied-node-taints: 
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Thu, 19 Oct 2023 01:58:22 +0800
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  gke-sara-gke-cluster-default-pool-df7770d2-l11r
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 22 Oct 2023 07:05:14 +0800
+Conditions:
+  Type                          Status  LastHeartbeatTime                 LastTransitionTime                Reason                          Message
+  ----                          ------  -----------------                 ------------------                ------                          -------
+  CorruptDockerOverlay2         False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoCorruptDockerOverlay2         docker overlay2 is functioning properly
+  KernelDeadlock                False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   KernelHasNoDeadlock             kernel has no deadlock
+  ReadonlyFilesystem            False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   FilesystemIsNotReadOnly         Filesystem is not read-only
+  FrequentUnregisterNetDevice   False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoFrequentUnregisterNetDevice   node is functioning properly
+  FrequentKubeletRestart        False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoFrequentKubeletRestart        kubelet is functioning properly
+  FrequentDockerRestart         False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoFrequentDockerRestart         docker is functioning properly
+  FrequentContainerdRestart     False   Sun, 22 Oct 2023 07:01:57 +0800   Thu, 19 Oct 2023 01:58:27 +0800   NoFrequentContainerdRestart     containerd is functioning properly
+  NetworkUnavailable            False   Thu, 19 Oct 2023 01:58:24 +0800   Thu, 19 Oct 2023 01:58:23 +0800   RouteCreated                    NodeController create implicit route
+  MemoryPressure                False   Sun, 22 Oct 2023 07:03:52 +0800   Thu, 19 Oct 2023 01:58:18 +0800   KubeletHasSufficientMemory      kubelet has sufficient memory available
+  DiskPressure                  False   Sun, 22 Oct 2023 07:03:52 +0800   Thu, 19 Oct 2023 01:58:18 +0800   KubeletHasNoDiskPressure        kubelet has no disk pressure
+  PIDPressure                   False   Sun, 22 Oct 2023 07:03:52 +0800   Thu, 19 Oct 2023 01:58:18 +0800   KubeletHasSufficientPID         kubelet has sufficient PID available
+  Ready                         True    Sun, 22 Oct 2023 07:03:52 +0800   Thu, 19 Oct 2023 01:58:30 +0800   KubeletReady                    kubelet is posting ready status. AppArmor enabled
+Addresses:
+  InternalIP:  10.128.0.21
+  ExternalIP:  34.42.83.59
+  Hostname:    gke-sara-gke-cluster-default-pool-df7770d2-l11r
+Capacity:
+  cpu:                2
+  ephemeral-storage:  20134592Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             4002572Ki
+  pods:               110
+Allocatable:
+  cpu:                940m
+  ephemeral-storage:  7818621717
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             2856716Ki
+  pods:               110
+System Info:
+  Machine ID:                 46228b6f0bc48ec6c5ecaaeaec4102e9
+  System UUID:                46228b6f-0bc4-8ec6-c5ec-aaeaec4102e9
+  Boot ID:                    d39b2df9-73a4-4cce-8de0-4156f6d2cf01
+  Kernel Version:             5.15.0-1036-gke
+  OS Image:                   Ubuntu 22.04.2 LTS
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  containerd://1.7.0
+  Kubelet Version:            v1.27.3-gke.100
+  Kube-Proxy Version:         v1.27.3-gke.100
+PodCIDR:                      10.84.1.0/24
+PodCIDRs:                     10.84.1.0/24
+ProviderID:                   gce://sara-project-401601/us-central1-a/gke-sara-gke-cluster-default-pool-df7770d2-l11r
+Non-terminated Pods:          (11 in total)
+  Namespace                   Name                                                          CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                                          ------------  ----------  ---------------  -------------  ---
+  cnrm-system                 cnrm-unmanaged-detector-0                                     250m (26%)    0 (0%)      512Mi (18%)      1Gi (36%)      3d6h
+  cnrm-system                 cnrm-webhook-manager-864c85fd9f-9zdvk                         250m (26%)    0 (0%)      128Mi (4%)       128Mi (4%)     3d5h
+  default                     myapp1-deployment-5c7b7b6698-w5xt9                            50m (5%)      60m (6%)    16Mi (0%)        32Mi (1%)      32m
+  gmp-system                  collector-9khfl                                               5m (0%)       0 (0%)      36M (1%)         3032M (103%)   3d5h
+  kube-system                 filestore-node-6gswk                                          20m (2%)      0 (0%)      130Mi (4%)       0 (0%)         3d5h
+  kube-system                 fluentbit-gke-dbw9t                                           100m (10%)    0 (0%)      200Mi (7%)       500Mi (17%)    3d5h
+  kube-system                 gke-metadata-server-tfw2x                                     100m (10%)    0 (0%)      100Mi (3%)       100Mi (3%)     3d5h
+  kube-system                 gke-metrics-agent-c6g6m                                       14m (1%)      0 (0%)      160Mi (5%)       160Mi (5%)     3d5h
+  kube-system                 kube-proxy-gke-sara-gke-cluster-default-pool-df7770d2-l11r    100m (10%)    0 (0%)      0 (0%)           0 (0%)         3d5h
+  kube-system                 netd-dk7lt                                                    2m (0%)       0 (0%)      30Mi (1%)        0 (0%)         3d5h
+  kube-system                 pdcsi-node-fnn7r                                              10m (1%)      0 (0%)      20Mi (0%)        100Mi (3%)     3d5h
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests          Limits
+  --------           --------          ------
+  cpu                901m (95%)        60m (6%)
+  memory             1394954496 (47%)  5175289344 (176%)
+  ephemeral-storage  0 (0%)            0 (0%)
+  hugepages-1Gi      0 (0%)            0 (0%)
+  hugepages-2Mi      0 (0%)            0 (0%)
+Events:
+  Type     Reason      Age   From            Message
+  ----     ------      ----  ----            -------
+  Warning  OOMKilling  26s   kernel-monitor  Memory cgroup out of memory: Killed process 919213 (apt) total-vm:46392kB, anon-rss:29680kB, file-rss:6248kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ vim session.out 
+
+
