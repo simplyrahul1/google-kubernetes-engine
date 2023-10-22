@@ -1,0 +1,2160 @@
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ mv '/home/rahul/Downloads/autoscaler_is_enabled.png' .
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5c7b7b6698-bxxtg   1/1     Running   0          69m
+myapp1-deployment-5c7b7b6698-w5xt9   1/1     Running   0          69m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d5h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ ls
+autoscaler_is_enabled.png  kube-manifests  README.md
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ ls kube-manifests/
+01-kubernetes-deployment.yaml  02-kubernetes-loadbalancer-service.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 5 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "200m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              cpu: "400m"  # 1000m is equal to 1 VCPU core                                               
+    rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cd ../62-Kubernetes-Requests-and-Limits/
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ kubectl delete -f kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/62-Kubernetes-Requests-and-Limits$ cd ..
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine$ cd 63-GKE-Cluster-Autoscaling/
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 5 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "200m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              cpu: "400m"  # 1000m is equal to 1 VCPU core                                               
+    rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/
+#^[[Hdeployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ ^C
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d5h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   106m         11%    1506Mi          53%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   108m         11%    2073Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   80m          8%     1923Mi          68%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment unchanged
+service/myapp1-lb-service unchanged
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   0/5     5            0           83s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          90s
+myapp1-deployment-6fb8d677d4-9hz7v   0/1     Pending   0          90s
+myapp1-deployment-6fb8d677d4-f2bfj   0/1     Pending   0          90s
+myapp1-deployment-6fb8d677d4-r9ptw   0/1     Pending   0          90s
+myapp1-deployment-6fb8d677d4-v7x48   0/1     Pending   0          90s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d5h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   137m         14%    1503Mi          53%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   97m          10%    2073Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   75m          7%     1924Mi          68%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe nodes gke-sara-gke-cluster-default-pool-99c59557-cthb
+Name:               gke-sara-gke-cluster-default-pool-99c59557-cthb
+Roles:              <none>
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=e2-medium
+                    beta.kubernetes.io/os=linux
+                    cloud.google.com/gke-boot-disk=pd-standard
+                    cloud.google.com/gke-container-runtime=containerd
+                    cloud.google.com/gke-cpu-scaling-level=2
+                    cloud.google.com/gke-logging-variant=DEFAULT
+                    cloud.google.com/gke-max-pods-per-node=110
+                    cloud.google.com/gke-netd-ready=true
+                    cloud.google.com/gke-nodepool=default-pool
+                    cloud.google.com/gke-os-distribution=ubuntu
+                    cloud.google.com/gke-provisioning=spot
+                    cloud.google.com/gke-spot=true
+                    cloud.google.com/gke-stack-type=IPV4
+                    cloud.google.com/machine-family=e2
+                    cloud.google.com/private-node=false
+                    failure-domain.beta.kubernetes.io/region=us-central1
+                    failure-domain.beta.kubernetes.io/zone=us-central1-c
+                    iam.gke.io/gke-metadata-server-enabled=true
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-99c59557-cthb
+                    kubernetes.io/os=linux
+                    node.kubernetes.io/instance-type=e2-medium
+                    topology.gke.io/zone=us-central1-c
+                    topology.kubernetes.io/region=us-central1
+                    topology.kubernetes.io/zone=us-central1-c
+Annotations:        container.googleapis.com/instance_id: 2204397538390839728
+                    csi.volume.kubernetes.io/nodeid:
+                      {"filestore.csi.storage.gke.io":"gke-sara-gke-cluster-default-pool-99c59557-cthb","pd.csi.storage.gke.io":"projects/sara-project-401601/zo...
+                    node.alpha.kubernetes.io/ttl: 0
+                    node.gke.io/last-applied-node-labels:
+                      cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,clou...
+                    node.gke.io/last-applied-node-taints: 
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Wed, 11 Oct 2023 04:10:09 +0800
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  gke-sara-gke-cluster-default-pool-99c59557-cthb
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 22 Oct 2023 07:51:20 +0800
+Conditions:
+  Type                          Status  LastHeartbeatTime                 LastTransitionTime                Reason                          Message
+  ----                          ------  -----------------                 ------------------                ------                          -------
+  KernelDeadlock                False   Sun, 22 Oct 2023 07:50:23 +0800   Wed, 11 Oct 2023 04:10:14 +0800   KernelHasNoDeadlock             kernel has no deadlock
+  ReadonlyFilesystem            False   Sun, 22 Oct 2023 07:50:23 +0800   Wed, 11 Oct 2023 04:10:14 +0800   FilesystemIsNotReadOnly         Filesystem is not read-only
+  CorruptDockerOverlay2         False   Sun, 22 Oct 2023 07:50:23 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoCorruptDockerOverlay2         docker overlay2 is functioning properly
+  FrequentKubeletRestart        False   Sun, 22 Oct 2023 07:50:23 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoFrequentKubeletRestart        kubelet is functioning properly
+  FrequentDockerRestart         False   Sun, 22 Oct 2023 07:50:23 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoFrequentDockerRestart         docker is functioning properly
+  FrequentContainerdRestart     False   Sun, 22 Oct 2023 07:50:23 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoFrequentContainerdRestart     containerd is functioning properly
+  FrequentUnregisterNetDevice   False   Sun, 22 Oct 2023 07:50:23 +0800   Wed, 11 Oct 2023 04:10:14 +0800   NoFrequentUnregisterNetDevice   node is functioning properly
+  NetworkUnavailable            False   Wed, 11 Oct 2023 04:10:10 +0800   Wed, 11 Oct 2023 04:10:10 +0800   RouteCreated                    NodeController create implicit route
+  MemoryPressure                False   Sun, 22 Oct 2023 07:49:55 +0800   Wed, 11 Oct 2023 04:10:08 +0800   KubeletHasSufficientMemory      kubelet has sufficient memory available
+  DiskPressure                  False   Sun, 22 Oct 2023 07:49:55 +0800   Wed, 11 Oct 2023 04:10:08 +0800   KubeletHasNoDiskPressure        kubelet has no disk pressure
+  PIDPressure                   False   Sun, 22 Oct 2023 07:49:55 +0800   Wed, 11 Oct 2023 04:10:08 +0800   KubeletHasSufficientPID         kubelet has sufficient PID available
+  Ready                         True    Sun, 22 Oct 2023 07:49:55 +0800   Wed, 11 Oct 2023 04:10:18 +0800   KubeletReady                    kubelet is posting ready status. AppArmor enabled
+Addresses:
+  InternalIP:  10.128.0.10
+  ExternalIP:  34.69.59.203
+  Hostname:    gke-sara-gke-cluster-default-pool-99c59557-cthb
+Capacity:
+  cpu:                2
+  ephemeral-storage:  20134592Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             4002572Ki
+  pods:               110
+Allocatable:
+  cpu:                940m
+  ephemeral-storage:  7818621717
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             2856716Ki
+  pods:               110
+System Info:
+  Machine ID:                      d28d240c6264a92665bb5cd2b21cda63
+  System UUID:                     d28d240c-6264-a926-65bb-5cd2b21cda63
+  Boot ID:                         b86fafbe-4e22-4f22-a0d5-e7baccb917f8
+  Kernel Version:                  5.15.0-1036-gke
+  OS Image:                        Ubuntu 22.04.2 LTS
+  Operating System:                linux
+  Architecture:                    amd64
+  Container Runtime Version:       containerd://1.7.0
+  Kubelet Version:                 v1.27.3-gke.100
+  Kube-Proxy Version:              v1.27.3-gke.100
+PodCIDR:                           10.84.0.0/24
+PodCIDRs:                          10.84.0.0/24
+ProviderID:                        gce://sara-project-401601/us-central1-c/gke-sara-gke-cluster-default-pool-99c59557-cthb
+Non-terminated Pods:               (18 in total)
+  Namespace                        Name                                                          CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                        ----                                                          ------------  ----------  ---------------  -------------  ---
+  configconnector-operator-system  configconnector-operator-0                                    100m (10%)    0 (0%)      512Mi (18%)      1Gi (36%)      10d
+  gmp-system                       alertmanager-0                                                2m (0%)       0 (0%)      20M (0%)         160M (5%)      10d
+  gmp-system                       collector-ssrwf                                               5m (0%)       0 (0%)      36M (1%)         3032M (103%)   11d
+  gmp-system                       gmp-operator-84c7f7b854-84d5j                                 1m (0%)       0 (0%)      16M (0%)         2G (68%)       10d
+  kube-system                      event-exporter-gke-7bf6c99dcb-cslkt                           3m (0%)       0 (0%)      100Mi (3%)       0 (0%)         10d
+  kube-system                      filestore-node-h7kl6                                          20m (2%)      0 (0%)      130Mi (4%)       0 (0%)         11d
+  kube-system                      fluentbit-gke-48b8c                                           100m (10%)    0 (0%)      200Mi (7%)       500Mi (17%)    11d
+  kube-system                      gke-metadata-server-ngs2r                                     100m (10%)    0 (0%)      100Mi (3%)       100Mi (3%)     11d
+  kube-system                      gke-metrics-agent-drbp9                                       14m (1%)      0 (0%)      160Mi (5%)       160Mi (5%)     11d
+  kube-system                      konnectivity-agent-autoscaler-5d9dbcc6d8-hmsqv                10m (1%)      0 (0%)      10M (0%)         0 (0%)         10d
+  kube-system                      konnectivity-agent-bfd86b98f-mnlc8                            10m (1%)      0 (0%)      30Mi (1%)        125Mi (4%)     10d
+  kube-system                      kube-dns-5bfd847c64-97lbj                                     260m (27%)    0 (0%)      110Mi (3%)       210Mi (7%)     10d
+  kube-system                      kube-dns-autoscaler-84b8db4dc7-9nvsk                          20m (2%)      0 (0%)      10Mi (0%)        0 (0%)         10d
+  kube-system                      kube-proxy-gke-sara-gke-cluster-default-pool-99c59557-cthb    100m (10%)    0 (0%)      0 (0%)           0 (0%)         11d
+  kube-system                      l7-default-backend-d86c96845-sq5qk                            10m (1%)      0 (0%)      20Mi (0%)        0 (0%)         10d
+  kube-system                      metrics-server-v0.5.2-6bf74b5d5f-m27fb                        48m (5%)      43m (4%)    105Mi (3%)       355Mi (12%)    10d
+  kube-system                      netd-6bch6                                                    2m (0%)       0 (0%)      30Mi (1%)        0 (0%)         11d
+  kube-system                      pdcsi-node-w28dt                                              10m (1%)      0 (0%)      20Mi (0%)        100Mi (3%)     11d
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests          Limits
+  --------           --------          ------
+  cpu                815m (86%)        43m (4%)
+  memory             1683175552 (57%)  7891034624 (269%)
+  ephemeral-storage  0 (0%)            0 (0%)
+  hugepages-1Gi      0 (0%)            0 (0%)
+  hugepages-2Mi      0 (0%)            0 (0%)
+Events:
+  Type     Reason      Age   From            Message
+  ----     ------      ----  ----            -------
+  Warning  OOMKilling  60m   kernel-monitor  Memory cgroup out of memory: Killed process 3190678 (apt) total-vm:46392kB, anon-rss:29920kB, file-rss:5152kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+  Warning  OOMKilling  59m   kernel-monitor  Memory cgroup out of memory: Killed process 3191262 (apt) total-vm:45436kB, anon-rss:29712kB, file-rss:4748kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+  Warning  OOMKilling  59m   kernel-monitor  Memory cgroup out of memory: Killed process 3191328 (apt) total-vm:46384kB, anon-rss:29936kB, file-rss:5024kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+  Warning  OOMKilling  57m   kernel-monitor  Memory cgroup out of memory: Killed process 3191924 (apt-get) total-vm:46416kB, anon-rss:29852kB, file-rss:4968kB, shmem-rss:0kB, UID:0 pgtables:128kB oom_score_adj:996
+  Warning  OOMKilling  55m   kernel-monitor  Memory cgroup out of memory: Killed process 3192500 (apt-get) total-vm:46416kB, anon-rss:29852kB, file-rss:5052kB, shmem-rss:0kB, UID:0 pgtables:124kB oom_score_adj:996
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          2m49s
+myapp1-deployment-6fb8d677d4-9hz7v   0/1     Pending   0          2m49s
+myapp1-deployment-6fb8d677d4-f2bfj   0/1     Pending   0          2m49s
+myapp1-deployment-6fb8d677d4-r9ptw   0/1     Pending   0          2m49s
+myapp1-deployment-6fb8d677d4-v7x48   0/1     Pending   0          2m49s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods myapp1-deployment-6fb8d677d4-7dpgv
+Name:             myapp1-deployment-6fb8d677d4-7dpgv
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=6fb8d677d4
+Annotations:      cloud.google.com/cluster_autoscaler_unhelpable_since: 2023-10-21T23:48:54+0000
+                  cloud.google.com/cluster_autoscaler_unhelpable_until: Inf
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-6fb8d677d4
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-gxrxr (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-gxrxr:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason             Age                  From                Message
+  ----     ------             ----                 ----                -------
+  Normal   NotTriggerScaleUp  3m3s                 cluster-autoscaler  pod didn't trigger scale-up (it wouldn't fit if a new node is added): 3 max cluster cpu, memory limit reached
+  Warning  FailedScheduling   3m2s (x2 over 3m4s)  default-scheduler   0/3 nodes are available: 3 Insufficient cpu. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod..
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment configured
+service/myapp1-lb-service unchanged
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          4m44s
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          26s
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          26s
+myapp1-deployment-77958b5bbf-jgcqf   0/1     Pending   0          24s
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          26s
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          25s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d5h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          5m18s
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          60s
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          60s
+myapp1-deployment-77958b5bbf-jgcqf   0/1     Pending   0          58s
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          60s
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          59s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods myapp1-deployment-77958b5bbf-shxpg
+Name:             myapp1-deployment-77958b5bbf-shxpg
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=77958b5bbf
+Annotations:      cloud.google.com/cluster_autoscaler_unhelpable_since: 2023-10-21T23:53:15+0000
+                  cloud.google.com/cluster_autoscaler_unhelpable_until: Inf
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-77958b5bbf
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        50m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-7bp8g (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-7bp8g:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason             Age                From                Message
+  ----     ------             ----               ----                -------
+  Warning  FailedScheduling   86s (x2 over 89s)  default-scheduler   0/3 nodes are available: 3 Insufficient cpu. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod..
+  Normal   NotTriggerScaleUp  86s                cluster-autoscaler  pod didn't trigger scale-up (it wouldn't fit if a new node is added): 3 max cluster cpu, memory limit reached
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   126m         13%    1575Mi          56%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   100m         10%    2072Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   77m          8%     1937Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d5h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          7m14s
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          2m56s
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          2m56s
+myapp1-deployment-77958b5bbf-jgcqf   0/1     Pending   0          2m54s
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          2m56s
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          2m55s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          20m
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          15m
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          15m
+myapp1-deployment-77958b5bbf-jgcqf   0/1     Pending   0          15m
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          15m
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          15m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          32m
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          28m
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          28m
+myapp1-deployment-77958b5bbf-jgcqf   0/1     Pending   0          28m
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          28m
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          28m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ mv '/home/rahul/Downloads/old_NAP_Node_Auto_Provisioning.png' .
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          34m
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          30m
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          30m
+myapp1-deployment-77958b5bbf-jgcqf   0/1     Pending   0          30m
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          30m
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          30m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d6h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   124m         13%    1511Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   101m         10%    2079Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   80m          8%     1934Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   122m         12%    1571Mi          56%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   103m         10%    2079Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   79m          8%     1938Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d6h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   125m         13%    1574Mi          56%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   100m         10%    2067Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   79m          8%     1928Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-7dpgv   0/1     Pending   0          38m
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          33m
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          33m
+myapp1-deployment-77958b5bbf-jgcqf   0/1     Pending   0          33m
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          33m
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          33m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 5 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "72Mi"
+              cpu: "100m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment configured
+service/myapp1-lb-service unchanged
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   3/5     3            3           39m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-88ttx   0/1     Pending   0          19s
+myapp1-deployment-664c4b6df7-8k4s8   0/1     Pending   0          19s
+myapp1-deployment-664c4b6df7-m4bsm   0/1     Pending   0          19s
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          35m
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          35m
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          35m
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          35m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get pods
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-88ttx   0/1     Pending   0          69s
+myapp1-deployment-664c4b6df7-8k4s8   0/1     Pending   0          69s
+myapp1-deployment-664c4b6df7-m4bsm   0/1     Pending   0          69s
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          35m
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          35m
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          35m
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          35m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top pods
+NAME                                 CPU(cores)   MEMORY(bytes)   
+myapp1-deployment-77958b5bbf-4qw5b   0m           1Mi             
+myapp1-deployment-77958b5bbf-7cqvn   0m           1Mi             
+myapp1-deployment-77958b5bbf-rdz8x   0m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods myapp1-deployment-664c4b6df7-88ttx
+Name:             myapp1-deployment-664c4b6df7-88ttx
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=664c4b6df7
+Annotations:      cloud.google.com/cluster_autoscaler_unhelpable_since: 2023-10-22T00:28:00+0000
+                  cloud.google.com/cluster_autoscaler_unhelpable_until: Inf
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-664c4b6df7
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     100m
+      memory:  72Mi
+    Requests:
+      cpu:        50m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-cz6rc (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-cz6rc:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason             Age                From                Message
+  ----     ------             ----               ----                -------
+  Normal   NotTriggerScaleUp  95s                cluster-autoscaler  pod didn't trigger scale-up (it wouldn't fit if a new node is added): 3 max cluster cpu, memory limit reached
+  Warning  FailedScheduling   94s (x2 over 97s)  default-scheduler   0/3 nodes are available: 3 Insufficient cpu. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod..
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d6h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-88ttx   0/1     Pending   0          6m27s
+myapp1-deployment-664c4b6df7-8k4s8   0/1     Pending   0          6m27s
+myapp1-deployment-664c4b6df7-m4bsm   0/1     Pending   0          6m27s
+myapp1-deployment-77958b5bbf-4qw5b   1/1     Running   0          41m
+myapp1-deployment-77958b5bbf-7cqvn   1/1     Running   0          41m
+myapp1-deployment-77958b5bbf-rdz8x   1/1     Running   0          41m
+myapp1-deployment-77958b5bbf-shxpg   0/1     Pending   0          41m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl delete -f kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d6h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   138m         14%    1555Mi          55%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   96m          10%    2072Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   76m          8%     1925Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d6h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-b8gcn   0/1     Pending   0          15s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          15s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          15s
+myapp1-deployment-664c4b6df7-xxtv8   0/1     Pending   0          15s
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          15s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods 
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-b8gcn   0/1     Pending   0          28s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          28s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          28s
+myapp1-deployment-664c4b6df7-xxtv8   0/1     Pending   0          28s
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          28s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods myapp1-deployment-664c4b6df7-xxtv8
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-xxtv8   0/1     Pending   0          37s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   157m         16%    1577Mi          56%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   94m          10%    2073Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   93m          9%     1930Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe nodes gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+Name:               gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+Roles:              <none>
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=e2-medium
+                    beta.kubernetes.io/os=linux
+                    cloud.google.com/gke-boot-disk=pd-standard
+                    cloud.google.com/gke-container-runtime=containerd
+                    cloud.google.com/gke-cpu-scaling-level=2
+                    cloud.google.com/gke-logging-variant=DEFAULT
+                    cloud.google.com/gke-max-pods-per-node=110
+                    cloud.google.com/gke-netd-ready=true
+                    cloud.google.com/gke-nodepool=default-pool
+                    cloud.google.com/gke-os-distribution=ubuntu
+                    cloud.google.com/gke-provisioning=spot
+                    cloud.google.com/gke-spot=true
+                    cloud.google.com/gke-stack-type=IPV4
+                    cloud.google.com/machine-family=e2
+                    cloud.google.com/private-node=false
+                    failure-domain.beta.kubernetes.io/region=us-central1
+                    failure-domain.beta.kubernetes.io/zone=us-central1-b
+                    iam.gke.io/gke-metadata-server-enabled=true
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+                    kubernetes.io/os=linux
+                    node.kubernetes.io/instance-type=e2-medium
+                    topology.gke.io/zone=us-central1-b
+                    topology.kubernetes.io/region=us-central1
+                    topology.kubernetes.io/zone=us-central1-b
+Annotations:        container.googleapis.com/instance_id: 4676315495442686480
+                    csi.volume.kubernetes.io/nodeid:
+                      {"filestore.csi.storage.gke.io":"gke-sara-gke-cluster-default-pool-b30cb3e3-1crl","pd.csi.storage.gke.io":"projects/sara-project-401601/zo...
+                    node.alpha.kubernetes.io/ttl: 0
+                    node.gke.io/last-applied-node-labels:
+                      cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,clou...
+                    node.gke.io/last-applied-node-taints: 
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Sat, 14 Oct 2023 03:41:10 +0800
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 22 Oct 2023 08:37:19 +0800
+Conditions:
+  Type                          Status  LastHeartbeatTime                 LastTransitionTime                Reason                          Message
+  ----                          ------  -----------------                 ------------------                ------                          -------
+  ReadonlyFilesystem            False   Sun, 22 Oct 2023 08:33:03 +0800   Sat, 14 Oct 2023 03:41:15 +0800   FilesystemIsNotReadOnly         Filesystem is not read-only
+  CorruptDockerOverlay2         False   Sun, 22 Oct 2023 08:33:03 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoCorruptDockerOverlay2         docker overlay2 is functioning properly
+  FrequentUnregisterNetDevice   False   Sun, 22 Oct 2023 08:33:03 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoFrequentUnregisterNetDevice   node is functioning properly
+  FrequentKubeletRestart        False   Sun, 22 Oct 2023 08:33:03 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoFrequentKubeletRestart        kubelet is functioning properly
+  FrequentDockerRestart         False   Sun, 22 Oct 2023 08:33:03 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoFrequentDockerRestart         docker is functioning properly
+  FrequentContainerdRestart     False   Sun, 22 Oct 2023 08:33:03 +0800   Sat, 14 Oct 2023 03:41:15 +0800   NoFrequentContainerdRestart     containerd is functioning properly
+  KernelDeadlock                False   Sun, 22 Oct 2023 08:33:03 +0800   Sat, 14 Oct 2023 03:41:15 +0800   KernelHasNoDeadlock             kernel has no deadlock
+  NetworkUnavailable            False   Sat, 14 Oct 2023 03:41:11 +0800   Sat, 14 Oct 2023 03:41:10 +0800   RouteCreated                    NodeController create implicit route
+  MemoryPressure                False   Sun, 22 Oct 2023 08:36:25 +0800   Sat, 14 Oct 2023 03:41:07 +0800   KubeletHasSufficientMemory      kubelet has sufficient memory available
+  DiskPressure                  False   Sun, 22 Oct 2023 08:36:25 +0800   Sat, 14 Oct 2023 03:41:07 +0800   KubeletHasNoDiskPressure        kubelet has no disk pressure
+  PIDPressure                   False   Sun, 22 Oct 2023 08:36:25 +0800   Sat, 14 Oct 2023 03:41:07 +0800   KubeletHasSufficientPID         kubelet has sufficient PID available
+  Ready                         True    Sun, 22 Oct 2023 08:36:25 +0800   Sat, 14 Oct 2023 03:41:18 +0800   KubeletReady                    kubelet is posting ready status. AppArmor enabled
+Addresses:
+  InternalIP:  10.128.0.17
+  ExternalIP:  34.31.73.205
+  Hostname:    gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+Capacity:
+  cpu:                2
+  ephemeral-storage:  20134592Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             4002564Ki
+  pods:               110
+Allocatable:
+  cpu:                940m
+  ephemeral-storage:  7818621717
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             2856708Ki
+  pods:               110
+System Info:
+  Machine ID:                 435218568f1f248d950dd0eb022c6d69
+  System UUID:                43521856-8f1f-248d-950d-d0eb022c6d69
+  Boot ID:                    e34f9a4f-8ac0-4d41-9b65-f18bafee80d3
+  Kernel Version:             5.15.0-1036-gke
+  OS Image:                   Ubuntu 22.04.2 LTS
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  containerd://1.7.0
+  Kubelet Version:            v1.27.3-gke.100
+  Kube-Proxy Version:         v1.27.3-gke.100
+PodCIDR:                      10.84.2.0/24
+PodCIDRs:                     10.84.2.0/24
+ProviderID:                   gce://sara-project-401601/us-central1-b/gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+Non-terminated Pods:          (14 in total)
+  Namespace                   Name                                                          CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                                          ------------  ----------  ---------------  -------------  ---
+  cnrm-system                 cnrm-deletiondefender-0                                       250m (26%)    0 (0%)      1Gi (36%)        1Gi (36%)      8d
+  cnrm-system                 cnrm-resource-stats-recorder-748ddcdbfd-h2l5r                 20m (2%)      0 (0%)      64Mi (2%)        64Mi (2%)      8d
+  gmp-system                  collector-vcwfc                                               5m (0%)       0 (0%)      36M (1%)         3032M (103%)   8d
+  gmp-system                  rule-evaluator-54f66874f5-z2fbw                               2m (0%)       0 (0%)      20M (0%)         1032M (35%)    8d
+  kube-system                 filestore-node-5ljsf                                          20m (2%)      0 (0%)      130Mi (4%)       0 (0%)         8d
+  kube-system                 fluentbit-gke-5l2g5                                           100m (10%)    0 (0%)      200Mi (7%)       500Mi (17%)    8d
+  kube-system                 gke-metadata-server-wxths                                     100m (10%)    0 (0%)      100Mi (3%)       100Mi (3%)     8d
+  kube-system                 gke-metrics-agent-rxkbf                                       14m (1%)      0 (0%)      160Mi (5%)       160Mi (5%)     8d
+  kube-system                 konnectivity-agent-bfd86b98f-5hkgl                            10m (1%)      0 (0%)      30Mi (1%)        125Mi (4%)     3d7h
+  kube-system                 konnectivity-agent-bfd86b98f-m4lm8                            10m (1%)      0 (0%)      30Mi (1%)        125Mi (4%)     8d
+  kube-system                 kube-dns-5bfd847c64-4xlrt                                     260m (27%)    0 (0%)      110Mi (3%)       210Mi (7%)     8d
+  kube-system                 kube-proxy-gke-sara-gke-cluster-default-pool-b30cb3e3-1crl    100m (10%)    0 (0%)      0 (0%)           0 (0%)         8d
+  kube-system                 netd-kwvcd                                                    2m (0%)       0 (0%)      30Mi (1%)        0 (0%)         8d
+  kube-system                 pdcsi-node-2jbfj                                              10m (1%)      0 (0%)      20Mi (0%)        100Mi (3%)     8d
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests          Limits
+  --------           --------          ------
+  cpu                903m (96%)        0 (0%)
+  memory             2046197248 (69%)  6434542Ki (225%)
+  ephemeral-storage  0 (0%)            0 (0%)
+  hugepages-1Gi      0 (0%)            0 (0%)
+  hugepages-2Mi      0 (0%)            0 (0%)
+Events:              <none>
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-b8gcn   0/1     Pending   0          102s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          102s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          102s
+myapp1-deployment-664c4b6df7-xxtv8   0/1     Pending   0          102s
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          102s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods myapp1-deployment-664c4b6df7-xxtv8
+Name:             myapp1-deployment-664c4b6df7-xxtv8
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=664c4b6df7
+Annotations:      cloud.google.com/cluster_autoscaler_unhelpable_since: 2023-10-22T00:36:06+0000
+                  cloud.google.com/cluster_autoscaler_unhelpable_until: Inf
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-664c4b6df7
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     100m
+      memory:  72Mi
+    Requests:
+      cpu:        50m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vz5jm (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-vz5jm:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason             Age                    From                Message
+  ----     ------             ----                   ----                -------
+  Warning  FailedScheduling   2m23s (x2 over 2m25s)  default-scheduler   0/3 nodes are available: 3 Insufficient cpu. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod..
+  Normal   NotTriggerScaleUp  2m23s                  cluster-autoscaler  pod didn't trigger scale-up (it wouldn't fit if a new node is added): 3 max cluster cpu, memory limit reached
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   Ready    <none>   45s    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d6h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   1232m        131%   1115Mi          39%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   128m         13%    1507Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   104m         11%    2122Mi          76%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   71m          7%     1933Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   5/5     5            5           6m33s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-b8gcn   1/1     Running   0          6m38s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          6m38s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          6m38s
+myapp1-deployment-664c4b6df7-xxtv8   1/1     Running   0          6m38s
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          6m38s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods myapp1-deployment-664c4b6df7-xxtv8
+Name:             myapp1-deployment-664c4b6df7-xxtv8
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-63c65613-q9fx/10.128.0.22
+Start Time:       Sun, 22 Oct 2023 08:41:36 +0800
+Labels:           app=myapp1
+                  pod-template-hash=664c4b6df7
+Annotations:      cloud.google.com/cluster_autoscaler_unhelpable_since: 2023-10-22T00:36:06+0000
+                  cloud.google.com/cluster_autoscaler_unhelpable_until: Inf
+Status:           Running
+IP:               10.84.3.4
+IPs:
+  IP:           10.84.3.4
+Controlled By:  ReplicaSet/myapp1-deployment-664c4b6df7
+Containers:
+  myapp1-container:
+    Container ID:   containerd://6c29fd7ed38ee0d345a611a2ab44000e2d1b8028fad7a52ea988f96eded58f4f
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 08:41:54 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     100m
+      memory:  72Mi
+    Requests:
+      cpu:        50m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vz5jm (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-vz5jm:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason             Age                    From                Message
+  ----     ------             ----                   ----                -------
+  Normal   NotTriggerScaleUp  7m57s                  cluster-autoscaler  pod didn't trigger scale-up (it wouldn't fit if a new node is added): 3 max cluster cpu, memory limit reached
+  Normal   NotTriggerScaleUp  2m50s (x8 over 4m)     cluster-autoscaler  pod didn't trigger scale-up (it wouldn't fit if a new node is added):
+  Warning  FailedScheduling   2m36s (x3 over 7m59s)  default-scheduler   0/3 nodes are available: 3 Insufficient cpu. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod..
+  Normal   Scheduled          2m27s                  default-scheduler   Successfully assigned default/myapp1-deployment-664c4b6df7-xxtv8 to gke-sara-gke-cluster-default-pool-63c65613-q9fx
+  Normal   Pulling            2m25s                  kubelet             Pulling image "stacksimplify/kubenginx:1.0.0"
+  Normal   Pulled             2m9s                   kubelet             Successfully pulled image "stacksimplify/kubenginx:1.0.0" in 4.71835756s (16.10854703s including waiting)
+  Normal   Created            2m9s                   kubelet             Created container myapp1-container
+  Normal   Started            2m9s                   kubelet             Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim session.out
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim session.out
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 6 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "72Mi"
+              cpu: "100m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-b8gcn   1/1     Running   0          10m
+myapp1-deployment-664c4b6df7-hfj4w   1/1     Running   0          23s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          10m
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          10m
+myapp1-deployment-664c4b6df7-xxtv8   1/1     Running   0          10m
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          10m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   Ready    <none>   5m24s   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d6h    v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes -o wide
+NAME                                              STATUS   ROLES    AGE     VERSION           INTERNAL-IP   EXTERNAL-IP    OS-IMAGE             KERNEL-VERSION    CONTAINER-RUNTIME
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   Ready    <none>   5m30s   v1.27.3-gke.100   10.128.0.22   34.172.9.181   Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100   10.128.0.10   34.69.59.203   Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100   10.128.0.17   34.31.73.205   Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d6h    v1.27.3-gke.100   10.128.0.21   34.42.83.59    Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   95m          10%    1258Mi          45%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   124m         13%    1592Mi          57%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   95m          10%    2077Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   68m          7%     1934Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   79m          8%     1262Mi          45%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   132m         14%    1543Mi          55%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   95m          10%    2080Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   80m          8%     1930Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   79m          8%     1262Mi          45%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   132m         14%    1543Mi          55%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   95m          10%    2080Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   80m          8%     1930Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-b8gcn   1/1     Running   0          12m
+myapp1-deployment-664c4b6df7-hfj4w   1/1     Running   0          115s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          12m
+myapp1-deployment-664c4b6df7-lk2rl   1/1     Running   0          35s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          12m
+myapp1-deployment-664c4b6df7-xxtv8   1/1     Running   0          12m
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          12m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-5spg7   1/1     Running   0          11s
+myapp1-deployment-664c4b6df7-b8gcn   1/1     Running   0          12m
+myapp1-deployment-664c4b6df7-hfj4w   1/1     Running   0          2m46s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          12m
+myapp1-deployment-664c4b6df7-lk2rl   1/1     Running   0          86s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          12m
+myapp1-deployment-664c4b6df7-xxtv8   1/1     Running   0          12m
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          12m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-5spg7   1/1     Running   0          57s
+myapp1-deployment-664c4b6df7-b8gcn   1/1     Running   0          13m
+myapp1-deployment-664c4b6df7-hfj4w   1/1     Running   0          3m32s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          13m
+myapp1-deployment-664c4b6df7-k6mn6   1/1     Running   0          23s
+myapp1-deployment-664c4b6df7-lk2rl   1/1     Running   0          2m12s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          13m
+myapp1-deployment-664c4b6df7-xxtv8   1/1     Running   0          13m
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          13m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   107m         11%    1279Mi          45%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   125m         13%    1534Mi          55%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   103m         10%    2074Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   81m          8%     1934Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 9 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "72Mi"
+              cpu: "100m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   91m          9%     1306Mi          46%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   121m         12%    1529Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   105m         11%    2073Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   76m          8%     1933Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-4d4m9   0/1     Pending   0          13s
+myapp1-deployment-664c4b6df7-5spg7   1/1     Running   0          2m20s
+myapp1-deployment-664c4b6df7-b8gcn   1/1     Running   0          15m
+myapp1-deployment-664c4b6df7-bzrbd   0/1     Pending   0          13s
+myapp1-deployment-664c4b6df7-hfj4w   1/1     Running   0          4m55s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          15m
+myapp1-deployment-664c4b6df7-k6mn6   1/1     Running   0          106s
+myapp1-deployment-664c4b6df7-lk2rl   1/1     Running   0          3m35s
+myapp1-deployment-664c4b6df7-nfz86   0/1     Pending   0          13s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          15m
+myapp1-deployment-664c4b6df7-xxtv8   1/1     Running   0          15m
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          15m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-4d4m9   0/1     Pending   0          41s
+myapp1-deployment-664c4b6df7-5spg7   1/1     Running   0          2m48s
+myapp1-deployment-664c4b6df7-b8gcn   1/1     Running   0          15m
+myapp1-deployment-664c4b6df7-bzrbd   0/1     Pending   0          41s
+myapp1-deployment-664c4b6df7-hfj4w   1/1     Running   0          5m23s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          15m
+myapp1-deployment-664c4b6df7-k6mn6   1/1     Running   0          2m14s
+myapp1-deployment-664c4b6df7-lk2rl   1/1     Running   0          4m3s
+myapp1-deployment-664c4b6df7-nfz86   0/1     Pending   0          41s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          15m
+myapp1-deployment-664c4b6df7-xxtv8   1/1     Running   0          15m
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          15m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods myapp1-deployment-664c4b6df7-4d4m9
+Name:             myapp1-deployment-664c4b6df7-4d4m9
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=664c4b6df7
+Annotations:      cloud.google.com/cluster_autoscaler_unhelpable_since: 2023-10-22T00:50:57+0000
+                  cloud.google.com/cluster_autoscaler_unhelpable_until: Inf
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-664c4b6df7
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     100m
+      memory:  72Mi
+    Requests:
+      cpu:        50m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ps6rt (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-ps6rt:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason             Age                From                Message
+  ----     ------             ----               ----                -------
+  Warning  FailedScheduling   58s (x2 over 60s)  default-scheduler   0/4 nodes are available: 4 Insufficient cpu. preemption: 0/4 nodes are available: 4 No preemption victims found for incoming pod..
+  Normal   NotTriggerScaleUp  58s                cluster-autoscaler  pod didn't trigger scale-up (it wouldn't fit if a new node is added): 4 max cluster cpu, memory limit reached
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   82m          8%     1302Mi          46%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   133m         14%    1518Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   103m         10%    2069Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   78m          8%     1932Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   91m          9%     1303Mi          46%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   129m         13%    1516Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   103m         10%    2065Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   81m          8%     1936Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   87m          9%     1304Mi          46%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   135m         14%    1520Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   104m         11%    2071Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   82m          8%     1934Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-4d4m9   0/1     Pending   0          4m12s
+myapp1-deployment-664c4b6df7-5spg7   1/1     Running   0          6m19s
+myapp1-deployment-664c4b6df7-b8gcn   1/1     Running   0          19m
+myapp1-deployment-664c4b6df7-bzrbd   0/1     Pending   0          4m12s
+myapp1-deployment-664c4b6df7-hfj4w   1/1     Running   0          8m54s
+myapp1-deployment-664c4b6df7-jmfkd   1/1     Running   0          19m
+myapp1-deployment-664c4b6df7-k6mn6   1/1     Running   0          5m45s
+myapp1-deployment-664c4b6df7-lk2rl   1/1     Running   0          7m34s
+myapp1-deployment-664c4b6df7-nfz86   0/1     Pending   0          4m12s
+myapp1-deployment-664c4b6df7-rb7fr   1/1     Running   0          19m
+myapp1-deployment-664c4b6df7-xxtv8   1/1     Running   0          19m
+myapp1-deployment-664c4b6df7-zl9vp   1/1     Running   0          19m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl delete -f kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 12 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "72Mi"
+              cpu: "100m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ #kubectl apply -f kube-manifests/
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get pods
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   90m          9%     1315Mi          47%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   122m         12%    1535Mi          55%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   100m         10%    2070Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   80m          8%     1929Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   99m          10%    1318Mi          47%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   117m         12%    1526Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   109m         11%    2072Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   77m          8%     1930Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-5fxk4   0/1     Pending   0          2m41s
+myapp1-deployment-664c4b6df7-7pc7s   1/1     Running   0          2m41s
+myapp1-deployment-664c4b6df7-7rhjt   1/1     Running   0          2m41s
+myapp1-deployment-664c4b6df7-8brkl   1/1     Running   0          2m41s
+myapp1-deployment-664c4b6df7-9pnx5   0/1     Pending   0          2m41s
+myapp1-deployment-664c4b6df7-b6fgg   1/1     Running   0          2m41s
+myapp1-deployment-664c4b6df7-ccm6x   1/1     Running   0          2m41s
+myapp1-deployment-664c4b6df7-g8bjt   0/1     Pending   0          2m41s
+myapp1-deployment-664c4b6df7-ggqwr   1/1     Running   0          2m41s
+myapp1-deployment-664c4b6df7-qfmm8   1/1     Running   0          2m41s
+myapp1-deployment-664c4b6df7-qhnxw   1/1     Running   0          2m41s
+myapp1-deployment-664c4b6df7-r29cm   1/1     Running   0          2m41s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-5fxk4   0/1     Pending   0          2m54s
+myapp1-deployment-664c4b6df7-7pc7s   1/1     Running   0          2m54s
+myapp1-deployment-664c4b6df7-7rhjt   1/1     Running   0          2m54s
+myapp1-deployment-664c4b6df7-8brkl   1/1     Running   0          2m54s
+myapp1-deployment-664c4b6df7-9pnx5   0/1     Pending   0          2m54s
+myapp1-deployment-664c4b6df7-b6fgg   1/1     Running   0          2m54s
+myapp1-deployment-664c4b6df7-ccm6x   1/1     Running   0          2m54s
+myapp1-deployment-664c4b6df7-g8bjt   0/1     Pending   0          2m54s
+myapp1-deployment-664c4b6df7-ggqwr   1/1     Running   0          2m54s
+myapp1-deployment-664c4b6df7-qfmm8   1/1     Running   0          2m54s
+myapp1-deployment-664c4b6df7-qhnxw   1/1     Running   0          2m54s
+myapp1-deployment-664c4b6df7-r29cm   1/1     Running   0          2m54s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl delete -f kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   72m          7%     1281Mi          45%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   129m         13%    1513Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   97m          10%    2075Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   75m          7%     1933Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   99m          10%    1282Mi          45%       
+gke-sara-gke-cluster-default-pool-99c59557-cthb   134m         14%    1524Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   98m          10%    2077Mi          74%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   76m          8%     1934Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 12 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "72Mi"
+              cpu: "100m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-296kr   0/1     Pending   0          42s
+myapp1-deployment-664c4b6df7-9g5r8   0/1     Pending   0          42s
+myapp1-deployment-664c4b6df7-9lmbz   1/1     Running   0          42s
+myapp1-deployment-664c4b6df7-kjh2d   1/1     Running   0          42s
+myapp1-deployment-664c4b6df7-kxn5d   1/1     Running   0          42s
+myapp1-deployment-664c4b6df7-ljsjc   1/1     Running   0          42s
+myapp1-deployment-664c4b6df7-lwtdl   1/1     Running   0          42s
+myapp1-deployment-664c4b6df7-vc8b7   1/1     Running   0          42s
+myapp1-deployment-664c4b6df7-vjp5n   0/1     Pending   0          42s
+myapp1-deployment-664c4b6df7-vsfn5   1/1     Running   0          42s
+myapp1-deployment-664c4b6df7-xllc4   1/1     Running   0          42s
+myapp1-deployment-664c4b6df7-zb7nt   1/1     Running   0          42s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-664c4b6df7-296kr   0/1     Pending   0          96s
+myapp1-deployment-664c4b6df7-9g5r8   0/1     Pending   0          96s
+myapp1-deployment-664c4b6df7-9lmbz   1/1     Running   0          96s
+myapp1-deployment-664c4b6df7-kjh2d   1/1     Running   0          96s
+myapp1-deployment-664c4b6df7-kxn5d   1/1     Running   0          96s
+myapp1-deployment-664c4b6df7-ljsjc   1/1     Running   0          96s
+myapp1-deployment-664c4b6df7-lwtdl   1/1     Running   0          96s
+myapp1-deployment-664c4b6df7-vc8b7   1/1     Running   0          96s
+myapp1-deployment-664c4b6df7-vjp5n   0/1     Pending   0          96s
+myapp1-deployment-664c4b6df7-vsfn5   1/1     Running   0          96s
+myapp1-deployment-664c4b6df7-xllc4   1/1     Running   0          96s
+myapp1-deployment-664c4b6df7-zb7nt   1/1     Running   0          96s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl delete -f kube-manifests/
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   Ready    <none>   23m    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d7h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS     ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   NotReady   <none>   24m    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready      <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready      <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready      <none>   3d7h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS     ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-63c65613-q9fx   NotReady   <none>   24m    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready      <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready      <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready      <none>   3d7h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get nodes
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE    VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d7h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   11d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get nodes
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7f65f965d8-59fv4   1/1     Running   0          3m46s
+myapp1-deployment-7f65f965d8-5c6sx   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-674zr   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-br782   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-bsbjc   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-lxvxh   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-lzmhm   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-pck8g   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-sh7rr   1/1     Running   0          3m46s
+myapp1-deployment-7f65f965d8-tkkfp   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-txlkt   1/1     Running   0          3m47s
+myapp1-deployment-7f65f965d8-xbvzr   1/1     Running   0          3m47s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   4h47m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-ppft   Ready    <none>   2m32s   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d11h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   114m         12%    1545Mi          55%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   83m          8%     1453Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-ppft   78m          8%     1146Mi          41%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   113m         12%    2061Mi          73%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   76m          8%     1975Mi          70%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top pods
+NAME                                 CPU(cores)   MEMORY(bytes)   
+myapp1-deployment-7f65f965d8-59fv4   0m           1Mi             
+myapp1-deployment-7f65f965d8-5c6sx   0m           1Mi             
+myapp1-deployment-7f65f965d8-674zr   0m           2Mi             
+myapp1-deployment-7f65f965d8-br782   0m           1Mi             
+myapp1-deployment-7f65f965d8-bsbjc   0m           1Mi             
+myapp1-deployment-7f65f965d8-lxvxh   0m           2Mi             
+myapp1-deployment-7f65f965d8-lzmhm   0m           1Mi             
+myapp1-deployment-7f65f965d8-pck8g   0m           1Mi             
+myapp1-deployment-7f65f965d8-sh7rr   0m           1Mi             
+myapp1-deployment-7f65f965d8-tkkfp   0m           1Mi             
+myapp1-deployment-7f65f965d8-txlkt   0m           1Mi             
+myapp1-deployment-7f65f965d8-xbvzr   0m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get nodes
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$  kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   4h50m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-ppft   Ready    <none>   4m59s   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d11h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get nodes | wc -l
+
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes | wc -l
+6
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes | grep gke | wc -l
+5
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 20 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "1072Mi"
+              cpu: "1000m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get nodes
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7f65f965d8-59fv4   1/1     Running   0          7m50s
+myapp1-deployment-7f65f965d8-5c6sx   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-674zr   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-79wkg   1/1     Running   0          23s
+myapp1-deployment-7f65f965d8-95db8   1/1     Running   0          23s
+myapp1-deployment-7f65f965d8-9v9fx   1/1     Running   0          23s
+myapp1-deployment-7f65f965d8-br782   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-bsbjc   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-hfg9v   1/1     Running   0          23s
+myapp1-deployment-7f65f965d8-lxvxh   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-lzmhm   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-pck8g   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-rzcfs   1/1     Running   0          23s
+myapp1-deployment-7f65f965d8-sh7rr   1/1     Running   0          7m50s
+myapp1-deployment-7f65f965d8-smpw8   1/1     Running   0          23s
+myapp1-deployment-7f65f965d8-tkkfp   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-tnl96   1/1     Running   0          23s
+myapp1-deployment-7f65f965d8-txlkt   1/1     Running   0          7m51s
+myapp1-deployment-7f65f965d8-wncsw   1/1     Running   0          23s
+myapp1-deployment-7f65f965d8-xbvzr   1/1     Running   0          7m51s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get nodes
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   4h51m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-ppft   Ready    <none>   6m37s   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d12h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   118m         12%    1480Mi          53%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   75m          7%     1473Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-ppft   218m         23%    1250Mi          44%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   110m         11%    2058Mi          73%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   96m          10%    2023Mi          72%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7f65f965d8-59fv4   1/1     Running   0          9m4s
+myapp1-deployment-7f65f965d8-5c6sx   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-674zr   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-79wkg   1/1     Running   0          97s
+myapp1-deployment-7f65f965d8-95db8   1/1     Running   0          97s
+myapp1-deployment-7f65f965d8-9v9fx   1/1     Running   0          97s
+myapp1-deployment-7f65f965d8-br782   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-bsbjc   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-hfg9v   1/1     Running   0          97s
+myapp1-deployment-7f65f965d8-l2skh   0/1     Pending   0          9s
+myapp1-deployment-7f65f965d8-lxvxh   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-lzmhm   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-n2xcp   0/1     Pending   0          9s
+myapp1-deployment-7f65f965d8-pck8g   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-rzcfs   1/1     Running   0          97s
+myapp1-deployment-7f65f965d8-sh7rr   1/1     Running   0          9m4s
+myapp1-deployment-7f65f965d8-smpw8   1/1     Running   0          97s
+myapp1-deployment-7f65f965d8-tkkfp   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-tnl96   1/1     Running   0          97s
+myapp1-deployment-7f65f965d8-txlkt   1/1     Running   0          9m5s
+myapp1-deployment-7f65f965d8-wncsw   1/1     Running   0          97s
+myapp1-deployment-7f65f965d8-xbvzr   1/1     Running   0          9m5s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods | grep myapp | wc -l
+22
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7f65f965d8-59fv4   1/1     Running   0          9m46s
+myapp1-deployment-7f65f965d8-5c6sx   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-674zr   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-79wkg   1/1     Running   0          2m19s
+myapp1-deployment-7f65f965d8-95db8   1/1     Running   0          2m19s
+myapp1-deployment-7f65f965d8-9tcgm   0/1     Pending   0          4s
+myapp1-deployment-7f65f965d8-9v9fx   1/1     Running   0          2m19s
+myapp1-deployment-7f65f965d8-br782   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-bsbjc   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-fp6sl   0/1     Pending   0          4s
+myapp1-deployment-7f65f965d8-hfg9v   1/1     Running   0          2m19s
+myapp1-deployment-7f65f965d8-ksvb7   0/1     Pending   0          4s
+myapp1-deployment-7f65f965d8-l2skh   0/1     Pending   0          51s
+myapp1-deployment-7f65f965d8-l4jvg   0/1     Pending   0          4s
+myapp1-deployment-7f65f965d8-lxvxh   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-lzmhm   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-n2xcp   0/1     Pending   0          51s
+myapp1-deployment-7f65f965d8-nsg7l   0/1     Pending   0          4s
+myapp1-deployment-7f65f965d8-pck8g   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-rzcfs   1/1     Running   0          2m19s
+myapp1-deployment-7f65f965d8-sh7rr   1/1     Running   0          9m46s
+myapp1-deployment-7f65f965d8-smpw8   1/1     Running   0          2m19s
+myapp1-deployment-7f65f965d8-tbj2g   0/1     Pending   0          4s
+myapp1-deployment-7f65f965d8-tkkfp   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-tnl96   1/1     Running   0          2m19s
+myapp1-deployment-7f65f965d8-txlkt   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-wncsw   1/1     Running   0          2m19s
+myapp1-deployment-7f65f965d8-xbvzr   1/1     Running   0          9m47s
+myapp1-deployment-7f65f965d8-zbtm7   0/1     Pending   0          4s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods | grep myapp | wc -l
+29
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7f65f965d8-59fv4   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-5c6sx   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-674zr   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-79wkg   1/1     Running   0          2m33s
+myapp1-deployment-7f65f965d8-95db8   1/1     Running   0          2m33s
+myapp1-deployment-7f65f965d8-9tcgm   0/1     Pending   0          18s
+myapp1-deployment-7f65f965d8-9v9fx   1/1     Running   0          2m33s
+myapp1-deployment-7f65f965d8-br782   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-bsbjc   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-fp6sl   0/1     Pending   0          18s
+myapp1-deployment-7f65f965d8-hfg9v   1/1     Running   0          2m33s
+myapp1-deployment-7f65f965d8-ksvb7   0/1     Pending   0          18s
+myapp1-deployment-7f65f965d8-l2skh   0/1     Pending   0          65s
+myapp1-deployment-7f65f965d8-l4jvg   0/1     Pending   0          18s
+myapp1-deployment-7f65f965d8-lxvxh   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-lzmhm   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-n2xcp   0/1     Pending   0          65s
+myapp1-deployment-7f65f965d8-nsg7l   0/1     Pending   0          18s
+myapp1-deployment-7f65f965d8-pck8g   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-rzcfs   1/1     Running   0          2m33s
+myapp1-deployment-7f65f965d8-sh7rr   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-smpw8   1/1     Running   0          2m33s
+myapp1-deployment-7f65f965d8-tbj2g   0/1     Pending   0          18s
+myapp1-deployment-7f65f965d8-tkkfp   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-tnl96   1/1     Running   0          2m33s
+myapp1-deployment-7f65f965d8-txlkt   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-wncsw   1/1     Running   0          2m33s
+myapp1-deployment-7f65f965d8-xbvzr   1/1     Running   0          10m
+myapp1-deployment-7f65f965d8-zbtm7   0/1     Pending   0          18s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods 
+^C
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods myapp1-deployment-7f65f965d8-zbtm7
+Name:             myapp1-deployment-7f65f965d8-zbtm7
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=7f65f965d8
+Annotations:      <none>
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-7f65f965d8
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     1
+      memory:  1072Mi
+    Requests:
+      cpu:        50m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-j82k9 (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-j82k9:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age   From               Message
+  ----     ------            ----  ----               -------
+  Warning  FailedScheduling  47s   default-scheduler  0/5 nodes are available: 5 Insufficient cpu. preemption: 0/5 nodes are available: 5 No preemption victims found for incoming pod..
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   5h31m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-mv4v   Ready    <none>   37m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-ppft   Ready    <none>   46m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d12h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   97m          10%    1453Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   83m          8%     1461Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-mv4v   116m         12%    1395Mi          50%       
+gke-sara-gke-cluster-default-pool-99c59557-ppft   80m          8%     1301Mi          46%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   101m         10%    2109Mi          75%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   96m          10%    1975Mi          70%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-7f65f965d8-59fv4   1/1     Running   0          47m
+myapp1-deployment-7f65f965d8-5c6sx   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-674zr   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-79wkg   1/1     Running   0          40m
+myapp1-deployment-7f65f965d8-95db8   1/1     Running   0          40m
+myapp1-deployment-7f65f965d8-9tcgm   1/1     Running   0          38m
+myapp1-deployment-7f65f965d8-9v9fx   1/1     Running   0          40m
+myapp1-deployment-7f65f965d8-br782   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-bsbjc   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-fp6sl   1/1     Running   0          38m
+myapp1-deployment-7f65f965d8-hfg9v   1/1     Running   0          40m
+myapp1-deployment-7f65f965d8-ksvb7   1/1     Running   0          38m
+myapp1-deployment-7f65f965d8-l2skh   1/1     Running   0          39m
+myapp1-deployment-7f65f965d8-l4jvg   1/1     Running   0          38m
+myapp1-deployment-7f65f965d8-lxvxh   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-lzmhm   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-n2xcp   1/1     Running   0          39m
+myapp1-deployment-7f65f965d8-nsg7l   1/1     Running   0          38m
+myapp1-deployment-7f65f965d8-pck8g   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-rzcfs   1/1     Running   0          40m
+myapp1-deployment-7f65f965d8-sh7rr   1/1     Running   0          47m
+myapp1-deployment-7f65f965d8-smpw8   1/1     Running   0          40m
+myapp1-deployment-7f65f965d8-tbj2g   1/1     Running   0          38m
+myapp1-deployment-7f65f965d8-tkkfp   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-tnl96   1/1     Running   0          40m
+myapp1-deployment-7f65f965d8-txlkt   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-wncsw   1/1     Running   0          40m
+myapp1-deployment-7f65f965d8-xbvzr   1/1     Running   0          48m
+myapp1-deployment-7f65f965d8-zbtm7   1/1     Running   0          38m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl describe pods myapp1-deployment-7f65f965d8-zbtm7
+Name:             myapp1-deployment-7f65f965d8-zbtm7
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-mv4v/10.128.0.25
+Start Time:       Sun, 22 Oct 2023 14:01:36 +0800
+Labels:           app=myapp1
+                  pod-template-hash=7f65f965d8
+Annotations:      <none>
+Status:           Running
+IP:               10.84.5.4
+IPs:
+  IP:           10.84.5.4
+Controlled By:  ReplicaSet/myapp1-deployment-7f65f965d8
+Containers:
+  myapp1-container:
+    Container ID:   containerd://38c5c61651283946552fa4f9ab8e64c51881a44432ed5aa9d02feabdf637e34c
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 14:01:51 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     1
+      memory:  1072Mi
+    Requests:
+      cpu:        50m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-j82k9 (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-j82k9:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age   From               Message
+  ----     ------            ----  ----               -------
+  Warning  FailedScheduling  38m   default-scheduler  0/5 nodes are available: 5 Insufficient cpu. preemption: 0/5 nodes are available: 5 No preemption victims found for incoming pod..
+  Normal   Scheduled         37m   default-scheduler  Successfully assigned default/myapp1-deployment-7f65f965d8-zbtm7 to gke-sara-gke-cluster-default-pool-99c59557-mv4v
+  Normal   Pulling           37m   kubelet            Pulling image "stacksimplify/kubenginx:1.0.0"
+  Normal   Pulled            37m   kubelet            Successfully pulled image "stacksimplify/kubenginx:1.0.0" in 449.924122ms (13.478900272s including waiting)
+  Normal   Created           37m   kubelet            Created container myapp1-container
+  Normal   Started           37m   kubelet            Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   101m         10%    1417Mi          50%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   80m          8%     1458Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-mv4v   125m         13%    1397Mi          50%       
+gke-sara-gke-cluster-default-pool-99c59557-ppft   114m         12%    1300Mi          46%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   106m         11%    2111Mi          75%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   85m          9%     1973Mi          70%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 29 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "768Mi"
+              cpu: "1000m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS              RESTARTS   AGE
+myapp1-deployment-769f65f56d-4pqpk   0/1     Pending             0          4s
+myapp1-deployment-769f65f56d-6gqvd   0/1     ContainerCreating   0          5s
+myapp1-deployment-769f65f56d-6jwwl   0/1     Pending             0          4s
+myapp1-deployment-769f65f56d-7hkkd   0/1     ContainerCreating   0          5s
+myapp1-deployment-769f65f56d-87rkr   0/1     Pending             0          0s
+myapp1-deployment-769f65f56d-8ncrr   0/1     Pending             0          4s
+myapp1-deployment-769f65f56d-bx7wg   1/1     Running             0          5s
+myapp1-deployment-769f65f56d-dfswm   0/1     Pending             0          2s
+myapp1-deployment-769f65f56d-dgsrr   1/1     Running             0          5s
+myapp1-deployment-769f65f56d-fcdsv   0/1     Pending             0          5s
+myapp1-deployment-769f65f56d-jkzjq   1/1     Running             0          5s
+myapp1-deployment-769f65f56d-kfp4p   1/1     Running             0          1s
+myapp1-deployment-769f65f56d-p6f4k   0/1     Pending             0          4s
+myapp1-deployment-769f65f56d-q4q25   1/1     Running             0          5s
+myapp1-deployment-769f65f56d-qp47f   0/1     Pending             0          0s
+myapp1-deployment-769f65f56d-qptl8   1/1     Running             0          5s
+myapp1-deployment-769f65f56d-qsvwr   1/1     Running             0          5s
+myapp1-deployment-769f65f56d-rh8ph   1/1     Running             0          1s
+myapp1-deployment-769f65f56d-spwd7   1/1     Running             0          5s
+myapp1-deployment-769f65f56d-vx98j   1/1     Running             0          3s
+myapp1-deployment-769f65f56d-xpdcc   1/1     Running             0          5s
+myapp1-deployment-769f65f56d-xwkwk   1/1     Running             0          3s
+myapp1-deployment-769f65f56d-zhcrk   0/1     Pending             0          0s
+myapp1-deployment-7f65f965d8-5c6sx   1/1     Running             0          50m
+myapp1-deployment-7f65f965d8-674zr   1/1     Running             0          50m
+myapp1-deployment-7f65f965d8-79wkg   1/1     Terminating         0          42m
+myapp1-deployment-7f65f965d8-9tcgm   1/1     Terminating         0          40m
+myapp1-deployment-7f65f965d8-9v9fx   1/1     Terminating         0          42m
+myapp1-deployment-7f65f965d8-br782   1/1     Running             0          50m
+myapp1-deployment-7f65f965d8-bsbjc   1/1     Running             0          50m
+myapp1-deployment-7f65f965d8-fp6sl   1/1     Running             0          40m
+myapp1-deployment-7f65f965d8-ksvb7   1/1     Terminating         0          40m
+myapp1-deployment-7f65f965d8-l2skh   1/1     Terminating         0          41m
+myapp1-deployment-7f65f965d8-l4jvg   1/1     Running             0          40m
+myapp1-deployment-7f65f965d8-lxvxh   1/1     Running             0          50m
+myapp1-deployment-7f65f965d8-nsg7l   1/1     Terminating         0          40m
+myapp1-deployment-7f65f965d8-pck8g   1/1     Running             0          50m
+myapp1-deployment-7f65f965d8-tkkfp   1/1     Running             0          50m
+myapp1-deployment-7f65f965d8-txlkt   1/1     Running             0          50m
+myapp1-deployment-7f65f965d8-xbvzr   1/1     Running             0          50m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   29/29   29           29          50m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   29/29   29           29          50m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-769f65f56d-4pqpk   1/1     Running   0          39s
+myapp1-deployment-769f65f56d-5vrgb   1/1     Running   0          34s
+myapp1-deployment-769f65f56d-6gqvd   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-6jwwl   1/1     Running   0          39s
+myapp1-deployment-769f65f56d-7hkkd   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-87rkr   1/1     Running   0          35s
+myapp1-deployment-769f65f56d-88flm   1/1     Running   0          35s
+myapp1-deployment-769f65f56d-8ncrr   1/1     Running   0          39s
+myapp1-deployment-769f65f56d-bx7wg   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-dfswm   1/1     Running   0          37s
+myapp1-deployment-769f65f56d-dgsrr   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-fcdsv   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-jkzjq   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-kfp4p   1/1     Running   0          36s
+myapp1-deployment-769f65f56d-p6f4k   1/1     Running   0          39s
+myapp1-deployment-769f65f56d-pjphm   1/1     Running   0          34s
+myapp1-deployment-769f65f56d-q4q25   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-qp47f   1/1     Running   0          35s
+myapp1-deployment-769f65f56d-qptl8   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-qsvwr   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-rh8ph   1/1     Running   0          36s
+myapp1-deployment-769f65f56d-rhnh8   1/1     Running   0          34s
+myapp1-deployment-769f65f56d-spwd7   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-vblzn   1/1     Running   0          34s
+myapp1-deployment-769f65f56d-vx98j   1/1     Running   0          38s
+myapp1-deployment-769f65f56d-xpdcc   1/1     Running   0          40s
+myapp1-deployment-769f65f56d-xs757   1/1     Running   0          34s
+myapp1-deployment-769f65f56d-xwkwk   1/1     Running   0          38s
+myapp1-deployment-769f65f56d-zhcrk   1/1     Running   0          35s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   23/29   23           23          51m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   29/29   29           29          59m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-669679564b-469m5   1/1     Running   0          8m3s
+myapp1-deployment-669679564b-4ktnc   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-5wx4b   1/1     Running   0          8m2s
+myapp1-deployment-669679564b-5z4xc   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-69jsl   1/1     Running   0          8m
+myapp1-deployment-669679564b-774ft   1/1     Running   0          8m6s
+myapp1-deployment-669679564b-7x64f   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-9678s   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-brgpx   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-bzm7c   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-cpxcw   1/1     Running   0          8m3s
+myapp1-deployment-669679564b-csn5g   1/1     Running   0          8m2s
+myapp1-deployment-669679564b-d7dns   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-dcnd9   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-dhf4r   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-fk28b   1/1     Running   0          8m
+myapp1-deployment-669679564b-fm5cw   1/1     Running   0          8m3s
+myapp1-deployment-669679564b-j7wvr   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-jf2jq   1/1     Running   0          8m3s
+myapp1-deployment-669679564b-jtm25   1/1     Running   0          8m4s
+myapp1-deployment-669679564b-khkws   1/1     Running   0          8m1s
+myapp1-deployment-669679564b-nbdbp   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-pwtjd   1/1     Running   0          8m1s
+myapp1-deployment-669679564b-v6kz7   1/1     Running   0          8m6s
+myapp1-deployment-669679564b-vfl5p   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-xxrz5   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-z45z5   1/1     Running   0          8m7s
+myapp1-deployment-669679564b-zd7v8   1/1     Running   0          8m4s
+myapp1-deployment-669679564b-zx76w   1/1     Running   0          8m7s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get deploy
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6bbdddb4d6-4df6x   1/1     Running   0          13s
+myapp1-deployment-6bbdddb4d6-54nlj   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-5bk9n   1/1     Running   0          15s
+myapp1-deployment-6bbdddb4d6-662fx   1/1     Running   0          9s
+myapp1-deployment-6bbdddb4d6-7v6lv   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-82gpf   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-8w6mc   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-9mftv   1/1     Running   0          10s
+myapp1-deployment-6bbdddb4d6-9z8lv   1/1     Running   0          14s
+myapp1-deployment-6bbdddb4d6-b4kwn   1/1     Running   0          9s
+myapp1-deployment-6bbdddb4d6-ckckh   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-ctlsp   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-gc6dp   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-gvl67   1/1     Running   0          15s
+myapp1-deployment-6bbdddb4d6-kbkqk   1/1     Running   0          13s
+myapp1-deployment-6bbdddb4d6-l45fq   1/1     Running   0          10s
+myapp1-deployment-6bbdddb4d6-mf8fb   1/1     Running   0          14s
+myapp1-deployment-6bbdddb4d6-nhncv   1/1     Running   0          11s
+myapp1-deployment-6bbdddb4d6-pjzh4   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-pxc8v   1/1     Running   0          15s
+myapp1-deployment-6bbdddb4d6-q8wrd   1/1     Running   0          11s
+myapp1-deployment-6bbdddb4d6-qccd9   1/1     Running   0          15s
+myapp1-deployment-6bbdddb4d6-tr9p8   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-v696l   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-wqj7z   1/1     Running   0          9s
+myapp1-deployment-6bbdddb4d6-wtlbm   1/1     Running   0          16s
+myapp1-deployment-6bbdddb4d6-x8hfm   1/1     Running   0          13s
+myapp1-deployment-6bbdddb4d6-xlzrf   1/1     Running   0          12s
+myapp1-deployment-6bbdddb4d6-xpfjv   1/1     Running   0          15s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6bbdddb4d6-4df6x   1/1     Running   0          38s
+myapp1-deployment-6bbdddb4d6-54nlj   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-5bk9n   1/1     Running   0          40s
+myapp1-deployment-6bbdddb4d6-662fx   1/1     Running   0          34s
+myapp1-deployment-6bbdddb4d6-7v6lv   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-82gpf   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-8w6mc   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-9mftv   1/1     Running   0          35s
+myapp1-deployment-6bbdddb4d6-9z8lv   1/1     Running   0          39s
+myapp1-deployment-6bbdddb4d6-b4kwn   1/1     Running   0          34s
+myapp1-deployment-6bbdddb4d6-ckckh   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-ctlsp   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-gc6dp   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-gvl67   1/1     Running   0          40s
+myapp1-deployment-6bbdddb4d6-kbkqk   1/1     Running   0          38s
+myapp1-deployment-6bbdddb4d6-l45fq   1/1     Running   0          35s
+myapp1-deployment-6bbdddb4d6-mf8fb   1/1     Running   0          39s
+myapp1-deployment-6bbdddb4d6-nhncv   1/1     Running   0          36s
+myapp1-deployment-6bbdddb4d6-pjzh4   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-pxc8v   1/1     Running   0          40s
+myapp1-deployment-6bbdddb4d6-q8wrd   1/1     Running   0          36s
+myapp1-deployment-6bbdddb4d6-qccd9   1/1     Running   0          40s
+myapp1-deployment-6bbdddb4d6-tr9p8   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-v696l   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-wqj7z   1/1     Running   0          34s
+myapp1-deployment-6bbdddb4d6-wtlbm   1/1     Running   0          41s
+myapp1-deployment-6bbdddb4d6-x8hfm   1/1     Running   0          38s
+myapp1-deployment-6bbdddb4d6-xlzrf   1/1     Running   0          37s
+myapp1-deployment-6bbdddb4d6-xpfjv   1/1     Running   0          40s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get deploy
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   5h45m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-mv4v   Ready    <none>   50m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-ppft   Ready    <none>   59m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-tvgh   Ready    <none>   9m39s   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d12h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 29 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "128Mi"
+              cpu: "1000m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   5h45m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-mv4v   Ready    <none>   51m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-ppft   Ready    <none>   60m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-tvgh   Ready    <none>   10m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d12h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get deploy
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   29/29   29           29          61m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-57b55478b8-4qlgn   1/1     Running   0          34s
+myapp1-deployment-57b55478b8-6d66j   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-84dhm   1/1     Running   0          29s
+myapp1-deployment-57b55478b8-87qzx   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-8fb4k   1/1     Running   0          30s
+myapp1-deployment-57b55478b8-9tc5j   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-b5z5w   1/1     Running   0          31s
+myapp1-deployment-57b55478b8-cmxv7   1/1     Running   0          29s
+myapp1-deployment-57b55478b8-czrfz   1/1     Running   0          30s
+myapp1-deployment-57b55478b8-fh2qq   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-j7s5b   1/1     Running   0          29s
+myapp1-deployment-57b55478b8-jtbms   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-l7bqd   1/1     Running   0          32s
+myapp1-deployment-57b55478b8-l9rck   1/1     Running   0          30s
+myapp1-deployment-57b55478b8-ltbq4   1/1     Running   0          29s
+myapp1-deployment-57b55478b8-mwbc6   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-mxbdf   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-pbmhd   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-pgbd4   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-q7tfr   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-qjpch   1/1     Running   0          29s
+myapp1-deployment-57b55478b8-qnn42   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-sbsd8   1/1     Running   0          30s
+myapp1-deployment-57b55478b8-tx96h   1/1     Running   0          31s
+myapp1-deployment-57b55478b8-w8tv9   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-x2msk   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-x6jph   1/1     Running   0          32s
+myapp1-deployment-57b55478b8-zdzdv   1/1     Running   0          33s
+myapp1-deployment-57b55478b8-zvmsz   1/1     Running   0          30s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ ^C
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get deploy
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   29/29   29           29          62m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get deploy
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   29/29   29           29          63m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get deploy
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-58794d5f57-2gm78   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-5kqqs   1/1     Running   0          14s
+myapp1-deployment-58794d5f57-5ltvv   1/1     Running   0          16s
+myapp1-deployment-58794d5f57-68nbg   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-6bgjl   1/1     Running   0          16s
+myapp1-deployment-58794d5f57-6qxwm   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-8vffc   1/1     Running   0          15s
+myapp1-deployment-58794d5f57-b6678   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-d882s   1/1     Running   0          18s
+myapp1-deployment-58794d5f57-dwkhk   1/1     Running   0          18s
+myapp1-deployment-58794d5f57-dzthr   1/1     Running   0          16s
+myapp1-deployment-58794d5f57-fj7lr   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-hq2zw   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-hrb6t   1/1     Running   0          15s
+myapp1-deployment-58794d5f57-j8v7m   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-jgmn4   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-k49c8   1/1     Running   0          18s
+myapp1-deployment-58794d5f57-khkhv   1/1     Running   0          16s
+myapp1-deployment-58794d5f57-krjvz   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-l8hl5   1/1     Running   0          14s
+myapp1-deployment-58794d5f57-lh7gv   1/1     Running   0          18s
+myapp1-deployment-58794d5f57-lktkp   1/1     Running   0          15s
+myapp1-deployment-58794d5f57-nmmdr   1/1     Running   0          18s
+myapp1-deployment-58794d5f57-qs9ts   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-r286k   1/1     Running   0          14s
+myapp1-deployment-58794d5f57-vf9rn   1/1     Running   0          19s
+myapp1-deployment-58794d5f57-wncmb   1/1     Running   0          17s
+myapp1-deployment-58794d5f57-x9595   1/1     Running   0          15s
+myapp1-deployment-58794d5f57-xnsth   1/1     Running   0          17s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ ^C
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   5h47m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-mv4v   Ready    <none>   53m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-ppft   Ready    <none>   62m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-tvgh   Ready    <none>   12m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d12h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   124m         13%    1438Mi          51%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   153m         16%    1293Mi          46%       
+gke-sara-gke-cluster-default-pool-99c59557-mv4v   344m         36%    1435Mi          51%       
+gke-sara-gke-cluster-default-pool-99c59557-ppft   275m         29%    1297Mi          46%       
+gke-sara-gke-cluster-default-pool-99c59557-tvgh   346m         36%    1326Mi          47%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   108m         11%    2110Mi          75%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   100m         10%    1975Mi          70%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes | grep gke | wc -l
+7
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes | grep gk | wc -l7
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vi kube-manifests/01-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+spec: # Dictionary
+  replicas: 9 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
+            limits:
+              memory: "128Mi"
+              cpu: "100m"  # 1000m is equal to 1 VCPU core                                               
+    
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl apply -f kube-manifests/01-kubernetes-deployment.yaml 
+deployment.apps/myapp1-deployment configured
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   104m         11%    1488Mi          53%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   73m          7%     1307Mi          46%       
+gke-sara-gke-cluster-default-pool-99c59557-mv4v   128m         13%    1435Mi          51%       
+gke-sara-gke-cluster-default-pool-99c59557-ppft   80m          8%     1304Mi          46%       
+gke-sara-gke-cluster-default-pool-99c59557-tvgh   96m          10%    1326Mi          47%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   106m         11%    2111Mi          75%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   82m          8%     1974Mi          70%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get  nodes
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   9/9     9            9           65m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-58794d5f57-68nbg   1/1     Running   0          2m15s
+myapp1-deployment-58794d5f57-6qxwm   1/1     Running   0          2m15s
+myapp1-deployment-58794d5f57-b6678   1/1     Running   0          2m15s
+myapp1-deployment-58794d5f57-d882s   1/1     Running   0          2m14s
+myapp1-deployment-58794d5f57-dwkhk   1/1     Running   0          2m14s
+myapp1-deployment-58794d5f57-hq2zw   1/1     Running   0          2m15s
+myapp1-deployment-58794d5f57-lh7gv   1/1     Running   0          2m14s
+myapp1-deployment-58794d5f57-vf9rn   1/1     Running   0          2m15s
+myapp1-deployment-58794d5f57-wncmb   1/1     Running   0          2m13s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get nodes
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes | grep gk | wc -l
+7
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl top nodes | grep gk | wc -l
+
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl get nodes
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ watch kubectl top nodes | grep gk | wc -l
+
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ kubectl top nodes | grep gk | wc -l
+4
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/63-GKE-Cluster-Autoscaling$ vim session-01.out
+
+

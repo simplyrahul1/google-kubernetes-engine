@@ -3,7 +3,7 @@ kind: Deployment
 metadata: #Dictionary
   name: myapp1-deployment
 spec: # Dictionary
-  replicas: 5 
+  replicas: 9 
   selector:
     matchLabels:
       app: myapp1
@@ -20,9 +20,9 @@ spec: # Dictionary
             - containerPort: 80  
           resources:
             requests:
-              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
-              cpu: "200m" # `m` means milliCPU
+              memory: "64Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "50m" # `m` means milliCPU
             limits:
-              memory: "256Mi"
-              cpu: "400m"  # 1000m is equal to 1 VCPU core                                               
+              memory: "128Mi"
+              cpu: "100m"  # 1000m is equal to 1 VCPU core                                               
     
