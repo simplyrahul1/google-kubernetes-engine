@@ -1,0 +1,753 @@
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ ls
+kube-manifests  README.md
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ ls kube-manifests/
+01-kubernetes-namespace.yaml      03-kubernetes-deployment.yaml
+02-kubernetes-resourcequota.yaml  04-kubernetes-loadbalancer-service.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ cat kube-manifests/01-kubernetes-namespace.yaml 
+apiVersion: v1
+kind: Namespace
+metadata: 
+  name: qa
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ cat kube-manifests/02-kubernetes-resourcequota.yaml 
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: qa-namespace-resource-quota
+  namespace: qa
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi  
+    pods: "3"    
+    configmaps: "3" 
+    persistentvolumeclaims: "3" 
+    secrets: "3" 
+    services: "3"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ cat kube-manifests/03-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+  namespace: qa
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "200m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              cpu: "400m"  # 1000m is equal to 1 VCPU core                                               
+    rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ cat kube-manifests/04-kubernetes-loadbalancer-service.yaml 
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-lb-service
+  namespace: qa
+spec:
+  type: LoadBalancer # ClusterIP, # NodePort
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ cat kube-manifests/0
+01-kubernetes-namespace.yaml             03-kubernetes-deployment.yaml            
+02-kubernetes-resourcequota.yaml         04-kubernetes-loadbalancer-service.yaml  
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl apply -f kube-manifests/
+namespace/qa created
+resourcequota/qa-namespace-resource-quota created
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get all -n qa
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-6fb8d677d4-bnrdp   0/1     Pending   0          16s
+pod/myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          17s
+
+NAME                        TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+service/myapp1-lb-service   LoadBalancer   10.80.5.125   <pending>     80:30017/TCP   17s
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   1/2     2            1           19s
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-6fb8d677d4   2         2         1       19s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe deploy myapp1-deployment
+Error from server (NotFound): deployments.apps "myapp1-deployment" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe deployment/myapp1-deployment
+Error from server (NotFound): deployments.apps "myapp1-deployment" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe deployment.apps/myapp1-deployment
+Error from server (NotFound): deployments.apps "myapp1-deployment" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get deploy
+No resources found in default namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe deployment.apps/myapp1-deployment -n qa
+Name:                   myapp1-deployment
+Namespace:              qa
+CreationTimestamp:      Sun, 22 Oct 2023 20:38:38 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=myapp1
+Replicas:               2 desired | 2 updated | 2 total | 1 available | 1 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=myapp1
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      False   MinimumReplicasUnavailable
+  Progressing    True    ReplicaSetUpdated
+OldReplicaSets:  <none>
+NewReplicaSet:   myapp1-deployment-6fb8d677d4 (2/2 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  100s  deployment-controller  Scaled up replica set myapp1-deployment-6fb8d677d4 to 2
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          109s
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          110s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe pods myapp1-deployment-6fb8d677d4-bnrdp
+Error from server (NotFound): pods "myapp1-deployment-6fb8d677d4-bnrdp" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe pods myapp1-deployment-6fb8d677d4-bnrdp -n qa
+Name:             myapp1-deployment-6fb8d677d4-bnrdp
+Namespace:        qa
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-zxr4/10.128.0.28
+Start Time:       Sun, 22 Oct 2023 20:40:09 +0800
+Labels:           app=myapp1
+                  pod-template-hash=6fb8d677d4
+Annotations:      <none>
+Status:           Running
+IP:               10.84.3.2
+IPs:
+  IP:           10.84.3.2
+Controlled By:  ReplicaSet/myapp1-deployment-6fb8d677d4
+Containers:
+  myapp1-container:
+    Container ID:   containerd://5c58f668feb8169b3188e57f75eec100cd4c679ed3e9b7ee773eab08295b2dac
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 20:40:24 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-zm4tr (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-zm4tr:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age    From                Message
+  ----     ------            ----   ----                -------
+  Warning  FailedScheduling  2m14s  default-scheduler   0/4 nodes are available: 4 Insufficient cpu. preemption: 0/4 nodes are available: 4 No preemption victims found for incoming pod..
+  Normal   TriggeredScaleUp  2m9s   cluster-autoscaler  pod triggered scale-up: [{https://www.googleapis.com/compute/v1/projects/sara-project-401601/zones/us-central1-c/instanceGroups/gke-sara-gke-cluster-default-pool-99c59557-grp 2->3 (max: 7)}]
+  Normal   Scheduled         44s    default-scheduler   Successfully assigned qa/myapp1-deployment-6fb8d677d4-bnrdp to gke-sara-gke-cluster-default-pool-99c59557-zxr4
+  Normal   Pulling           41s    kubelet             Pulling image "stacksimplify/kubenginx:1.0.0"
+  Normal   Pulled            29s    kubelet             Successfully pulled image "stacksimplify/kubenginx:1.0.0" in 6.460702713s (11.697615615s including waiting)
+  Normal   Created           29s    kubelet             Created container myapp1-container
+  Normal   Started           29s    kubelet             Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   11h     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-zxr4   Ready    <none>   73s     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d18h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods
+No resources found in default namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          3m3s
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          3m4s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe pods myapp1-deployment-6fb8d677d4-lbvcr -n qa
+Name:             myapp1-deployment-6fb8d677d4-lbvcr
+Namespace:        qa
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-jbjx/10.128.0.23
+Start Time:       Sun, 22 Oct 2023 20:38:39 +0800
+Labels:           app=myapp1
+                  pod-template-hash=6fb8d677d4
+Annotations:      <none>
+Status:           Running
+IP:               10.84.4.42
+IPs:
+  IP:           10.84.4.42
+Controlled By:  ReplicaSet/myapp1-deployment-6fb8d677d4
+Containers:
+  myapp1-container:
+    Container ID:   containerd://523a6a0d9580346a3d4ea182571e0d59562609dc8ee1a19897825fedb5ed2a35
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 20:38:40 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-4488t (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-4488t:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  3m21s  default-scheduler  Successfully assigned qa/myapp1-deployment-6fb8d677d4-lbvcr to gke-sara-gke-cluster-default-pool-99c59557-jbjx
+  Normal  Pulled     3m21s  kubelet            Container image "stacksimplify/kubenginx:1.0.0" already present on machine
+  Normal  Created    3m21s  kubelet            Created container myapp1-container
+  Normal  Started    3m20s  kubelet            Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   11h     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-zxr4   Ready    <none>   2m7s    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d18h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   82m          8%     1466Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   149m         15%    1464Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-zxr4   75m          7%     1128Mi          40%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   96m          10%    2126Mi          76%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   74m          7%     1938Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa -w
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          4m1s
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          4m2s
+^Crahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa -w
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          4m27s
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          4m28s
+^Crahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa -o wide
+NAME                                 READY   STATUS    RESTARTS   AGE     IP           NODE                                              NOMINATED NODE   READINESS GATES
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          4m35s   10.84.3.2    gke-sara-gke-cluster-default-pool-99c59557-zxr4   <none>           <none>
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          4m36s   10.84.4.42   gke-sara-gke-cluster-default-pool-99c59557-jbjx   <none>           <none>
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get all -n qa
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          5m1s
+pod/myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          5m2s
+
+NAME                        TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE
+service/myapp1-lb-service   LoadBalancer   10.80.5.125   35.226.232.97   80:30017/TCP   5m1s
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   2/2     2            2           5m3s
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-6fb8d677d4   2         2         2       5m3s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get resourcequota
+NAME                  AGE     REQUEST                                                                                                                            LIMIT
+gke-resource-quotas   6h38m   count/ingresses.extensions: 0/5k, count/ingresses.networking.k8s.io: 0/5k, count/jobs.batch: 0/10k, pods: 0/5k, services: 1/1500   
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get resourcequota -n qa
+NAME                          AGE     REQUEST                                                                                                                                  LIMIT
+gke-resource-quotas           5m24s   count/ingresses.extensions: 0/5k, count/ingresses.networking.k8s.io: 0/5k, count/jobs.batch: 0/10k, pods: 2/5k, services: 1/1500         
+qa-namespace-resource-quota   5m23s   configmaps: 1/3, persistentvolumeclaims: 0/3, pods: 2/3, requests.cpu: 400m/1, requests.memory: 256Mi/1Gi, secrets: 0/3, services: 1/3   limits.cpu: 800m/2, limits.memory: 512Mi/2Gi
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe resourcequota qa-namespace-resource-quota
+Error from server (NotFound): resourcequotas "qa-namespace-resource-quota" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe resourcequota qa-namespace-resource-quota -n qa
+Name:                   qa-namespace-resource-quota
+Namespace:              qa
+Resource                Used   Hard
+--------                ----   ----
+configmaps              1      3
+limits.cpu              800m   2
+limits.memory           512Mi  2Gi
+persistentvolumeclaims  0      3
+pods                    2      3
+requests.cpu            400m   1
+requests.memory         256Mi  1Gi
+secrets                 0      3
+services                1      3
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe resourcequota gke-resource-quotas
+Name:                              gke-resource-quotas
+Namespace:                         default
+Resource                           Used  Hard
+--------                           ----  ----
+count/ingresses.extensions         0     5k
+count/ingresses.networking.k8s.io  0     5k
+count/jobs.batch                   0     10k
+pods                               0     5k
+services                           1     1500
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe resourcequota gke-resource-quotas -n qa
+Name:                              gke-resource-quotas
+Namespace:                         qa
+Resource                           Used  Hard
+--------                           ----  ----
+count/ingresses.extensions         0     5k
+count/ingresses.networking.k8s.io  0     5k
+count/jobs.batch                   0     10k
+pods                               2     5k
+services                           1     1500
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl scale --replicas=4 deployment/myapp1-deployment -n qa
+deployment.apps/myapp1-deployment scaled
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get deploy -n qa
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   3/4     3            3           8m23s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          8m31s
+myapp1-deployment-6fb8d677d4-g9ptm   1/1     Running   0          20s
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          8m32s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get deploy -n qa
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   3/4     3            3           8m44s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   11h     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-zxr4   Ready    <none>   7m33s   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d18h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   93m          9%     1527Mi          54%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   144m         15%    1467Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-zxr4   74m          7%     1184Mi          42%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   113m         12%    2123Mi          76%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   86m          9%     1942Mi          69%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl top pods
+No resources found in default namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl top pods -n qa
+NAME                                 CPU(cores)   MEMORY(bytes)   
+myapp1-deployment-6fb8d677d4-bnrdp   0m           1Mi             
+myapp1-deployment-6fb8d677d4-g9ptm   0m           1Mi             
+myapp1-deployment-6fb8d677d4-lbvcr   0m           2Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl top pods -n qa -w
+error: unknown shorthand flag: 'w' in -w
+See 'kubectl top pod --help' for usage.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe resourcequota qa-namespace-resource-quota -n qa
+Name:                   qa-namespace-resource-quota
+Namespace:              qa
+Resource                Used   Hard
+--------                ----   ----
+configmaps              1      3
+limits.cpu              1200m  2
+limits.memory           768Mi  2Gi
+persistentvolumeclaims  0      3
+pods                    3      3
+requests.cpu            600m   1
+requests.memory         384Mi  1Gi
+secrets                 0      3
+services                1      3
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe deploy myapp1-deployment -n qa
+Name:                   myapp1-deployment
+Namespace:              qa
+CreationTimestamp:      Sun, 22 Oct 2023 20:38:38 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=myapp1
+Replicas:               4 desired | 3 updated | 3 total | 3 available | 1 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=myapp1
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type             Status  Reason
+  ----             ------  ------
+  Progressing      True    NewReplicaSetAvailable
+  ReplicaFailure   True    FailedCreate
+  Available        True    MinimumReplicasAvailable
+OldReplicaSets:    <none>
+NewReplicaSet:     myapp1-deployment-6fb8d677d4 (3/4 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  10m    deployment-controller  Scaled up replica set myapp1-deployment-6fb8d677d4 to 2
+  Normal  ScalingReplicaSet  2m33s  deployment-controller  Scaled up replica set myapp1-deployment-6fb8d677d4 to 4 from 2
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get rs -n qa
+NAME                           DESIRED   CURRENT   READY   AGE
+myapp1-deployment-6fb8d677d4   4         3         3       11m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe rs 
+No resources found in default namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe rs myapp1-deployment-6fb8d677d4 -n qa
+Name:           myapp1-deployment-6fb8d677d4
+Namespace:      qa
+Selector:       app=myapp1,pod-template-hash=6fb8d677d4
+Labels:         app=myapp1
+                pod-template-hash=6fb8d677d4
+Annotations:    deployment.kubernetes.io/desired-replicas: 4
+                deployment.kubernetes.io/max-replicas: 5
+                deployment.kubernetes.io/revision: 1
+Controlled By:  Deployment/myapp1-deployment
+Replicas:       3 current / 4 desired
+Pods Status:    3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=myapp1
+           pod-template-hash=6fb8d677d4
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type             Status  Reason
+  ----             ------  ------
+  ReplicaFailure   True    FailedCreate
+Events:
+  Type     Reason            Age                  From                   Message
+  ----     ------            ----                 ----                   -------
+  Normal   SuccessfulCreate  11m                  replicaset-controller  Created pod: myapp1-deployment-6fb8d677d4-lbvcr
+  Normal   SuccessfulCreate  11m                  replicaset-controller  Created pod: myapp1-deployment-6fb8d677d4-bnrdp
+  Normal   SuccessfulCreate  3m33s                replicaset-controller  Created pod: myapp1-deployment-6fb8d677d4-g9ptm
+  Warning  FailedCreate      3m33s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-jqtmn" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      3m33s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-z2hl9" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      3m33s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-8dkxf" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      3m33s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-rmjxs" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      3m33s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-6hmxh" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      3m33s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-zhnkv" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      3m33s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-6crsf" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      3m33s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-g7v8h" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      3m32s                replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-pzh86" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      53s (x7 over 3m32s)  replicaset-controller  (combined from similar events): Error creating: pods "myapp1-deployment-6fb8d677d4-m6tww" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ vim kube-manifests/0
+01-kubernetes-namespace.yaml             03-kubernetes-deployment.yaml            
+02-kubernetes-resourcequota.yaml         04-kubernetes-loadbalancer-service.yaml  
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ vim kube-manifests/02-kubernetes-resourcequota.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl apply -f kube-manifests/
+namespace/qa unchanged
+resourcequota/qa-namespace-resource-quota configured
+deployment.apps/myapp1-deployment configured
+service/myapp1-lb-service unchanged
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          13m
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          13m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get deploy -n qa
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   2/2     2            2           13m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl scale --replicas=4 deployment/myapp1-deployment -n qa
+deployment.apps/myapp1-deployment scaled
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get deploy -n qa
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   3/4     4            3           13m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-2dztn   1/1     Running   0          12s
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          13m
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          13m
+myapp1-deployment-6fb8d677d4-t8lmv   0/1     Pending   0          12s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe pods myapp1-deployment-6fb8d677d4-t8lmv -n qa
+Name:             myapp1-deployment-6fb8d677d4-t8lmv
+Namespace:        qa
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=6fb8d677d4
+Annotations:      <none>
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-6fb8d677d4
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-k9rph (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-k9rph:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age   From                Message
+  ----     ------            ----  ----                -------
+  Warning  FailedScheduling  33s   default-scheduler   0/5 nodes are available: 5 Insufficient cpu. preemption: 0/5 nodes are available: 5 No preemption victims found for incoming pod..
+  Normal   TriggeredScaleUp  28s   cluster-autoscaler  pod triggered scale-up: [{https://www.googleapis.com/compute/v1/projects/sara-project-401601/zones/us-central1-c/instanceGroups/gke-sara-gke-cluster-default-pool-99c59557-grp 3->4 (max: 7)}]
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get rs
+No resources found in default namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get rs -n qa
+NAME                           DESIRED   CURRENT   READY   AGE
+myapp1-deployment-6fb8d677d4   4         4         3       14m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe rs myapp1-deployment-6fb8d677d4 
+Error from server (NotFound): replicasets.apps "myapp1-deployment-6fb8d677d4" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe rs myapp1-deployment-6fb8d677d4  -n qa
+Name:           myapp1-deployment-6fb8d677d4
+Namespace:      qa
+Selector:       app=myapp1,pod-template-hash=6fb8d677d4
+Labels:         app=myapp1
+                pod-template-hash=6fb8d677d4
+Annotations:    deployment.kubernetes.io/desired-replicas: 4
+                deployment.kubernetes.io/max-replicas: 5
+                deployment.kubernetes.io/revision: 1
+Controlled By:  Deployment/myapp1-deployment
+Replicas:       4 current / 4 desired
+Pods Status:    3 Running / 1 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=myapp1
+           pod-template-hash=6fb8d677d4
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Events:
+  Type     Reason            Age                   From                   Message
+  ----     ------            ----                  ----                   -------
+  Normal   SuccessfulCreate  14m                   replicaset-controller  Created pod: myapp1-deployment-6fb8d677d4-lbvcr
+  Normal   SuccessfulCreate  14m                   replicaset-controller  Created pod: myapp1-deployment-6fb8d677d4-bnrdp
+  Normal   SuccessfulCreate  6m42s                 replicaset-controller  Created pod: myapp1-deployment-6fb8d677d4-g9ptm
+  Warning  FailedCreate      6m42s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-jqtmn" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      6m42s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-z2hl9" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      6m42s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-8dkxf" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      6m42s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-rmjxs" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      6m42s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-6hmxh" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      6m42s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-zhnkv" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      6m42s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-6crsf" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      6m42s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-g7v8h" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      6m41s                 replicaset-controller  Error creating: pods "myapp1-deployment-6fb8d677d4-pzh86" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Warning  FailedCreate      4m2s (x7 over 6m41s)  replicaset-controller  (combined from similar events): Error creating: pods "myapp1-deployment-6fb8d677d4-m6tww" is forbidden: exceeded quota: qa-namespace-resource-quota, requested: pods=1, used: pods=3, limited: pods=3
+  Normal   SuccessfulDelete  2m17s                 replicaset-controller  Deleted pod: myapp1-deployment-6fb8d677d4-g9ptm
+  Normal   SuccessfulCreate  75s                   replicaset-controller  Created pod: myapp1-deployment-6fb8d677d4-2dztn
+  Normal   SuccessfulCreate  75s                   replicaset-controller  Created pod: myapp1-deployment-6fb8d677d4-t8lmv
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa
+NAME                                 READY   STATUS              RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-2dztn   1/1     Running             0          87s
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running             0          15m
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running             0          15m
+myapp1-deployment-6fb8d677d4-t8lmv   0/1     ContainerCreating   0          87s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl logs -f myapp1-deployment-6fb8d677d4-t8lmv -n qa
+^C
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl describe pods myapp1-deployment-6fb8d677d4-t8lmv -n qa
+Name:             myapp1-deployment-6fb8d677d4-t8lmv
+Namespace:        qa
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-mh95/10.128.0.29
+Start Time:       Sun, 22 Oct 2023 20:53:35 +0800
+Labels:           app=myapp1
+                  pod-template-hash=6fb8d677d4
+Annotations:      <none>
+Status:           Running
+IP:               10.84.5.2
+IPs:
+  IP:           10.84.5.2
+Controlled By:  ReplicaSet/myapp1-deployment-6fb8d677d4
+Containers:
+  myapp1-container:
+    Container ID:   containerd://b5047c1594612b8494de01535f58afdad61580b98c7cd698599a6793a4500518
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 20:53:47 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-k9rph (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-k9rph:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age   From                Message
+  ----     ------            ----  ----                -------
+  Warning  FailedScheduling  2m8s  default-scheduler   0/5 nodes are available: 5 Insufficient cpu. preemption: 0/5 nodes are available: 5 No preemption victims found for incoming pod..
+  Normal   TriggeredScaleUp  2m3s  cluster-autoscaler  pod triggered scale-up: [{https://www.googleapis.com/compute/v1/projects/sara-project-401601/zones/us-central1-c/instanceGroups/gke-sara-gke-cluster-default-pool-99c59557-grp 3->4 (max: 7)}]
+  Normal   Scheduled         50s   default-scheduler   Successfully assigned qa/myapp1-deployment-6fb8d677d4-t8lmv to gke-sara-gke-cluster-default-pool-99c59557-mh95
+  Normal   Pulling           47s   kubelet             Pulling image "stacksimplify/kubenginx:1.0.0"
+  Normal   Pulled            38s   kubelet             Successfully pulled image "stacksimplify/kubenginx:1.0.0" in 5.862362802s (9.138294422s including waiting)
+  Normal   Created           38s   kubelet             Created container myapp1-container
+  Normal   Started           38s   kubelet             Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods
+No resources found in default namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get pods -n qa
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-2dztn   1/1     Running   0          2m18s
+myapp1-deployment-6fb8d677d4-bnrdp   1/1     Running   0          15m
+myapp1-deployment-6fb8d677d4-lbvcr   1/1     Running   0          15m
+myapp1-deployment-6fb8d677d4-t8lmv   1/1     Running   0          2m18s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   11h     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-mh95   Ready    <none>   75s     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-zxr4   Ready    <none>   14m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d18h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl get svc -n qa
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE
+myapp1-lb-service   LoadBalancer   10.80.5.125   35.226.232.97   80:30017/TCP   16m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ curl http://35.226.232.97
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ kubectl delete -f kube-manifests/
+namespace "qa" deleted
+resourcequota "qa-namespace-resource-quota" deleted
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+
+vim session.out
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ vim session.out
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ 
+
+

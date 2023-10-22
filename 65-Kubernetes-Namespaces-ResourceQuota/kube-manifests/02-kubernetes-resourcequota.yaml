@@ -9,7 +9,7 @@ spec:
     requests.memory: 1Gi
     limits.cpu: "2"
     limits.memory: 2Gi  
-    pods: "3"    
+    pods: "4"    
     configmaps: "3" 
     persistentvolumeclaims: "3" 
     secrets: "3" 
