@@ -1,0 +1,523 @@
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/65-Kubernetes-Namespaces-ResourceQuota$ cd ../66-Kubernetes-Namespaces-LimitRange/
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ ls
+01-kube-manifests-LimitRange-defaults  02-kube-manifests-LimitRange-MinMax  README.md
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ ls 01-kube-manifests-LimitRange-defaults/*
+01-kube-manifests-LimitRange-defaults/01-kubernetes-namespace.yaml
+01-kube-manifests-LimitRange-defaults/02-kubernetes-resourcequota-limitrange.yaml
+01-kube-manifests-LimitRange-defaults/03-kubernetes-deployment.yaml
+01-kube-manifests-LimitRange-defaults/04-kubernetes-loadbalancer-service.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ cat 01-kube-manifests-LimitRange-defaults/*
+apiVersion: v1
+kind: Namespace
+metadata: 
+  name: qa
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: qa-namespace-resource-quota
+  namespace: qa
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi  
+    pods: "3"    
+    configmaps: "3" 
+    persistentvolumeclaims: "3" 
+    secrets: "3" 
+    services: "3" 
+---    
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-cpu-mem-limit-range
+  namespace: qa
+spec:
+  limits:
+    - default:
+        cpu: "400m"  # If not specified default limit is 1 vCPU per container     
+        memory: "256Mi" # If not specified the Container's memory limit is set to 512Mi, which is the default memory limit for the namespace.
+      defaultRequest:
+        cpu: "200m" # If not specified default it will take from whatever specified in limits.default.cpu      
+        memory: "128Mi" # If not specified default it will take from whatever specified in limits.default.memory
+      max: 
+        cpu: "500m"
+        memory: "500Mi"
+      min:       
+        cpu: "100m"
+        memory: "100Mi"
+      type: Container apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+  namespace: qa
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          #resources:
+          #  requests:
+          #    memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+          #    cpu: "200m" # `m` means milliCPU
+          #  limits:
+          #    memory: "256Mi"
+          #    cpu: "400m"  # 1000m is equal to 1 VCPU core                                               
+    apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-lb-service
+  namespace: qa
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl apply -f 01-kube-manifests-LimitRange-defaults/
+namespace/qa created
+resourcequota/qa-namespace-resource-quota created
+limitrange/default-cpu-mem-limit-range created
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get ns
+NAME                              STATUS   AGE
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+qa                                Active   4m6s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get resourcequota -n qa
+NAME                          AGE     REQUEST                                                                                                                                  LIMIT
+gke-resource-quotas           4m20s   count/ingresses.extensions: 0/5k, count/ingresses.networking.k8s.io: 0/5k, count/jobs.batch: 0/10k, pods: 2/5k, services: 1/1500         
+qa-namespace-resource-quota   4m19s   configmaps: 1/3, persistentvolumeclaims: 0/3, pods: 2/3, requests.cpu: 400m/1, requests.memory: 256Mi/1Gi, secrets: 0/3, services: 1/3   limits.cpu: 800m/2, limits.memory: 512Mi/2Gi
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl describe resourcequota qa-namespace-resource-quota -n qa
+Name:                   qa-namespace-resource-quota
+Namespace:              qa
+Resource                Used   Hard
+--------                ----   ----
+configmaps              1      3
+limits.cpu              800m   2
+limits.memory           512Mi  2Gi
+persistentvolumeclaims  0      3
+pods                    2      3
+requests.cpu            400m   1
+requests.memory         256Mi  1Gi
+secrets                 0      3
+services                1      3
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get deploy -n qa
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   2/2     2            2           5m5s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get pods -n qa
+NAME                                READY   STATUS    RESTARTS   AGE
+myapp1-deployment-b99ccfb9d-6ht9s   1/1     Running   0          5m21s
+myapp1-deployment-b99ccfb9d-kjlcc   1/1     Running   0          5m21s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl describe pods myapp1-deployment-b99ccfb9d-6ht9s
+Error from server (NotFound): pods "myapp1-deployment-b99ccfb9d-6ht9s" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl describe pods myapp1-deployment-b99ccfb9d-6ht9s -n qa
+Name:             myapp1-deployment-b99ccfb9d-6ht9s
+Namespace:        qa
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-wlj9/10.128.0.30
+Start Time:       Sun, 22 Oct 2023 21:22:23 +0800
+Labels:           app=myapp1
+                  pod-template-hash=b99ccfb9d
+Annotations:      kubernetes.io/limit-ranger:
+                    LimitRanger plugin set: cpu, memory request for container myapp1-container; cpu, memory limit for container myapp1-container
+Status:           Running
+IP:               10.84.3.2
+IPs:
+  IP:           10.84.3.2
+Controlled By:  ReplicaSet/myapp1-deployment-b99ccfb9d
+Containers:
+  myapp1-container:
+    Container ID:   containerd://9be814808348ff36b91bef2b393522c1efbadc00c36b1c203add2b463a886923
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 21:22:40 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-8kv9m (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-8kv9m:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age                    From                Message
+  ----     ------            ----                   ----                -------
+  Warning  FailedScheduling  5m39s (x2 over 5m40s)  default-scheduler   0/4 nodes are available: 4 Insufficient cpu. preemption: 0/4 nodes are available: 4 No preemption victims found for incoming pod..
+  Normal   TriggeredScaleUp  5m32s                  cluster-autoscaler  pod triggered scale-up: [{https://www.googleapis.com/compute/v1/projects/sara-project-401601/zones/us-central1-c/instanceGroups/gke-sara-gke-cluster-default-pool-99c59557-grp 2->3 (max: 7)}]
+  Normal   Scheduled         3m59s                  default-scheduler   Successfully assigned qa/myapp1-deployment-b99ccfb9d-6ht9s to gke-sara-gke-cluster-default-pool-99c59557-wlj9
+  Normal   Pulling           3m57s                  kubelet             Pulling image "stacksimplify/kubenginx:1.0.0"
+  Normal   Pulled            3m43s                  kubelet             Successfully pulled image "stacksimplify/kubenginx:1.0.0" in 7.101708305s (14.275441485s including waiting)
+  Normal   Created           3m43s                  kubelet             Created container myapp1-container
+  Normal   Started           3m42s                  kubelet             Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   12h     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-wlj9   Ready    <none>   4m27s   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d19h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get svc -n qa
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)        AGE
+myapp1-lb-service   LoadBalancer   10.80.9.220   34.133.91.214   80:30037/TCP   6m30s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ curl http://34.133.91.214
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl delete -f 01-kube-manifests-LimitRange-defaults/
+namespace "qa" deleted
+resourcequota "qa-namespace-resource-quota" deleted
+limitrange "default-cpu-mem-limit-range" deleted
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ ls
+01-kube-manifests-LimitRange-defaults  02-kube-manifests-LimitRange-MinMax  README.md
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ ls 02-kube-manifests-LimitRange-MinMax/
+01-kubernetes-namespace.yaml                 03-kubernetes-deployment.yaml
+02-kubernetes-resourcequota-limitrange.yaml  04-kubernetes-loadbalancer-service.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ cat 02-kube-manifests-LimitRange-MinMax/01-kubernetes-namespace.yaml 
+apiVersion: v1
+kind: Namespace
+metadata: 
+  name: qa
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ cat 02-kube-manifests-LimitRange-MinMax/02-kubernetes-resourcequota-limitrange.yaml 
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: qa-namespace-resource-quota
+  namespace: qa
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi  
+    pods: "3"    
+    configmaps: "3" 
+    persistentvolumeclaims: "3" 
+    secrets: "3" 
+    services: "3" 
+---    
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-cpu-mem-limit-range
+  namespace: qa
+spec:
+  limits:
+    - default:
+        cpu: "400m"  # If not specified default limit is 1 vCPU per container     
+        memory: "256Mi" # If not specified the Container's memory limit is set to 512Mi, which is the default memory limit for the namespace.
+      defaultRequest:
+        cpu: "200m" # If not specified default it will take from whatever specified in limits.default.cpu      
+        memory: "128Mi" # If not specified default it will take from whatever specified in limits.default.memory
+      max: 
+        cpu: "500m"
+        memory: "500Mi"
+      min:       
+        cpu: "100m"
+        memory: "100Mi"
+      type: Container rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ cat 02-kube-manifests-LimitRange-MinMax/03-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+  namespace: qa
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "450m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              #cpu: "600m"  # This is above the max value defined in Limit Range, Pods will not be scheduled and error thrown when we refer ReplicaSet Events
+              cpu: "500m" # This is equal to Max value defined in LimitRange, Pods will be scheduled.   rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ vim 02-kube-manifests-LimitRange-MinMax/03-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ cat 02-kube-manifests-LimitRange-MinMax/03-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+  namespace: qa
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "450m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              cpu: "600m"  # This is above the max value defined in Limit Range, Pods will not be scheduled and error thrown when we refer ReplicaSet Events
+              #cpu: "500m" # This is equal to Max value defined in LimitRange, Pods will be scheduled.   
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ ls
+01-kube-manifests-LimitRange-defaults  02-kube-manifests-LimitRange-MinMax  README.md
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ ls 02-kube-manifests-LimitRange-MinMax/
+01-kubernetes-namespace.yaml                 03-kubernetes-deployment.yaml
+02-kubernetes-resourcequota-limitrange.yaml  04-kubernetes-loadbalancer-service.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ cat 02-kube-manifests-LimitRange-MinMax/04-kubernetes-loadbalancer-service.yaml 
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-lb-service
+  namespace: qa
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl apply -f 02-kube-manifests-LimitRange-MinMax/
+namespace/qa created
+resourcequota/qa-namespace-resource-quota created
+limitrange/default-cpu-mem-limit-range created
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get resourcequota -n qa
+NAME                          AGE     REQUEST                                                                                                                            LIMIT
+gke-resource-quotas           2m20s   count/ingresses.extensions: 0/5k, count/ingresses.networking.k8s.io: 0/5k, count/jobs.batch: 0/10k, pods: 0/5k, services: 1/1500   
+qa-namespace-resource-quota   2m19s   configmaps: 1/3, persistentvolumeclaims: 0/3, pods: 0/3, requests.cpu: 0/1, requests.memory: 0/1Gi, secrets: 0/3, services: 1/3    limits.cpu: 0/2, limits.memory: 0/2Gi
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl describe resourcequota qa-namespace-resource-quota -n qa
+Name:                   qa-namespace-resource-quota
+Namespace:              qa
+Resource                Used  Hard
+--------                ----  ----
+configmaps              1     3
+limits.cpu              0     2
+limits.memory           0     2Gi
+persistentvolumeclaims  0     3
+pods                    0     3
+requests.cpu            0     1
+requests.memory         0     1Gi
+secrets                 0     3
+services                1     3
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get deploy -n qa
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   0/2     0            0           3m8s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl describe deploy myapp1-deployment -n qa
+Name:                   myapp1-deployment
+Namespace:              qa
+CreationTimestamp:      Sun, 22 Oct 2023 21:30:22 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=myapp1
+Replicas:               2 desired | 0 updated | 0 total | 0 available | 2 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=myapp1
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     600m
+      memory:  256Mi
+    Requests:
+      cpu:        450m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type             Status  Reason
+  ----             ------  ------
+  Progressing      True    NewReplicaSetCreated
+  Available        False   MinimumReplicasUnavailable
+  ReplicaFailure   True    FailedCreate
+OldReplicaSets:    <none>
+NewReplicaSet:     myapp1-deployment-7f5ddbc8b (0/2 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  3m26s  deployment-controller  Scaled up replica set myapp1-deployment-7f5ddbc8b to 2
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get rs -n qa
+NAME                          DESIRED   CURRENT   READY   AGE
+myapp1-deployment-7f5ddbc8b   2         0         0       3m34s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl describe rs myapp1-deployment-7f5ddbc8b -n qa
+Name:           myapp1-deployment-7f5ddbc8b
+Namespace:      qa
+Selector:       app=myapp1,pod-template-hash=7f5ddbc8b
+Labels:         app=myapp1
+                pod-template-hash=7f5ddbc8b
+Annotations:    deployment.kubernetes.io/desired-replicas: 2
+                deployment.kubernetes.io/max-replicas: 3
+                deployment.kubernetes.io/revision: 1
+Controlled By:  Deployment/myapp1-deployment
+Replicas:       0 current / 2 desired
+Pods Status:    0 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=myapp1
+           pod-template-hash=7f5ddbc8b
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     600m
+      memory:  256Mi
+    Requests:
+      cpu:        450m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type             Status  Reason
+  ----             ------  ------
+  ReplicaFailure   True    FailedCreate
+Events:
+  Type     Reason        Age                  From                   Message
+  ----     ------        ----                 ----                   -------
+  Warning  FailedCreate  3m50s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-kb7fq" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  3m50s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-tmhwf" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  3m50s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-ds4x4" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  3m50s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-5b55p" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  3m50s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-8tktr" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  3m49s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-mbglj" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  3m49s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-trjnj" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  3m49s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-9b7nd" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  3m48s                replicaset-controller  Error creating: pods "myapp1-deployment-7f5ddbc8b-blk47" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+  Warning  FailedCreate  66s (x7 over 3m47s)  replicaset-controller  (combined from similar events): Error creating: pods "myapp1-deployment-7f5ddbc8b-cg96m" is forbidden: maximum cpu usage per Container is 500m, but limit is 600m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ vim 02-kube-manifests-LimitRange-MinMax/03-kubernetes-deployment.yaml 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl apply -f 02-kube-manifests-LimitRange-MinMax/
+namespace/qa unchanged
+resourcequota/qa-namespace-resource-quota unchanged
+limitrange/default-cpu-mem-limit-range unchanged
+deployment.apps/myapp1-deployment configured
+service/myapp1-lb-service unchanged
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get rs -n qa
+NAME                           DESIRED   CURRENT   READY   AGE
+myapp1-deployment-57f45fb6bd   2         2         2       2m49s
+myapp1-deployment-7f5ddbc8b    0         0         0       7m20s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl describe resourcequota qa-namespace-resource-quota -n qa
+Name:                   qa-namespace-resource-quota
+Namespace:              qa
+Resource                Used   Hard
+--------                ----   ----
+configmaps              1      3
+limits.cpu              1      2
+limits.memory           512Mi  2Gi
+persistentvolumeclaims  0      3
+pods                    2      3
+requests.cpu            900m   1
+requests.memory         256Mi  1Gi
+secrets                 0      3
+services                1      3
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get svc -n qaq
+No resources found in qaq namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl get svc -n qa
+NAME                TYPE           CLUSTER-IP   EXTERNAL-IP      PORT(S)        AGE
+myapp1-lb-service   LoadBalancer   10.80.3.99   34.122.181.124   80:32321/TCP   8m8s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ curl http://34.121.181.124
+ 
+^C
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ curl http://34.122.181.124<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ kubectl delete -f 02-kube-manifests-LimitRange-MinMax/
+namespace "qa" deleted
+resourcequota "qa-namespace-resource-quota" deleted
+limitrange "default-cpu-mem-limit-range" deleted
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/66-Kubernetes-Namespaces-LimitRange$ vim session.out
+
