@@ -1,0 +1,573 @@
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ ls
+01-kube-manifests-imperative  02-kube-manifests-declarative  README.md
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ ls 01-kube-manifests-imperative/
+01-kubernetes-deployment.yaml  02-kubernetes-loadbalancer-service.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ cat 01-kube-manifests-imperative/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment  
+spec: # Dictionary
+  replicas: 2 
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "200m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              cpu: "400m"  # 1000m is equal to 1 VCPU core                                               
+    rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ cat 01-kube-manifests-imperative/02-kubernetes-loadbalancer-service.yaml 
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-lb-service
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   7h16m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d14h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns
+NAME                              STATUS   AGE
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl create ns anirudh
+namespace/anirudh created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns
+NAME                              STATUS   AGE
+anirudh                           Active   6s
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl apply -f 
+01-kube-manifests-imperative/  02-kube-manifests-declarative/ README.md                      
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl apply -f 01-kube-manifests-imperative -n anirudh
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get all -n anirudh
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-6fb8d677d4-6t4nl   0/1     Pending   0          19s
+pod/myapp1-deployment-6fb8d677d4-8fcrd   1/1     Running   0          19s
+
+NAME                        TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+service/myapp1-lb-service   LoadBalancer   10.80.10.115   <pending>     80:30405/TCP   20s
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   1/2     2            1           21s
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-6fb8d677d4   2         2         1       22s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get deploy -n anirudh
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   1/2     2            1           46s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get pods -n anirudh
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-6t4nl   0/1     Pending   0          59s
+myapp1-deployment-6fb8d677d4-8fcrd   1/1     Running   0          59s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl describe pods myapp1-deployment-6fb8d677d4-6t4nl -n anirudh
+Name:             myapp1-deployment-6fb8d677d4-6t4nl
+Namespace:        anirudh
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=myapp1
+                  pod-template-hash=6fb8d677d4
+Annotations:      <none>
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/myapp1-deployment-6fb8d677d4
+Containers:
+  myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-8m6nj (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False 
+Volumes:
+  kube-api-access-8m6nj:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age   From                Message
+  ----     ------            ----  ----                -------
+  Warning  FailedScheduling  79s   default-scheduler   0/4 nodes are available: 4 Insufficient cpu. preemption: 0/4 nodes are available: 4 No preemption victims found for incoming pod..
+  Normal   TriggeredScaleUp  72s   cluster-autoscaler  pod triggered scale-up: [{https://www.googleapis.com/compute/v1/projects/sara-project-401601/zones/us-central1-c/instanceGroups/gke-sara-gke-cluster-default-pool-99c59557-grp 2->3 (max: 7)}]
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   7h20m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-sfxk   Ready    <none>   13s     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d14h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%        MEMORY(bytes)   MEMORY%     
+gke-sara-gke-cluster-default-pool-99c59557-cthb   86m          9%          1485Mi          53%         
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   123m         13%         1389Mi          49%         
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   106m         11%         2113Mi          75%         
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   100m         10%         1962Mi          70%         
+gke-sara-gke-cluster-default-pool-99c59557-sfxk   <unknown>    <unknown>   <unknown>       <unknown>   
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   76m          8%     1488Mi          53%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   108m         11%    1386Mi          49%       
+gke-sara-gke-cluster-default-pool-99c59557-sfxk   73m          7%     1116Mi          40%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   103m         10%    2109Mi          75%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   80m          8%     1968Mi          70%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   7h22m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-sfxk   Ready    <none>   2m3s    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d14h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get pods -n anirudh
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-6t4nl   1/1     Running   0          3m36s
+myapp1-deployment-6fb8d677d4-8fcrd   1/1     Running   0          3m36s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl describe pods myapp1-deployment-6fb8d677d4-6t4nl -n anirudh
+Name:             myapp1-deployment-6fb8d677d4-6t4nl
+Namespace:        anirudh
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-sfxk/10.128.0.27
+Start Time:       Sun, 22 Oct 2023 16:27:40 +0800
+Labels:           app=myapp1
+                  pod-template-hash=6fb8d677d4
+Annotations:      <none>
+Status:           Running
+IP:               10.84.3.2
+IPs:
+  IP:           10.84.3.2
+Controlled By:  ReplicaSet/myapp1-deployment-6fb8d677d4
+Containers:
+  myapp1-container:
+    Container ID:   containerd://89f1083e44e1c048d9ce2c13f28dbaa375ca0d433fed0954f836abf51c98107b
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 16:27:56 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     400m
+      memory:  256Mi
+    Requests:
+      cpu:        200m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-8m6nj (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-8m6nj:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age    From                Message
+  ----     ------            ----   ----                -------
+  Warning  FailedScheduling  3m45s  default-scheduler   0/4 nodes are available: 4 Insufficient cpu. preemption: 0/4 nodes are available: 4 No preemption victims found for incoming pod..
+  Normal   TriggeredScaleUp  3m38s  cluster-autoscaler  pod triggered scale-up: [{https://www.googleapis.com/compute/v1/projects/sara-project-401601/zones/us-central1-c/instanceGroups/gke-sara-gke-cluster-default-pool-99c59557-grp 2->3 (max: 7)}]
+  Normal   Scheduled         2m8s   default-scheduler   Successfully assigned anirudh/myapp1-deployment-6fb8d677d4-6t4nl to gke-sara-gke-cluster-default-pool-99c59557-sfxk
+  Normal   Pulling           2m7s   kubelet             Pulling image "stacksimplify/kubenginx:1.0.0"
+  Normal   Pulled            112s   kubelet             Successfully pulled image "stacksimplify/kubenginx:1.0.0" in 6.468744663s (14.571042387s including waiting)
+  Normal   Created           112s   kubelet             Created container myapp1-container
+  Normal   Started           112s   kubelet             Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get svc -n anirudh
+NAME                TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE
+myapp1-lb-service   LoadBalancer   10.80.10.115   34.42.126.230   80:30405/TCP   4m13s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ curl http://34.42.126.230
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.80.10.115
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it -n anirudh --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.80.10.115
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it -n anirudh007 --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.80.10.115
+Error from server (NotFound): namespaces "anirudh007" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it -n anirudh --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.80.10.115
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns 
+NAME                              STATUS   AGE
+anirudh                           Active   10m
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get all -n anirudh
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-6fb8d677d4-6t4nl   1/1     Running   0          10m
+pod/myapp1-deployment-6fb8d677d4-8fcrd   1/1     Running   0          10m
+
+NAME                        TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE
+service/myapp1-lb-service   LoadBalancer   10.80.10.115   34.42.126.230   80:30405/TCP   10m
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   2/2     2            2           10m
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-6fb8d677d4   2         2         2       10m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl delete ns anirudh
+namespace "anirudh" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get all -n anirudh
+No resources found in anirudh namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns 
+NAME                              STATUS   AGE
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ ls 02-kube-manifests-declarative/
+00-kubernetes-namespace.yaml  01-kubernetes-deployment.yaml  02-kubernetes-loadbalancer-service.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ cat 02-kube-manifests-declarative/00-kubernetes-namespace.yaml 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qarahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ cat 02-kube-manifests-declarative/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: myapp1-deployment
+  namespace: qa
+spec: # Dictionary
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata: # Dictionary
+      name: myapp1-pod
+      labels: # Dictionary
+        app: myapp1  # Key value pairs
+    spec:
+      containers: # List
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "200m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              cpu: "400m"  # 1000m is equal to 1 VCPU core                                               
+    rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ cat 02-kube-manifests-declarative/02-kubernetes-loadbalancer-service.yaml 
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-lb-service
+  namespace: qa
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   7h34m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-sfxk   Ready    <none>   14m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d14h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ ls
+01-kube-manifests-imperative  02-kube-manifests-declarative  README.md
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns
+NAME                              STATUS   AGE
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl apply -f 02-kube-manifests-declarative/
+namespace/qa created
+deployment.apps/myapp1-deployment created
+service/myapp1-lb-service created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns
+NAME                              STATUS   AGE
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+qa                                Active   8s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get all -n qa
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/myapp1-deployment-6fb8d677d4-46sxt   1/1     Running   0          19s
+pod/myapp1-deployment-6fb8d677d4-dd59s   1/1     Running   0          19s
+
+NAME                        TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE
+service/myapp1-lb-service   LoadBalancer   10.80.14.3   <pending>     80:32120/TCP   19s
+
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/myapp1-deployment   2/2     2            2           20s
+
+NAME                                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/myapp1-deployment-6fb8d677d4   2         2         2       20s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get deploy -n qa
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   2/2     2            2           47s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get pods -n qa
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-6fb8d677d4-46sxt   1/1     Running   0          54s
+myapp1-deployment-6fb8d677d4-dd59s   1/1     Running   0          54s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get pods -n qa -o wide --show-labels
+NAME                                 READY   STATUS    RESTARTS   AGE   IP           NODE                                              NOMINATED NODE   READINESS GATES   LABELS
+myapp1-deployment-6fb8d677d4-46sxt   1/1     Running   0          62s   10.84.3.7    gke-sara-gke-cluster-default-pool-99c59557-sfxk   <none>           <none>            app=myapp1,pod-template-hash=6fb8d677d4
+myapp1-deployment-6fb8d677d4-dd59s   1/1     Running   0          62s   10.84.4.41   gke-sara-gke-cluster-default-pool-99c59557-jbjx   <none>           <none>            app=myapp1,pod-template-hash=6fb8d677d4
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get nodes -o wide --show-labels
+NAME                                              STATUS   ROLES    AGE     VERSION           INTERNAL-IP   EXTERNAL-IP      OS-IMAGE             KERNEL-VERSION    CONTAINER-RUNTIME    LABELS
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100   10.128.0.10   34.69.59.203     Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-medium,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=ubuntu,cloud.google.com/gke-provisioning=spot,cloud.google.com/gke-spot=true,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,cloud.google.com/private-node=false,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-c,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-99c59557-cthb,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-medium,topology.gke.io/zone=us-central1-c,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-c
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   7h36m   v1.27.3-gke.100   10.128.0.23   34.123.249.125   Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-medium,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=ubuntu,cloud.google.com/gke-provisioning=spot,cloud.google.com/gke-spot=true,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,cloud.google.com/private-node=false,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-c,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-99c59557-jbjx,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-medium,topology.gke.io/zone=us-central1-c,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-c
+gke-sara-gke-cluster-default-pool-99c59557-sfxk   Ready    <none>   16m     v1.27.3-gke.100   10.128.0.27   35.238.82.64     Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-medium,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=ubuntu,cloud.google.com/gke-provisioning=spot,cloud.google.com/gke-spot=true,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,cloud.google.com/private-node=false,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-c,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-99c59557-sfxk,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-medium,topology.gke.io/zone=us-central1-c,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-c
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100   10.128.0.17   34.31.73.205     Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-medium,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=ubuntu,cloud.google.com/gke-provisioning=spot,cloud.google.com/gke-spot=true,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,cloud.google.com/private-node=false,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-b,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-b30cb3e3-1crl,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-medium,topology.gke.io/zone=us-central1-b,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-b
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d14h   v1.27.3-gke.100   10.128.0.21   34.42.83.59      Ubuntu 22.04.2 LTS   5.15.0-1036-gke   containerd://1.7.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=e2-medium,beta.kubernetes.io/os=linux,cloud.google.com/gke-boot-disk=pd-standard,cloud.google.com/gke-container-runtime=containerd,cloud.google.com/gke-cpu-scaling-level=2,cloud.google.com/gke-logging-variant=DEFAULT,cloud.google.com/gke-max-pods-per-node=110,cloud.google.com/gke-netd-ready=true,cloud.google.com/gke-nodepool=default-pool,cloud.google.com/gke-os-distribution=ubuntu,cloud.google.com/gke-provisioning=spot,cloud.google.com/gke-spot=true,cloud.google.com/gke-stack-type=IPV4,cloud.google.com/machine-family=e2,cloud.google.com/private-node=false,failure-domain.beta.kubernetes.io/region=us-central1,failure-domain.beta.kubernetes.io/zone=us-central1-a,iam.gke.io/gke-metadata-server-enabled=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=gke-sara-gke-cluster-default-pool-df7770d2-l11r,kubernetes.io/os=linux,node.kubernetes.io/instance-type=e2-medium,topology.gke.io/zone=us-central1-a,topology.kubernetes.io/region=us-central1,topology.kubernetes.io/zone=us-central1-a
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get sv -n qa -o wide --show-labels
+error: the server doesn't have a resource type "sv"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get svc -n qa -o wide --show-labels
+NAME                TYPE           CLUSTER-IP   EXTERNAL-IP     PORT(S)        AGE    SELECTOR     LABELS
+myapp1-lb-service   LoadBalancer   10.80.14.3   34.170.188.74   80:32120/TCP   108s   app=myapp1   <none>
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get pods -n qa -o wide --show-labels
+NAME                                 READY   STATUS    RESTARTS   AGE    IP           NODE                                              NOMINATED NODE   READINESS GATES   LABELS
+myapp1-deployment-6fb8d677d4-46sxt   1/1     Running   0          113s   10.84.3.7    gke-sara-gke-cluster-default-pool-99c59557-sfxk   <none>           <none>            app=myapp1,pod-template-hash=6fb8d677d4
+myapp1-deployment-6fb8d677d4-dd59s   1/1     Running   0          113s   10.84.4.41   gke-sara-gke-cluster-default-pool-99c59557-jbjx   <none>           <none>            app=myapp1,pod-template-hash=6fb8d677d4
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get nodes 
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   7h37m   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-sfxk   Ready    <none>   17m     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d14h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.80.14.3
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://34.170.188.74
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.84.3.7
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.84.4.41
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns
+kuNAME                              STATUS   AGE
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+qa                                Active   5m5s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl create ns abhishek
+namespace/abhishek created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns
+NAME                              STATUS   AGE
+abhishek                          Active   3s
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+qa                                Active   5m15s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl run -it -n abhishek --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.84.4.41
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl delete -f 
+01-kube-manifests-imperative/  02-kube-manifests-declarative/ README.md                      
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl delete -f 02-kube-manifests-declarative/
+namespace "qa" deleted
+deployment.apps "myapp1-deployment" deleted
+service "myapp1-lb-service" deleted
+kubectl get ns
+kubrahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl get ns
+eNAME                              STATUS   AGE
+abhishek                          Active   81s
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ kubectl delete ns abhishek
+namespace "abhishek" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ git add -A .
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ git commit -am"namespace imperatively and yaml curlimages"
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ vim session.out
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/64-Kubernetes-Namespaces$ 
+
+
