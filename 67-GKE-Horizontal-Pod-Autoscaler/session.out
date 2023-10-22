@@ -1,0 +1,1163 @@
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ ls
+kube-manifests  README.md
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ ls kube-manifests/
+01-kubernetes-deployment.yaml  02-kubernetes-cip-service.yaml  03-kubernetes-hpa.yaml
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ cat kube-manifests/01-kubernetes-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: 
+  name: myapp1-deployment
+spec: 
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp1
+  template:  
+    metadata:
+      name: myapp1-pod
+      labels:
+        app: myapp1  
+    spec:
+      containers: 
+        - name: myapp1-container
+          image: stacksimplify/kubenginx:1.0.0
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "5Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "5m" # `m` means milliCPU
+            limits:
+              memory: "50Mi"
+              cpu: "50m"  # 1000m is equal to 1 VCPU core                                               
+    rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ cat kube-manifests/02-kubernetes-cip-service.yaml 
+apiVersion: v1
+kind: Service 
+metadata:
+  name: myapp1-cip-service
+spec:
+  type: ClusterIP # ClusterIP, # NodePort
+  selector:
+    app: myapp1
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ cat kube-manifests/03-kubernetes-hpa.yaml 
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+ name: hpa-myapp1
+spec:
+ scaleTargetRef:
+   apiVersion: apps/v1
+   kind: Deployment
+   name: myapp1-deployment
+ minReplicas: 1
+ maxReplicas: 10
+ targetCPUUtilizationPercentage: 50
+ rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get ns
+NAME                              STATUS   AGE
+cnrm-system                       Active   12d
+configconnector-operator-system   Active   12d
+default                           Active   12d
+gke-managed-filestorecsi          Active   12d
+gmp-public                        Active   12d
+gmp-system                        Active   12d
+kube-node-lease                   Active   12d
+kube-public                       Active   12d
+kube-system                       Active   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.80.0.1    <none>        443/TCP   12d
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy 
+No resources found in default namespace.
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl apply -f kube-manifests/
+deployment.apps/myapp1-deployment created
+service/myapp1-cip-service created
+horizontalpodautoscaler.autoscaling/hpa-myapp1 created
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy 
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   1/1     1            1           6s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get rs
+NAME                           DESIRED   CURRENT   READY   AGE
+myapp1-deployment-5d796b8f6b   1         1         1       13s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          16s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get resourcequota
+NAME                  AGE     REQUEST                                                                                                                            LIMIT
+gke-resource-quotas   7h57m   count/ingresses.extensions: 0/5k, count/ingresses.networking.k8s.io: 0/5k, count/jobs.batch: 0/10k, pods: 1/5k, services: 2/1500   
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get hpa
+NAME         REFERENCE                      TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+hpa-myapp1   Deployment/myapp1-deployment   <unknown>/50%   1         10        1          46s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl describe hpa hpa-myapp1
+Name:                                                  hpa-myapp1
+Namespace:                                             default
+Labels:                                                <none>
+Annotations:                                           <none>
+CreationTimestamp:                                     Sun, 22 Oct 2023 22:02:27 +0800
+Reference:                                             Deployment/myapp1-deployment
+Metrics:                                               ( current / target )
+  resource cpu on pods  (as a percentage of request):  <unknown> / 50%
+Min replicas:                                          1
+Max replicas:                                          10
+Deployment pods:                                       1 current / 1 desired
+Conditions:
+  Type            Status  Reason                   Message
+  ----            ------  ------                   -------
+  AbleToScale     True    ReadyForNewScale         recommended size matches current size
+  ScalingActive   False   FailedGetResourceMetric  the HPA was unable to compute the replica count: No recommendation
+  ScalingLimited  False   DesiredWithinRange       the desired count is within the acceptable range
+Events:
+  Type     Reason                   Age                From                       Message
+  ----     ------                   ----               ----                       -------
+  Warning  FailedGetResourceMetric  11s (x6 over 56s)  horizontal-pod-autoscaler  No recommendation
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get svc
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes           ClusterIP   10.80.0.1    <none>        443/TCP   12d
+myapp1-cip-service   ClusterIP   10.80.5.81   <none>        80/TCP    2m19s
+(failed reverse-i-search)`curlimages -- /': git commit -am"namespace imperatively and yaml ^Crlimages"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.80.5.81
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/tempcurlpodv3, falling back to streaming logs: unable to upgrade connection: container tempcurlpodv3 not found in pod tempcurlpodv3_default
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl run -it --rm tempcurlpodv3 --image=curlimages/curl --restart=Never -- http://10.80.5.81
+<!DOCTYPE html>
+<html>
+   <body style="background-color:lightgoldenrodyellow;">
+      <h1>Welcome to Stack Simplify</h1>
+      <p>Kubernetes Fundamentals Demo</p>
+      <p>Application Version: V1</p>
+   </body>
+</html>pod "tempcurlpodv3" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ vim load_generator.sh
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ vim load_generator.sh
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   13h     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d20h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          6m38s
+
+
+
+
+
+--------------------- executed load-generator.sh from another terminal -----------------------------------------------
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ cat load_generator_2.sh 
+kubectl run -i --tty load-generator-2 \
+	--rm --image=busybox \
+	--restart=Never -- \
+	/bin/sh -c "while sleep 0.01; do wget -q -O- http://10.80.5.81; done"
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods -w
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          6m42s
+load-generator                       0/1     Pending   0          0s
+load-generator                       0/1     Pending   0          0s
+load-generator                       0/1     ContainerCreating   0          0s
+load-generator                       1/1     Running             0          2s
+myapp1-deployment-5d796b8f6b-bvtgr   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-bvtgr   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-bvtgr   0/1     ContainerCreating   0          0s
+myapp1-deployment-5d796b8f6b-bvtgr   1/1     Running             0          3s
+myapp1-deployment-5d796b8f6b-rm45s   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-rm45s   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-wxpvv   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-wxpvv   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-rm45s   0/1     ContainerCreating   0          0s
+myapp1-deployment-5d796b8f6b-wxpvv   0/1     ContainerCreating   0          0s
+myapp1-deployment-5d796b8f6b-wxpvv   1/1     Running             0          3s
+myapp1-deployment-5d796b8f6b-rm45s   1/1     Running             0          7s
+myapp1-deployment-5d796b8f6b-st2px   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-st2px   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-8rhbt   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-st2px   0/1     ContainerCreating   0          0s
+myapp1-deployment-5d796b8f6b-h8rl2   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-8rhbt   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-h8rl2   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-8rhbt   0/1     ContainerCreating   0          0s
+myapp1-deployment-5d796b8f6b-h8rl2   0/1     ContainerCreating   0          0s
+myapp1-deployment-5d796b8f6b-8rhbt   1/1     Running             0          2s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running             0          2s
+myapp1-deployment-5d796b8f6b-st2px   1/1     Running             0          3s
+myapp1-deployment-5d796b8f6b-k59pv   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-k59pv   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-m7ng2   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-k59pv   0/1     ContainerCreating   0          0s
+myapp1-deployment-5d796b8f6b-m7ng2   0/1     Pending             0          0s
+myapp1-deployment-5d796b8f6b-m7ng2   0/1     ContainerCreating   0          1s
+myapp1-deployment-5d796b8f6b-m7ng2   1/1     Running             0          2s
+myapp1-deployment-5d796b8f6b-k59pv   1/1     Running             0          3s
+^Crahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+load-generator                       1/1     Running   0          6m27s
+myapp1-deployment-5d796b8f6b-8rhbt   1/1     Running   0          5m12s
+myapp1-deployment-5d796b8f6b-bvtgr   1/1     Running   0          5m57s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          5m12s
+myapp1-deployment-5d796b8f6b-k59pv   1/1     Running   0          3m57s
+myapp1-deployment-5d796b8f6b-m7ng2   1/1     Running   0          3m57s
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          13m
+myapp1-deployment-5d796b8f6b-rm45s   1/1     Running   0          5m27s
+myapp1-deployment-5d796b8f6b-st2px   1/1     Running   0          5m12s
+myapp1-deployment-5d796b8f6b-wxpvv   1/1     Running   0          5m27s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   9/9     9            9           13m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl describe deploy myapp1-deployment
+Name:                   myapp1-deployment
+Namespace:              default
+CreationTimestamp:      Sun, 22 Oct 2023 22:02:26 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=myapp1
+Replicas:               9 desired | 9 updated | 9 total | 9 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=myapp1
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     50m
+      memory:  50Mi
+    Requests:
+      cpu:        5m
+      memory:     5Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      True    MinimumReplicasAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   myapp1-deployment-5d796b8f6b (9/9 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  13m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 1
+  Normal  ScalingReplicaSet  6m24s  deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 2 from 1
+  Normal  ScalingReplicaSet  5m54s  deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 4 from 2
+  Normal  ScalingReplicaSet  5m39s  deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 7 from 4
+  Normal  ScalingReplicaSet  4m24s  deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 9 from 7
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl logs -f deploy myapp1-deployment
+Error from server (NotFound): pods "deploy" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl logs -f deployment/myapp1-deployment
+Found 9 pods, using pod/myapp1-deployment-5d796b8f6b-qzvxk
+10.84.4.45 - - [22/Oct/2023:14:05:57 +0000] "GET / HTTP/1.1" 200 218 "-" "curl/8.4.0" "-"
+10.84.4.46 - - [22/Oct/2023:14:06:21 +0000] "GET / HTTP/1.1" 200 218 "-" "curl/8.4.0" "-"
+10.84.4.47 - - [22/Oct/2023:14:09:29 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.47 - - [22/Oct/2023:14:09:29 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.47 - - [22/Oct/2023:14:09:29 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+--
+
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+load-generator                       1/1     Running   0          7m56s
+myapp1-deployment-5d796b8f6b-8rhbt   1/1     Running   0          6m41s
+myapp1-deployment-5d796b8f6b-bvtgr   1/1     Running   0          7m26s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          6m41s
+myapp1-deployment-5d796b8f6b-k59pv   1/1     Running   0          5m26s
+myapp1-deployment-5d796b8f6b-m7ng2   1/1     Running   0          5m26s
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          14m
+myapp1-deployment-5d796b8f6b-rm45s   1/1     Running   0          6m56s
+myapp1-deployment-5d796b8f6b-st2px   1/1     Running   0          6m41s
+myapp1-deployment-5d796b8f6b-wxpvv   1/1     Running   0          6m56s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   9/9     9            9           15m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl top pods
+NAME                                 CPU(cores)   MEMORY(bytes)   
+load-generator                       153m         0Mi             
+myapp1-deployment-5d796b8f6b-8rhbt   2m           1Mi             
+myapp1-deployment-5d796b8f6b-bvtgr   2m           1Mi             
+myapp1-deployment-5d796b8f6b-h8rl2   3m           1Mi             
+myapp1-deployment-5d796b8f6b-k59pv   2m           1Mi             
+myapp1-deployment-5d796b8f6b-m7ng2   2m           1Mi             
+myapp1-deployment-5d796b8f6b-qzvxk   2m           1Mi             
+myapp1-deployment-5d796b8f6b-rm45s   3m           1Mi             
+myapp1-deployment-5d796b8f6b-st2px   2m           1Mi             
+myapp1-deployment-5d796b8f6b-wxpvv   2m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   102m         10%    1475Mi          52%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   490m         52%    1511Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   127m         13%    2099Mi          75%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   156m         16%    1966Mi          70%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods -o wide
+NAME                                 READY   STATUS    RESTARTS   AGE     IP           NODE                                              NOMINATED NODE   READINESS GATES
+load-generator                       1/1     Running   0          8m54s   10.84.4.47   gke-sara-gke-cluster-default-pool-99c59557-jbjx   <none>           <none>
+myapp1-deployment-5d796b8f6b-8rhbt   1/1     Running   0          7m39s   10.84.2.18   gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   <none>           <none>
+myapp1-deployment-5d796b8f6b-bvtgr   1/1     Running   0          8m24s   10.84.1.35   gke-sara-gke-cluster-default-pool-df7770d2-l11r   <none>           <none>
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          7m39s   10.84.4.48   gke-sara-gke-cluster-default-pool-99c59557-jbjx   <none>           <none>
+myapp1-deployment-5d796b8f6b-k59pv   1/1     Running   0          6m24s   10.84.1.37   gke-sara-gke-cluster-default-pool-df7770d2-l11r   <none>           <none>
+myapp1-deployment-5d796b8f6b-m7ng2   1/1     Running   0          6m24s   10.84.0.49   gke-sara-gke-cluster-default-pool-99c59557-cthb   <none>           <none>
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          15m     10.84.4.44   gke-sara-gke-cluster-default-pool-99c59557-jbjx   <none>           <none>
+myapp1-deployment-5d796b8f6b-rm45s   1/1     Running   0          7m54s   10.84.2.17   gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   <none>           <none>
+myapp1-deployment-5d796b8f6b-st2px   1/1     Running   0          7m39s   10.84.1.36   gke-sara-gke-cluster-default-pool-df7770d2-l11r   <none>           <none>
+myapp1-deployment-5d796b8f6b-wxpvv   1/1     Running   0          7m54s   10.84.0.48   gke-sara-gke-cluster-default-pool-99c59557-cthb   <none>           <none>
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods -o wide | grep myapp | awk '{print $7}' | sort -n | uniq
+gke-sara-gke-cluster-default-pool-99c59557-cthb
+gke-sara-gke-cluster-default-pool-99c59557-jbjx
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+gke-sara-gke-cluster-default-pool-df7770d2-l11r
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods -o wide | grep myapp | awk '{print $7}' | sort -n 
+gke-sara-gke-cluster-default-pool-99c59557-cthb
+gke-sara-gke-cluster-default-pool-99c59557-cthb
+gke-sara-gke-cluster-default-pool-99c59557-jbjx
+gke-sara-gke-cluster-default-pool-99c59557-jbjx
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+gke-sara-gke-cluster-default-pool-df7770d2-l11r
+gke-sara-gke-cluster-default-pool-df7770d2-l11r
+gke-sara-gke-cluster-default-pool-df7770d2-l11r
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE     VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   11d     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   Ready    <none>   13h     v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   8d      v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   3d20h   v1.27.3-gke.100
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl top nodes
+NAME                                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+gke-sara-gke-cluster-default-pool-99c59557-cthb   97m          10%    1548Mi          55%       
+gke-sara-gke-cluster-default-pool-99c59557-jbjx   458m         48%    1511Mi          54%       
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   117m         12%    2104Mi          75%       
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   157m         16%    1958Mi          70%       
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods -o wide | grep load | awk '{print $7}' | sort -n 
+gke-sara-gke-cluster-default-pool-99c59557-jbjx
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   9/9     9            9           18m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl top pods
+NAME                                 CPU(cores)   MEMORY(bytes)   
+load-generator                       148m         0Mi             
+myapp1-deployment-5d796b8f6b-8rhbt   2m           1Mi             
+myapp1-deployment-5d796b8f6b-bvtgr   2m           1Mi             
+myapp1-deployment-5d796b8f6b-h8rl2   3m           1Mi             
+myapp1-deployment-5d796b8f6b-k59pv   2m           1Mi             
+myapp1-deployment-5d796b8f6b-m7ng2   2m           1Mi             
+myapp1-deployment-5d796b8f6b-qzvxk   2m           1Mi             
+myapp1-deployment-5d796b8f6b-rm45s   2m           1Mi             
+myapp1-deployment-5d796b8f6b-st2px   2m           1Mi             
+myapp1-deployment-5d796b8f6b-wxpvv   3m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+load-generator                       1/1     Running   0          12m
+myapp1-deployment-5d796b8f6b-8rhbt   1/1     Running   0          10m
+myapp1-deployment-5d796b8f6b-bvtgr   1/1     Running   0          11m
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          10m
+myapp1-deployment-5d796b8f6b-k59pv   1/1     Running   0          9m34s
+myapp1-deployment-5d796b8f6b-m7ng2   1/1     Running   0          9m34s
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          19m
+myapp1-deployment-5d796b8f6b-rm45s   1/1     Running   0          11m
+myapp1-deployment-5d796b8f6b-st2px   1/1     Running   0          10m
+myapp1-deployment-5d796b8f6b-wxpvv   1/1     Running   0          11m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl describe pods myapp1-deployment-5d796b8f6b-8rhbt
+Name:             myapp1-deployment-5d796b8f6b-8rhbt
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-b30cb3e3-1crl/10.128.0.17
+Start Time:       Sun, 22 Oct 2023 22:10:43 +0800
+Labels:           app=myapp1
+                  pod-template-hash=5d796b8f6b
+Annotations:      <none>
+Status:           Running
+IP:               10.84.2.18
+IPs:
+  IP:           10.84.2.18
+Controlled By:  ReplicaSet/myapp1-deployment-5d796b8f6b
+Containers:
+  myapp1-container:
+    Container ID:   containerd://71081f1f289423f2ff31a0dc56d946ddaca0c35490d165633c2088251b2b6f03
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 22:10:45 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     50m
+      memory:  50Mi
+    Requests:
+      cpu:        5m
+      memory:     5Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-qmtk9 (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-qmtk9:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  11m   default-scheduler  Successfully assigned default/myapp1-deployment-5d796b8f6b-8rhbt to gke-sara-gke-cluster-default-pool-b30cb3e3-1crl
+  Normal  Pulled     11m   kubelet            Container image "stacksimplify/kubenginx:1.0.0" already present on machine
+  Normal  Created    11m   kubelet            Created container myapp1-container
+  Normal  Started    11m   kubelet            Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   9/9     9            9           20m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   9/9     9            9           21m
+
+
+------------triggered another load generator-------------------------------------------------------------------------
+
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ cat load_generator_2.sh 
+kubectl run -i --tty load-generator-2 \
+	--rm --image=busybox \
+	--restart=Never -- \
+	/bin/sh -c "while sleep 0.01; do wget -q -O- http://10.80.5.81; done"
+
+
+-----------------------------------------------------------------------------------------------------------------------
+
+ahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   10/10   10           10          24m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+load-generator                       1/1     Running   0          17m
+load-generator-2                     1/1     Running   0          3m14s
+myapp1-deployment-5d796b8f6b-8rhbt   1/1     Running   0          16m
+myapp1-deployment-5d796b8f6b-bvtgr   1/1     Running   0          17m
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          16m
+myapp1-deployment-5d796b8f6b-k59pv   1/1     Running   0          15m
+myapp1-deployment-5d796b8f6b-m7ng2   1/1     Running   0          15m
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          24m
+myapp1-deployment-5d796b8f6b-rm45s   1/1     Running   0          16m
+myapp1-deployment-5d796b8f6b-st2px   1/1     Running   0          16m
+myapp1-deployment-5d796b8f6b-wxpvv   1/1     Running   0          16m
+myapp1-deployment-5d796b8f6b-x8468   1/1     Running   0          2m27s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl describe pods load-generator-2
+Name:             load-generator-2
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-jbjx/10.128.0.23
+Start Time:       Sun, 22 Oct 2023 22:23:58 +0800
+Labels:           run=load-generator-2
+Annotations:      <none>
+Status:           Running
+IP:               10.84.4.49
+IPs:
+  IP:  10.84.4.49
+Containers:
+  load-generator-2:
+    Container ID:  containerd://fec0f04cda83a9026eee8e5c3f300498b105f29e0aac77fe9e3f019cea6ef84c
+    Image:         busybox
+    Image ID:      docker.io/library/busybox@sha256:3fbc632167424a6d997e74f52b878d7cc478225cffac6bc977eedfe51c7f4e79
+    Port:          <none>
+    Host Port:     <none>
+    Args:
+      /bin/sh
+      -c
+      while sleep 0.01; do wget -q -O- http://10.80.5.81; done
+    State:          Running
+      Started:      Sun, 22 Oct 2023 22:23:59 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-sqztg (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-sqztg:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  3m41s  default-scheduler  Successfully assigned default/load-generator-2 to gke-sara-gke-cluster-default-pool-99c59557-jbjx
+  Normal  Pulling    3m41s  kubelet            Pulling image "busybox"
+  Normal  Pulled     3m41s  kubelet            Successfully pulled image "busybox" in 111.598522ms (111.624844ms including waiting)
+  Normal  Created    3m41s  kubelet            Created container load-generator-2
+  Normal  Started    3m40s  kubelet            Started container load-generator-2
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   10/10   10           10          25m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl describe deployment/myapp1-deployment
+Name:                   myapp1-deployment
+Namespace:              default
+CreationTimestamp:      Sun, 22 Oct 2023 22:02:26 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=myapp1
+Replicas:               10 desired | 10 updated | 10 total | 10 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=myapp1
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     50m
+      memory:  50Mi
+    Requests:
+      cpu:        5m
+      memory:     5Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      True    MinimumReplicasAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   myapp1-deployment-5d796b8f6b (10/10 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  25m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 1
+  Normal  ScalingReplicaSet  18m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 2 from 1
+  Normal  ScalingReplicaSet  17m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 4 from 2
+  Normal  ScalingReplicaSet  17m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 7 from 4
+  Normal  ScalingReplicaSet  16m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 9 from 7
+  Normal  ScalingReplicaSet  3m39s  deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 10 from 9
+
+
+--
+
+I had perforamed ctrl-c on the load-genertaror screen
+
+---
+
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   10/10   10           10          28m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+load-generator                       0/1     Error     0          21m
+load-generator-2                     0/1     Error     0          6m40s
+myapp1-deployment-5d796b8f6b-8rhbt   1/1     Running   0          19m
+myapp1-deployment-5d796b8f6b-bvtgr   1/1     Running   0          20m
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          19m
+myapp1-deployment-5d796b8f6b-k59pv   1/1     Running   0          18m
+myapp1-deployment-5d796b8f6b-m7ng2   1/1     Running   0          18m
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          28m
+myapp1-deployment-5d796b8f6b-rm45s   1/1     Running   0          20m
+myapp1-deployment-5d796b8f6b-st2px   1/1     Running   0          19m
+myapp1-deployment-5d796b8f6b-wxpvv   1/1     Running   0          20m
+myapp1-deployment-5d796b8f6b-x8468   1/1     Running   0          5m53s
+
+----- delete load genertors pods---------
+
+
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl delete pods load-generator
+pod "load-generator" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl delete pods load-generator-2
+pod "load-generator-2" deleted
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-8rhbt   1/1     Running   0          20m
+myapp1-deployment-5d796b8f6b-bvtgr   1/1     Running   0          21m
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          20m
+myapp1-deployment-5d796b8f6b-k59pv   1/1     Running   0          19m
+myapp1-deployment-5d796b8f6b-m7ng2   1/1     Running   0          19m
+myapp1-deployment-5d796b8f6b-qzvxk   1/1     Running   0          28m
+myapp1-deployment-5d796b8f6b-rm45s   1/1     Running   0          20m
+myapp1-deployment-5d796b8f6b-st2px   1/1     Running   0          20m
+myapp1-deployment-5d796b8f6b-wxpvv   1/1     Running   0          20m
+myapp1-deployment-5d796b8f6b-x8468   1/1     Running   0          6m33s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl top pods
+NAME                                 CPU(cores)   MEMORY(bytes)   
+myapp1-deployment-5d796b8f6b-8rhbt   0m           1Mi             
+myapp1-deployment-5d796b8f6b-bvtgr   0m           1Mi             
+myapp1-deployment-5d796b8f6b-h8rl2   0m           1Mi             
+myapp1-deployment-5d796b8f6b-k59pv   0m           1Mi             
+myapp1-deployment-5d796b8f6b-m7ng2   0m           1Mi             
+myapp1-deployment-5d796b8f6b-qzvxk   0m           1Mi             
+myapp1-deployment-5d796b8f6b-rm45s   0m           1Mi             
+myapp1-deployment-5d796b8f6b-st2px   0m           1Mi             
+myapp1-deployment-5d796b8f6b-wxpvv   0m           1Mi             
+myapp1-deployment-5d796b8f6b-x8468   0m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   10/10   10           10          29m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl describe deployment/myapp1-deployment
+Name:                   myapp1-deployment
+Namespace:              default
+CreationTimestamp:      Sun, 22 Oct 2023 22:02:26 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=myapp1
+Replicas:               10 desired | 10 updated | 10 total | 10 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=myapp1
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     50m
+      memory:  50Mi
+    Requests:
+      cpu:        5m
+      memory:     5Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      True    MinimumReplicasAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   myapp1-deployment-5d796b8f6b (10/10 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  29m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 1
+  Normal  ScalingReplicaSet  22m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 2 from 1
+  Normal  ScalingReplicaSet  21m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 4 from 2
+  Normal  ScalingReplicaSet  21m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 7 from 4
+  Normal  ScalingReplicaSet  20m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 9 from 7
+  Normal  ScalingReplicaSet  7m20s  deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 10 from 9
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl logs --tail=5 deployment/myapp1-deployment
+Found 10 pods, using pod/myapp1-deployment-5d796b8f6b-qzvxk
+10.84.4.49 - - [22/Oct/2023:14:28:36 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl logs -f --tail=3 deployment/myapp1-deployment
+Found 10 pods, using pod/myapp1-deployment-5d796b8f6b-qzvxk
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get deploy
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+myapp1-deployment   1/1     1            1           34m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl logs --tail=5 deployment/myapp1-deployment
+10.84.4.49 - - [22/Oct/2023:14:28:36 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:36 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+10.84.4.49 - - [22/Oct/2023:14:28:37 +0000] "GET / HTTP/1.1" 200 218 "-" "Wget" "-"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl describe deployment/myapp1-deployment
+Name:                   myapp1-deployment
+Namespace:              default
+CreationTimestamp:      Sun, 22 Oct 2023 22:02:26 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=myapp1
+Replicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=myapp1
+  Containers:
+   myapp1-container:
+    Image:      stacksimplify/kubenginx:1.0.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     50m
+      memory:  50Mi
+    Requests:
+      cpu:        5m
+      memory:     5Mi
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      True    MinimumReplicasAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   myapp1-deployment-5d796b8f6b (1/1 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  34m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 1
+  Normal  ScalingReplicaSet  27m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 2 from 1
+  Normal  ScalingReplicaSet  26m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 4 from 2
+  Normal  ScalingReplicaSet  26m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 7 from 4
+  Normal  ScalingReplicaSet  25m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 9 from 7
+  Normal  ScalingReplicaSet  12m    deployment-controller  Scaled up replica set myapp1-deployment-5d796b8f6b to 10 from 9
+  Normal  ScalingReplicaSet  3m9s   deployment-controller  Scaled down replica set myapp1-deployment-5d796b8f6b to 4 from 10
+  Normal  ScalingReplicaSet  2m39s  deployment-controller  Scaled down replica set myapp1-deployment-5d796b8f6b to 1 from 4
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+
+
+
+----- started apache bench load generator-------------
+
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ sh -x ./apachebench_load_generator_1.sh 
++ kubectl run -i --rm --restart=Never --image=mocoso/apachebench apachebench-1 -- bash -c ab -n 10 -c 10 http://10.80.5.81/
+
+If you don't see a command prompt, try pressing enter.
+
+E1022 22:54:58.928028   69240 v2.go:104] EOF
+warning: couldn't attach to pod/apachebench-1, falling back to streaming logs: Internal error occurred: error attaching to container: container is in CONTAINER_EXITED state
+This is ApacheBench, Version 2.3 <$Revision: 1706008 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 10.80.5.81 (be patient).....done
+
+
+Server Software:        nginx/1.17.10
+Server Hostname:        10.80.5.81
+Server Port:            80
+
+Document Path:          /
+Document Length:        218 bytes
+
+Concurrency Level:      10
+Time taken for tests:   0.008 seconds
+Complete requests:      10
+Failed requests:        0
+Total transferred:      4510 bytes
+HTML transferred:       2180 bytes
+Requests per second:    1330.67 [#/sec] (mean)
+Time per request:       7.515 [ms] (mean)
+Time per request:       0.751 [ms] (mean, across all concurrent requests)
+Transfer rate:          586.07 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    1   0.5      1       2
+Processing:     5    5   0.0      5       5
+Waiting:        4    5   0.5      5       5
+Total:          6    6   0.5      6       7
+
+Percentage of the requests served within a certain time (ms)
+  50%      6
+  66%      6
+  75%      6
+  80%      7
+  90%      7
+  95%      7
+  98%      7
+  99%      7
+ 100%      7 (longest request)
+pod "apachebench-1" deleted
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ vim apachebench_load_generator_1.sh 
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ sh -x ./apachebench_load_generator_1.sh 
++ kubectl run -i --rm --restart=Never --image=mocoso/apachebench apachebench-1 -- bash -c ab -n 1000000 -c 1000 http://10.80.5.81/
+If you don't see a command prompt, try pressing enter.
+apr_socket_recv: Connection reset by peer (104)
+Total of 4533 requests completed
+pod "apachebench-1" deleted
+pod default/apachebench-1 terminated (Error)
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ vim apachebench_load_generator_1.sh 
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ sh -x ./apachebench_load_generator_1.sh 
++ kubectl run -i --rm --restart=Never --image=mocoso/apachebench apachebench-1 -- bash -c ab -n 1000 -c 1000 http://10.80.5.81/
+
+If you don't see a command prompt, try pressing enter.
+
+warning: couldn't attach to pod/apachebench-1, falling back to streaming logs: unable to upgrade connection: container apachebench-1 not found in pod apachebench-1_default
+This is ApacheBench, Version 2.3 <$Revision: 1706008 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 10.80.5.81 (be patient)
+Completed 100 requests
+Completed 200 requests
+Completed 300 requests
+Completed 400 requests
+Completed 500 requests
+Completed 600 requests
+Completed 700 requests
+Completed 800 requests
+Completed 900 requests
+Completed 1000 requests
+Finished 1000 requests
+
+
+Server Software:        nginx/1.17.10
+Server Hostname:        10.80.5.81
+Server Port:            80
+
+Document Path:          /
+Document Length:        218 bytes
+
+Concurrency Level:      1000
+Time taken for tests:   0.636 seconds
+Complete requests:      1000
+Failed requests:        0
+Total transferred:      451000 bytes
+HTML transferred:       218000 bytes
+Requests per second:    1572.06 [#/sec] (mean)
+Time per request:       636.109 [ms] (mean)
+Time per request:       0.636 [ms] (mean, across all concurrent requests)
+Transfer rate:          692.38 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:       34   47   6.8     47      61
+Processing:    31  229 140.5    255     543
+Waiting:       29  228 140.7    255     543
+Total:         85  276 134.1    303     580
+
+Percentage of the requests served within a certain time (ms)
+  50%    303
+  66%    320
+  75%    392
+  80%    400
+  90%    482
+  95%    486
+  98%    576
+  99%    578
+ 100%    580 (longest request)
+pod "apachebench-1" deleted
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ sh -x ./apachebench_load_generator_1.sh 
++ kubectl run -i --rm --restart=Never --image=mocoso/apachebench apachebench-1 -- bash -c ab -n 1000 -c 1000 http://10.80.5.81/
+
+This is ApacheBench, Version 2.3 <$Revision: 1706008 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 10.80.5.81 (be patient)
+Completed 100 requests
+Completed 200 requests
+Completed 300 requests
+Completed 400 requests
+Completed 500 requests
+Completed 600 requests
+Completed 700 requests
+Completed 800 requests
+Completed 900 requests
+Completed 1000 requests
+Finished 1000 requests
+
+
+Server Software:        nginx/1.17.10
+Server Hostname:        10.80.5.81
+Server Port:            80
+
+Document Path:          /
+Document Length:        218 bytes
+
+Concurrency Level:      1000
+Time taken for tests:   0.470 seconds
+Complete requests:      1000
+Failed requests:        0
+Total transferred:      451000 bytes
+HTML transferred:       218000 bytes
+Requests per second:    2126.52 [#/sec] (mean)
+Time per request:       470.252 [ms] (mean)
+Time per request:       0.470 [ms] (mean, across all concurrent requests)
+Transfer rate:          936.58 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:       37   48   5.2     49      55
+Processing:    26  162 105.3    191     379
+Waiting:       19  159 106.3    187     379
+Total:         77  210 100.5    236     419
+
+Percentage of the requests served within a certain time (ms)
+  50%    236
+  66%    246
+  75%    257
+  80%    325
+  90%    332
+  95%    414
+  98%    416
+  99%    417
+ 100%    419 (longest request)
+pod "apachebench-1" deleted
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ vim apachebench_load_generator_1.sh 
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ sh -x ./apachebench_load_generator_1.sh 
++ kubectl run -i --rm --restart=Never --image=mocoso/apachebench apachebench-1 -- bash -c ab -n 10000 -c 1000 http://10.80.5.81/
+
+If you don't see a command prompt, try pressing enter.
+
+
+Completed 5000 requests
+Completed 6000 requests
+Completed 7000 requests
+Completed 8000 requests
+Completed 9000 requests
+
+
+Server Software:        nginx/1.17.10
+Server Hostname:        10.80.5.81
+Server Port:            80
+
+Document Path:          /
+Document Length:        218 bytes
+
+Concurrency Level:      1000
+Time taken for tests:   5.833 seconds
+Complete requests:      10000
+Failed requests:        0
+Total transferred:      4510000 bytes
+HTML transferred:       2180000 bytes
+Requests per second:    1714.37 [#/sec] (mean)
+Time per request:       583.306 [ms] (mean)
+Time per request:       0.583 [ms] (mean, across all concurrent requests)
+Transfer rate:          755.06 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    7  13.5      2      59
+Processing:     0  485 274.9    486    1282
+Waiting:        0  482 274.6    485    1282
+Total:          1  492 270.1    491    1285
+
+Percentage of the requests served within a certain time (ms)
+  50%    491
+  66%    600
+  75%    683
+  80%    698
+  90%    886
+  95%    992
+  98%   1098
+  99%   1187
+ 100%   1285 (longest request)
+Completed 10000 requests
+Finished 10000 requests
+pod "apachebench-1" deleted
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ vim apachebench_load_generator_1.sh 
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ sh -x ./apachebench_load_generator_1.sh 
++ kubectl run -i --rm --restart=Never --image=mocoso/apachebench apachebench-1 -- bash -c ab -n 1000000 -c 10000 http://10.80.5.81/
+
+If you don't see a command prompt, try pressing enter.
+
+
+
+apr_socket_recv: Connection reset by peer (104)
+Total of 70340 requests completed
+pod "apachebench-1" deleted
+pod default/apachebench-1 terminated (Error)
+rahul@rahul-intel-nuc:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+
+
+
+----------------------
+
+
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+apachebench-1                        0/1     Error     0          19s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          47m
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-9psm7   1/1     Running   0          40s
+myapp1-deployment-5d796b8f6b-bljdv   1/1     Running   0          25s
+myapp1-deployment-5d796b8f6b-dvbxs   1/1     Running   0          40s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          48m
+myapp1-deployment-5d796b8f6b-m75mb   1/1     Running   0          40s
+myapp1-deployment-5d796b8f6b-mbmlr   1/1     Running   0          10s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-9psm7   1/1     Running   0          59s
+myapp1-deployment-5d796b8f6b-bljdv   1/1     Running   0          44s
+myapp1-deployment-5d796b8f6b-dvbxs   1/1     Running   0          59s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          49m
+myapp1-deployment-5d796b8f6b-m75mb   1/1     Running   0          59s
+myapp1-deployment-5d796b8f6b-mbmlr   1/1     Running   0          29s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-9psm7   1/1     Running   0          87s
+myapp1-deployment-5d796b8f6b-bljdv   1/1     Running   0          72s
+myapp1-deployment-5d796b8f6b-dvbxs   1/1     Running   0          87s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          49m
+myapp1-deployment-5d796b8f6b-m75mb   1/1     Running   0          87s
+myapp1-deployment-5d796b8f6b-mbmlr   1/1     Running   0          57s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+apachebench-1                        1/1     Running   0          17s
+myapp1-deployment-5d796b8f6b-5cwbk   1/1     Running   0          42s
+myapp1-deployment-5d796b8f6b-9psm7   1/1     Running   0          2m12s
+myapp1-deployment-5d796b8f6b-bljdv   1/1     Running   0          117s
+myapp1-deployment-5d796b8f6b-dvbxs   1/1     Running   0          2m12s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          50m
+myapp1-deployment-5d796b8f6b-jj5hs   1/1     Running   0          42s
+myapp1-deployment-5d796b8f6b-m75mb   1/1     Running   0          2m12s
+myapp1-deployment-5d796b8f6b-mbmlr   1/1     Running   0          102s
+myapp1-deployment-5d796b8f6b-mm9vh   1/1     Running   0          42s
+myapp1-deployment-5d796b8f6b-pnmlk   1/1     Running   0          42s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl top pods
+NAME                                 CPU(cores)   MEMORY(bytes)   
+myapp1-deployment-5d796b8f6b-5cwbk   2m           2Mi             
+myapp1-deployment-5d796b8f6b-9psm7   0m           1Mi             
+myapp1-deployment-5d796b8f6b-bljdv   0m           1Mi             
+myapp1-deployment-5d796b8f6b-dvbxs   2m           1Mi             
+myapp1-deployment-5d796b8f6b-h8rl2   0m           2Mi             
+myapp1-deployment-5d796b8f6b-jj5hs   2m           2Mi             
+myapp1-deployment-5d796b8f6b-m75mb   1m           1Mi             
+myapp1-deployment-5d796b8f6b-mbmlr   0m           1Mi             
+myapp1-deployment-5d796b8f6b-mm9vh   2m           1Mi             
+myapp1-deployment-5d796b8f6b-pnmlk   2m           1Mi             
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-5cwbk   1/1     Running   0          67s
+myapp1-deployment-5d796b8f6b-9psm7   1/1     Running   0          2m37s
+myapp1-deployment-5d796b8f6b-bljdv   1/1     Running   0          2m22s
+myapp1-deployment-5d796b8f6b-dvbxs   1/1     Running   0          2m37s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          50m
+myapp1-deployment-5d796b8f6b-jj5hs   1/1     Running   0          67s
+myapp1-deployment-5d796b8f6b-m75mb   1/1     Running   0          2m37s
+myapp1-deployment-5d796b8f6b-mbmlr   1/1     Running   0          2m7s
+myapp1-deployment-5d796b8f6b-mm9vh   1/1     Running   0          67s
+myapp1-deployment-5d796b8f6b-pnmlk   1/1     Running   0          67s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl describe pods myapp1-deployment-5d796b8f6b-5cwbk
+Name:             myapp1-deployment-5d796b8f6b-5cwbk
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gke-sara-gke-cluster-default-pool-99c59557-jbjx/10.128.0.23
+Start Time:       Sun, 22 Oct 2023 23:00:17 +0800
+Labels:           app=myapp1
+                  pod-template-hash=5d796b8f6b
+Annotations:      <none>
+Status:           Running
+IP:               10.84.4.56
+IPs:
+  IP:           10.84.4.56
+Controlled By:  ReplicaSet/myapp1-deployment-5d796b8f6b
+Containers:
+  myapp1-container:
+    Container ID:   containerd://82ecd4c9c048c1c52f519da34bbce50eb5a082f08a3e4d03c81b9d79aa51bd11
+    Image:          stacksimplify/kubenginx:1.0.0
+    Image ID:       docker.io/stacksimplify/kubenginx@sha256:205961b09a80476af4c2379841bf6abec0022101a7e6c5585a88316f7115d17a
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 22 Oct 2023 23:00:19 +0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     50m
+      memory:  50Mi
+    Requests:
+      cpu:        5m
+      memory:     5Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-gcxdw (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-gcxdw:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  92s   default-scheduler  Successfully assigned default/myapp1-deployment-5d796b8f6b-5cwbk to gke-sara-gke-cluster-default-pool-99c59557-jbjx
+  Normal  Pulled     91s   kubelet            Container image "stacksimplify/kubenginx:1.0.0" already present on machine
+  Normal  Created    91s   kubelet            Created container myapp1-container
+  Normal  Started    90s   kubelet            Started container myapp1-container
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl logs --tail=5 deployment/myapp1-deployment
+Found 10 pods, using pod/myapp1-deployment-5d796b8f6b-h8rl2
+10.84.4.57 - - [22/Oct/2023:15:01:08 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+10.84.4.57 - - [22/Oct/2023:15:01:08 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+10.84.4.57 - - [22/Oct/2023:15:01:08 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+10.84.4.57 - - [22/Oct/2023:15:01:08 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+10.84.4.57 - - [22/Oct/2023:15:01:09 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl logs --tail=5 pods myapp1-deployment-5d796b8f6b-5cwbk
+Error from server (NotFound): pods "pods" not found
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+myapp1-deployment-5d796b8f6b-5cwbk   1/1     Running   0          2m32s
+myapp1-deployment-5d796b8f6b-9psm7   1/1     Running   0          4m2s
+myapp1-deployment-5d796b8f6b-bljdv   1/1     Running   0          3m47s
+myapp1-deployment-5d796b8f6b-dvbxs   1/1     Running   0          4m2s
+myapp1-deployment-5d796b8f6b-h8rl2   1/1     Running   0          52m
+myapp1-deployment-5d796b8f6b-jj5hs   1/1     Running   0          2m32s
+myapp1-deployment-5d796b8f6b-m75mb   1/1     Running   0          4m2s
+myapp1-deployment-5d796b8f6b-mbmlr   1/1     Running   0          3m32s
+myapp1-deployment-5d796b8f6b-mm9vh   1/1     Running   0          2m32s
+myapp1-deployment-5d796b8f6b-pnmlk   1/1     Running   0          2m32s
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ kubectl logs --tail=5 myapp1-deployment-5d796b8f6b-5cwbk
+10.84.4.57 - - [22/Oct/2023:15:01:09 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+10.84.4.57 - - [22/Oct/2023:15:01:09 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+10.84.4.57 - - [22/Oct/2023:15:01:09 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+10.84.4.57 - - [22/Oct/2023:15:01:09 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+10.84.4.57 - - [22/Oct/2023:15:01:09 +0000] "GET / HTTP/1.0" 200 218 "-" "ApacheBench/2.3" "-"
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ vim session.out 
+rahul@rahul-System-Product-Name:~/github/google-kubernetes-engine/67-GKE-Horizontal-Pod-Autoscaler$ 
+
+
