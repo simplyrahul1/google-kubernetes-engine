@@ -1,0 +1,374 @@
+rahul@rahul-intel-nuc:~$ sudo ls
+[sudo] password for rahul: 
+Desktop  Documents  Downloads  github  Music  Pictures	Public	snap  Templates  Videos
+rahul@rahul-intel-nuc:~$ addg
+addgnupghome  addgroup      
+rahul@rahul-intel-nuc:~$ addgroup sre
+addgroup: Only root may add a user or group to the system.
+rahul@rahul-intel-nuc:~$ sudo addgroup sre--gid^C
+rahul@rahul-intel-nuc:~$ cat /etc/group
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:syslog,rahul
+tty:x:5:
+disk:x:6:
+lp:x:7:
+mail:x:8:
+news:x:9:
+uucp:x:10:
+man:x:12:
+proxy:x:13:
+kmem:x:15:
+dialout:x:20:
+fax:x:21:
+voice:x:22:
+cdrom:x:24:rahul
+floppy:x:25:
+tape:x:26:
+sudo:x:27:rahul
+audio:x:29:
+dip:x:30:rahul
+www-data:x:33:
+backup:x:34:
+operator:x:37:
+list:x:38:
+irc:x:39:
+src:x:40:
+shadow:x:42:
+utmp:x:43:
+video:x:44:
+sasl:x:45:
+plugdev:x:46:rahul
+staff:x:50:
+games:x:60:
+users:x:100:
+nogroup:x:65534:
+systemd-journal:x:101:
+systemd-network:x:102:
+crontab:x:103:
+systemd-timesync:x:104:
+input:x:105:
+sgx:x:106:
+kvm:x:107:
+render:x:108:
+messagebus:x:109:
+syslog:x:110:
+systemd-resolve:x:111:
+_ssh:x:112:
+tss:x:113:
+bluetooth:x:114:
+ssl-cert:x:115:
+uuidd:x:116:
+systemd-oom:x:117:
+tcpdump:x:118:
+avahi-autoipd:x:119:
+netdev:x:120:
+avahi:x:121:
+lpadmin:x:122:rahul
+rtkit:x:123:
+whoopsie:x:124:
+sssd:x:125:
+pipewire:x:126:
+nm-openvpn:x:127:
+fwupd-refresh:x:128:
+geoclue:x:129:
+scanner:x:130:saned
+saned:x:131:
+colord:x:132:
+gdm:x:133:
+lxd:x:134:rahul
+rahul:x:1000:
+sambashare:x:135:rahul
+gamemode:x:999:
+gnome-initial-setup:x:998:
+
+
+rahul@rahul-intel-nuc:~$ sudo addgroup sre --gid 5000
+Adding group `sre' (GID 5000) ...
+Done.
+
+
+rahul@rahul-intel-nuc:~$ sudo sudo adduser sre --gid 5000 --uid 5000
+Adding user `sre' ...
+Adding new user `sre' (5000) with group `sre (5000)' ...
+Creating home directory `/home/sre' ...
+Copying files from `/etc/skel' ...
+New password: 
+Retype new password: 
+passwd: password updated successfully
+Changing the user information for sre
+Enter the new value, or press ENTER for the default
+	Full Name []: sre
+	Room Number []: 
+	Work Phone []: 
+	Home Phone []: 
+	Other []: 
+Is the information correct? [Y/n] Y
+Adding new user `sre' to supplemental / extra groups `users' ...
+Adding user `sre' to group `users' ...
+
+rahul@rahul-intel-nuc:~$ cat /etc/group | grep 5000
+sre:x:5000:
+
+
+rahul@rahul-intel-nuc:~$ cat /etc/passwd | grep 5000
+sre:x:5000:5000:sre,,,:/home/sre:/bin/bash
+
+
+rahul@rahul-intel-nuc:~$ su - sre
+Password: 
+
+sre@rahul-intel-nuc:~$ gcloud container clusters get-credentials sara-autopilot-private-cluster-1 --region us-central1 --project sara-project-401601
+ERROR: (gcloud.container.clusters.get-credentials) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+sre@rahul-intel-nuc:~$ gcloud auth login
+Go to the following link in your browser:
+
+    https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=32555940559.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fsdk.cloud.google.com%2Fauthcode.html&scope=openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fappengine.admin+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fsqlservice.login+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcompute+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Faccounts.reauth&state=odKvhRkgiMeTqphBT8Gv7TWcQcRSXV&prompt=consent&access_type=offline&code_challenge=Q3w7Id2RDSze_Dv-wOS-OxRmjKpTWFa7Wp233SXkjJM&code_challenge_method=S256
+
+Enter authorization code: 4/0AfJohXk3i7jHsO48w_DEDgCQJ-_N4gH7f9oPSvEyf0BUqm4V0GDVfptYDLL9HXIj_6zo5A
+
+You are now logged in as [rahuludayshankarsinha@gmail.com].
+Your current project is [None].  You can change this setting by running:
+  $ gcloud config set project PROJECT_ID
+sre@rahul-intel-nuc:~$ gcloud config set project sara-project
+WARNING: You do not appear to have access to project [sara-project] or it does not exist.
+Are you sure you wish to set property [core/project] to sara-project?
+
+Do you want to continue (Y/n)?  Y
+
+Updated property [core/project].
+
+sre@rahul-intel-nuc:~$ gcloud container clusters get-credentials sara-autopilot-private-cluster-1 --region us-central1 --project sara-project-401601
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for sara-autopilot-private-cluster-1.
+
+sre@rahul-intel-nuc:~$ kubectl get nodes
+NAME                                                  STATUS   ROLES    AGE   VERSION
+gk3-sara-autopilot-priva-default-pool-47750026-sxwn   Ready    <none>   42m   v1.27.3-gke.100
+gk3-sara-autopilot-priva-default-pool-8580b4db-6rfp   Ready    <none>   42m   v1.27.3-gke.100
+
+sre@rahul-intel-nuc:~$ kubectl get nodes -o wide
+NAME                                                  STATUS   ROLES    AGE   VERSION           INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                             KERNEL-VERSION   CONTAINER-RUNTIME
+gk3-sara-autopilot-priva-default-pool-47750026-sxwn   Ready    <none>   42m   v1.27.3-gke.100   10.128.0.35   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+gk3-sara-autopilot-priva-default-pool-8580b4db-6rfp   Ready    <none>   42m   v1.27.3-gke.100   10.128.0.34   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+
+sre@rahul-intel-nuc:~$ mkdir kube-manifest
+sre@rahul-intel-nuc:~$ cd kube-manifest/
+sre@rahul-intel-nuc:~/kube-manifest$ vim 01-deployment.yaml
+sre@rahul-intel-nuc:~/kube-manifest$ vim 02-service.yaml
+
+sre@rahul-intel-nuc:~/kube-manifest$ cd ..
+sre@rahul-intel-nuc:~$ cat kube-manifest/01-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment 
+metadata: #Dictionary
+  name: sara-app-deployment
+spec: # Dictionary
+  replicas: 5 
+  selector:
+    matchLabels:
+      app: sara-app
+  template:  
+    metadata: # Dictionary
+      name: sara-app-pod
+      labels: # Dictionary
+        app: sara-app  # Key value pairs
+    spec:
+      containers: # List
+        - name: sara-app-container
+          image: nginx:stable-alpine3.17-slim
+          ports: 
+            - containerPort: 80  
+          resources:
+            requests:
+              memory: "128Mi" # 128 MebiByte is equal to 135 Megabyte (MB)
+              cpu: "200m" # `m` means milliCPU
+            limits:
+              memory: "256Mi"
+              cpu: "400m"  # 1000m is equal to 1 VCPU core                           
+
+sre@rahul-intel-nuc:~$ cat kube-manifest/02-service.yaml 
+apiVersion: v1
+kind: Service 
+metadata:
+  name: sara-app-lb-service
+spec:
+  type: LoadBalancer # ClusterIp, # NodePort
+  selector:
+    app: sara-app
+  ports: 
+    - name: http
+      port: 80 # Service Port
+      targetPort: 80 # Container Port
+
+sre@rahul-intel-nuc:~$ kubectl apply -f kube-manifest/
+Warning: autopilot-default-resources-mutator:Autopilot updated Deployment default/sara-app-deployment: adjusted resources to meet requirements for containers [sara-app-container] (see http://g.co/gke/autopilot-resources)
+deployment.apps/sara-app-deployment created
+service/sara-app-lb-service created
+
+sre@rahul-intel-nuc:~$ kubectl get deploy
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+sara-app-deployment   2/5     5            2           25s
+
+sre@rahul-intel-nuc:~$ kubectl get pods
+NAME                                  READY   STATUS    RESTARTS   AGE
+sara-app-deployment-9bbcfdbb9-68vkp   1/1     Running   0          31s
+sara-app-deployment-9bbcfdbb9-8qldm   0/1     Pending   0          31s
+sara-app-deployment-9bbcfdbb9-m2982   0/1     Pending   0          31s
+sara-app-deployment-9bbcfdbb9-t4rjz   0/1     Pending   0          31s
+sara-app-deployment-9bbcfdbb9-z8npq   1/1     Running   0          31s
+
+sre@rahul-intel-nuc:~$ kubectl get svc
+NAME                  TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)        AGE
+kubernetes            ClusterIP      34.118.224.1     <none>          443/TCP        50m
+sara-app-lb-service   LoadBalancer   34.118.226.191   35.232.181.29   80:31602/TCP   42s
+
+sre@rahul-intel-nuc:~$ curl http://35.232.181.29
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+sre@rahul-intel-nuc:~$ kubectl get pods
+NAME                                  READY   STATUS    RESTARTS   AGE
+sara-app-deployment-9bbcfdbb9-68vkp   1/1     Running   0          77s
+sara-app-deployment-9bbcfdbb9-8qldm   0/1     Pending   0          77s
+sara-app-deployment-9bbcfdbb9-m2982   0/1     Pending   0          77s
+sara-app-deployment-9bbcfdbb9-t4rjz   0/1     Pending   0          77s
+sara-app-deployment-9bbcfdbb9-z8npq   1/1     Running   0          77s
+
+sre@rahul-intel-nuc:~$ kubectl describe pod sara-app-deployment-9bbcfdbb9-8qldm
+Name:             sara-app-deployment-9bbcfdbb9-8qldm
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gk3-sara-autopilot-private-clu-pool-1-0743bc71-9sc9/10.128.0.36
+Start Time:       Tue, 24 Oct 2023 13:13:08 +0800
+Labels:           app=sara-app
+                  pod-template-hash=9bbcfdbb9
+Annotations:      <none>
+Status:           Pending
+SeccompProfile:   RuntimeDefault
+IP:               
+IPs:              <none>
+Controlled By:    ReplicaSet/sara-app-deployment-9bbcfdbb9
+Containers:
+  sara-app-container:
+    Container ID:   
+    Image:          nginx:stable-alpine3.17-slim
+    Image ID:       
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       ContainerCreating
+    Ready:          False
+    Restart Count:  0
+    Limits:
+      cpu:                250m
+      ephemeral-storage:  1Gi
+      memory:             512Mi
+    Requests:
+      cpu:                250m
+      ephemeral-storage:  1Gi
+      memory:             512Mi
+    Environment:          <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-jgggg (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             False 
+  ContainersReady   False 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-jgggg:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   Guaranteed
+Node-Selectors:              <none>
+Tolerations:                 kubernetes.io/arch=amd64:NoSchedule
+                             node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age                 From                                   Message
+  ----     ------            ----                ----                                   -------
+  Warning  FailedScheduling  99s (x2 over 100s)  gke.io/optimize-utilization-scheduler  0/2 nodes are available: 2 Insufficient cpu. preemption: 0/2 nodes are available: 2 No preemption victims found for incoming pod..
+  Normal   TriggeredScaleUp  92s                 cluster-autoscaler                     pod triggered scale-up: [{https://www.googleapis.com/compute/v1/projects/sara-project-401601/zones/us-central1-c/instanceGroups/gk3-sara-autopilot-private-clu-pool-1-0743bc71-grp 0->1 (max: 1000)}]
+  Normal   Scheduled         18s                 gke.io/optimize-utilization-scheduler  Successfully assigned default/sara-app-deployment-9bbcfdbb9-8qldm to gk3-sara-autopilot-private-clu-pool-1-0743bc71-9sc9
+
+sre@rahul-intel-nuc:~$ kubectl get pods
+NAME                                  READY   STATUS              RESTARTS   AGE
+sara-app-deployment-9bbcfdbb9-68vkp   1/1     Running             0          115s
+sara-app-deployment-9bbcfdbb9-8qldm   0/1     ContainerCreating   0          115s
+sara-app-deployment-9bbcfdbb9-m2982   0/1     ContainerCreating   0          115s
+sara-app-deployment-9bbcfdbb9-t4rjz   0/1     ContainerCreating   0          115s
+sara-app-deployment-9bbcfdbb9-z8npq   1/1     Running             0          115s
+
+sre@rahul-intel-nuc:~$ kubectl top pods
+NAME                                  CPU(cores)   MEMORY(bytes)   
+sara-app-deployment-9bbcfdbb9-68vkp   0m           2Mi             
+sara-app-deployment-9bbcfdbb9-z8npq   0m           2Mi             
+
+sre@rahul-intel-nuc:~$ kubectl get pods -w
+NAME                                  READY   STATUS    RESTARTS   AGE
+sara-app-deployment-9bbcfdbb9-68vkp   1/1     Running   0          2m29s
+sara-app-deployment-9bbcfdbb9-8qldm   1/1     Running   0          2m29s
+sara-app-deployment-9bbcfdbb9-m2982   1/1     Running   0          2m29s
+sara-app-deployment-9bbcfdbb9-t4rjz   1/1     Running   0          2m29s
+sara-app-deployment-9bbcfdbb9-z8npq   1/1     Running   0          2m29s
+
+sre@rahul-intel-nuc:~kubectl get deploy
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+sara-app-deployment   5/5     5            5           2m43s
+
+sre@rahul-intel-nuc:~$ kubectl delete -f kube-manifest/
+deployment.apps "sara-app-deployment" deleted
+service "sara-app-lb-service" deleted
+
+sre@rahul-intel-nuc:~$ kubectl get nodes -o wide
+NAME                                                  STATUS   ROLES    AGE     VERSION           INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                             KERNEL-VERSION   CONTAINER-RUNTIME
+gk3-sara-autopilot-priva-default-pool-47750026-sxwn   Ready    <none>   52m     v1.27.3-gke.100   10.128.0.35   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+gk3-sara-autopilot-priva-default-pool-8580b4db-6rfp   Ready    <none>   52m     v1.27.3-gke.100   10.128.0.34   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+gk3-sara-autopilot-private-clu-pool-1-0743bc71-9sc9   Ready    <none>   2m27s   v1.27.3-gke.100   10.128.0.36   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+sre@rahul-intel-nuc:~$ 
+
+sre@rahul-intel-nuc:~$ kubectl get nodes -o wide
+NAME                                                  STATUS   ROLES    AGE     VERSION           INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                             KERNEL-VERSION   CONTAINER-RUNTIME
+gk3-sara-autopilot-private-clu-pool-1-0743bc71-9sc9   Ready    <none>   7m54s   v1.27.3-gke.100   10.128.0.36   <none>        Container-Optimized OS from Google   5.15.109+        containerd://1.7.0
+sre@rahul-intel-nuc:~$ 
+
