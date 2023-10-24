@@ -297,3 +297,58 @@ cloudops@rahul-intel-nuc:~$ kubectl cluster-info dump > /tmp/gke_sara-project-40
 cloudops@rahul-intel-nuc:~$ view /tmp/gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a.info
 cloudops@rahul-intel-nuc:~$ 
 
+--
+
+cloudops@rahul-intel-nuc:~$ kubectl config set-context gke_sara-project-401601_us-central1_sara-gke-cluster
+Context "gke_sara-project-401601_us-central1_sara-gke-cluster" modified.
+
+
+cloudops@rahul-intel-nuc:~$ kubectl get nodes
+NAME                                                  STATUS   ROLES    AGE   VERSION
+gke-sara-zonal-cluster-u-default-pool-abf71bb8-wzg0   Ready    <none>   70m   v1.27.3-gke.100
+
+
+cloudops@rahul-intel-nuc:~$ kubectl cluster-info
+Kubernetes control plane is running at https://34.67.74.184
+GLBCDefaultBackend is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/default-http-backend:http/proxy
+KubeDNS is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Metrics-server is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/https:metrics-server:/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+cloudops@rahul-intel-nuc:~$
+
+
+
+
+
+
+
+
+--
+
+cloudops@rahul-intel-nuc:~$ kubectl config get-contexts
+CURRENT   NAME                                                             CLUSTER                                                          AUTHINFO                                                         NAMESPACE
+*         gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   
+          gke_sara-project-401601_us-central1_sara-gke-cluster             gke_sara-project-401601_us-central1_sara-gke-cluster             gke_sara-project-401601_us-central1_sara-gke-cluster             
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config current-context
+gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+cloudops@rahul-intel-nuc:~$ kubectl config set-context gke_sara-project-401601_us-central1_sara-gke-cluster
+Context "gke_sara-project-401601_us-central1_sara-gke-cluster" modified.
+cloudops@rahul-intel-nuc:~$ kubectl config current-context
+gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config use-context gke_sara-project-401601_us-central1_sara-gke-cluster
+Switched to context "gke_sara-project-401601_us-central1_sara-gke-cluster".
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config current-context
+gke_sara-project-401601_us-central1_sara-gke-cluster
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE   VERSION
+gke-sara-gke-cluster-default-pool-99c59557-cthb   Ready    <none>   13d   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-b30cb3e3-1crl   Ready    <none>   10d   v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-l11r   Ready    <none>   6d    v1.27.3-gke.100
+gke-sara-gke-cluster-default-pool-df7770d2-p4qw   Ready    <none>   17h   v1.27.3-gke.100
+cloudops@rahul-intel-nuc:~$ 
+
