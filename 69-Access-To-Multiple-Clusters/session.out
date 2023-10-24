@@ -1,0 +1,299 @@
+sre@rahul-intel-nuc:~$ sudo addgroup cloudops --gid 2000
+[sudo] password for sre: 
+Adding group `cloudops' (GID 2000) ...
+Done.
+
+sre@rahul-intel-nuc:~$ sudo adduser cloudops --gid 2000 --uid 2000
+Adding user `cloudops' ...
+Adding new user `cloudops' (2000) with group `cloudops (2000)' ...
+Creating home directory `/home/cloudops' ...
+Copying files from `/etc/skel' ...
+New password: 
+Retype new password: 
+passwd: password updated successfully
+Changing the user information for cloudops
+Enter the new value, or press ENTER for the default
+	Full Name []: cloudops
+	Room Number []: 
+	Work Phone []: 
+	Home Phone []: 
+	Other []: 
+Is the information correct? [Y/n] Y
+Adding new user `cloudops' to supplemental / extra groups `users' ...
+Adding user `cloudops' to group `users' ...
+
+sre@rahul-intel-nuc:~$ su - cloudops 
+Password: 
+cloudops@rahul-intel-nuc:~$
+
+
+cloudops@rahul-intel-nuc:~$ kubectl config view
+apiVersion: v1
+clusters: null
+contexts: null
+current-context: ""
+kind: Config
+preferences: {}
+users: null
+
+
+cloudops@rahul-intel-nuc:~$ ## Authorize gcloud to access the Cloud Platform with Google user credentials ##
+cloudops@rahul-intel-nuc:~$ gcloud auth login
+Go to the following link in your browser:
+
+    https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=32555940559.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fsdk.cloud.google.com%2Fauthcode.html&scope=openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fappengine.admin+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fsqlservice.login+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcompute+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Faccounts.reauth&state=byKfSU4xpwIYUIgiJu63FAcmhUwx1R&prompt=consent&access_type=offline&code_challenge=R95rL1MiP3iaZsd-MmQHEYn-lBgWjXbDIhrpiMe4Kxo&code_challenge_method=S256
+
+Enter authorization code: 4/0AfJohXktgsjE5KTJbHBVX2dQqXROh9yvMJUeQ1AudxTX7qSNhmgOvi8kHQqXmWL6uJS2SA
+
+You are now logged in as [rahuludayshankarsinha@gmail.com].
+Your current project is [None].  You can change this setting by running:
+  $ gcloud config set project PROJECT_ID
+
+
+### Set the project property in the core section ###
+cloudops@rahul-intel-nuc:~$ gcloud config set project sara-project
+WARNING: You do not appear to have access to project [sara-project] or it does not exist.
+Are you sure you wish to set property [core/project] to sara-project?
+
+Do you want to continue (Y/n)?  Y
+
+Updated property [core/project].
+
+
+cloudops@rahul-intel-nuc:~$ ## GKE Standard Zonal Cluster ##
+
+cloudops@rahul-intel-nuc:~$ gcloud container clusters get-credentials sara-zonal-cluster-usc1a --zone us-central1-a --project sara-project-401601
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for sara-zonal-cluster-usc1a.
+cloudops@rahul-intel-nuc:~$ ls .kube/config 
+.kube/config
+cloudops@rahul-intel-nuc:~$ ls -l .kube/config 
+-rw------- 1 cloudops cloudops 2936 Oct 25 01:10 .kube/config
+cloudops@rahul-intel-nuc:~$ cat .kube/config 
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVMRENDQXBTZ0F3SUJBZ0lRS3MzditlaXRVQUFzZXpwS1graCswREFOQmdrcWhraUc5dzBCQVFzRkFEQXYKTVMwd0t3WURWUVFERXlSaFl6a3haalkzTnkwMFpUa3pMVFF3TTJZdFltUmtZUzA0Tm1ObU1tSTVNR1JrWkRFdwpJQmNOTWpNeE1ESTBNVFUxTURVMldoZ1BNakExTXpFd01UWXhOalV3TlRaYU1DOHhMVEFyQmdOVkJBTVRKR0ZqCk9URm1OamMzTFRSbE9UTXROREF6WmkxaVpHUmhMVGcyWTJZeVlqa3daR1JrTVRDQ0FhSXdEUVlKS29aSWh2Y04KQVFFQkJRQURnZ0dQQURDQ0FZb0NnZ0dCQU5hRmtMMFJhUUlhRzQwZXgwTUJYazlIT0JHNjJtWmhJcUhST0NyUwpHZkI5U1p0ekdaUTdZbTh0S1ZWSTYzckV3VUttdU9lbUhzWCtCeFlibWZuVlZwNzhNaXNML1d0bDd5dlMybzEwCnFBQjc4WTc2aXpJOTVmbmlpYm5DN3RFK1J5dVJ0UUNjNXNPaGVZeHNjR3ZERFptYy9KK0ppODgyLzVGeEJKZmYKSVZHd1JTRGF0TGVsNFQ4bm1hM2JQNGtBKzg0TWx4M1cvd3JVWnd3a0E3WUdKd0RHbDlYNU5YcXBobmx1Y1Flego4MmdnUFRtbGZoMmo2NFVRbE1BWU8xRHA1MWFXZm00M0Y5UUROaHJza3l0ZnJ4WS91S25ZNW4rUS9RSzNGS3g5CmhLZDR2MTRteWQzRWIwNDAyVkM3SUg3b0JOMTlraXZQZGVwNHlsNVJRN0dRZ3dxaEZ2K3lkMVZDNDZ2SUdoUjYKbGRRNDhaWmI1UWtjZllqZ0FvS2N3RTZsU1B3cmR4TXh1aDRCT0Q4djYyYzQ2Ri8xcytRalFId3FCN0gzdVJoeQpQczBpRG1EN1ZEek10MkRuSW43QytnQmJTVjFSWXdXdlRwY1BZdzRCT09sV2tqczhKdFBvR1dQeVRCbFVYSlVRClM5a3AwNC9wTXYvZFYreVFsRUVibzhncyt3SURBUUFCbzBJd1FEQU9CZ05WSFE4QkFmOEVCQU1DQWdRd0R3WUQKVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVVlYXlqcENjUWxYbENkb2JFOWtUdWJFcm1aSjB3RFFZSgpLb1pJaHZjTkFRRUxCUUFEZ2dHQkFMdExUV1pNcEZZMEgwRkU3aUJpa1RTODVFZ2JYN3d2TWEzanJXa0tIUDNvCmdkVUgxdnQyL0IzL3NrajJ4VGZFVnlvbXU5WVZXc0lPSndNZm9ZZC9HakJ3NUJRM0hwbjlGMmE5azYydkxYMWMKdjlOYnFFc3RXYmhwMUVYcHBKckYwL01yODcvK09aOVhCQURsbEExdW5KWEJWNUgwR1gxelNieDNoQ0VNa1EzeQpVQndWYTY5Rkc5NW9hWTB3cGFVWHRYV3BwKzNGTUwwZGJjWGNRN05lcEFXU0ZNQVJyQStwdFFPZGlVS2tYeFhWCk9VQ1ExU2pDWGZBUHdpWHZvdldodUZTZmxucEllSVBBb1BtUVZrUENBaHd3cWhlVHdtZWp1bTlmc3YwU1BmTHkKbTFwNmhsK1ltSzVjNEh1cDR0Mm5PWWpqSkU1YXF1Yk9ZbElGWHMvTTVMU1FTZVhZdGdDU2p3THI5am04M1hNMgo4NVBmMU9iYVVTbFNDL2xXb1hRcEpZVkpkYkxZeUlsVXA1dGh0Q3haWTRXWXpMdEVBNUE5UEFHanZCZ3d6eVkwClYzb0hleDkvdkJkV2tCdDAyUEVPblUxd1ZCMS9oakpaTXJ0REJ6V2VVVW9vSmNHajhYQTFzdndFSDZ3M0l2RkMKWTFZTGEwM1VLU2xxUjU2Y3hKdTd4Zz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    server: https://34.67.74.184
+  name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+contexts:
+- context:
+    cluster: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+    user: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+  name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+current-context: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+kind: Config
+preferences: {}
+users:
+- name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      command: gke-gcloud-auth-plugin
+      installHint: Install gke-gcloud-auth-plugin for use with kubectl by following
+        https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+      provideClusterInfo: true
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config view
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: DATA+OMITTED
+    server: https://34.67.74.184
+  name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+contexts:
+- context:
+    cluster: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+    user: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+  name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+current-context: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+kind: Config
+preferences: {}
+users:
+- name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args: null
+      command: gke-gcloud-auth-plugin
+      env: null
+      installHint: Install gke-gcloud-auth-plugin for use with kubectl by following
+        https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+      interactiveMode: IfAvailable
+      provideClusterInfo: true
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config get-clusters
+NAME
+gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config get-contexts
+CURRENT   NAME                                                             CLUSTER                                                          AUTHINFO                                                         NAMESPACE
+*         gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config current-context
+gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config get-clusters
+NAME
+gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+cloudops@rahul-intel-nuc:~$ kubectl cluster-info
+Kubernetes control plane is running at https://34.67.74.184
+GLBCDefaultBackend is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/default-http-backend:http/proxy
+KubeDNS is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Metrics-server is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/https:metrics-server:/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+
+
+
+cloudops@rahul-intel-nuc:~$ ### GKE Standard Regional Cluster ###
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ gcloud container clusters get-credentials sara-gke-cluster --region us-central1 --project sara-project-401601
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for sara-gke-cluster.
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ cat .kube/config 
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVMRENDQXBTZ0F3SUJBZ0lRS3MzditlaXRVQUFzZXpwS1graCswREFOQmdrcWhraUc5dzBCQVFzRkFEQXYKTVMwd0t3WURWUVFERXlSaFl6a3haalkzTnkwMFpUa3pMVFF3TTJZdFltUmtZUzA0Tm1ObU1tSTVNR1JrWkRFdwpJQmNOTWpNeE1ESTBNVFUxTURVMldoZ1BNakExTXpFd01UWXhOalV3TlRaYU1DOHhMVEFyQmdOVkJBTVRKR0ZqCk9URm1OamMzTFRSbE9UTXROREF6WmkxaVpHUmhMVGcyWTJZeVlqa3daR1JrTVRDQ0FhSXdEUVlKS29aSWh2Y04KQVFFQkJRQURnZ0dQQURDQ0FZb0NnZ0dCQU5hRmtMMFJhUUlhRzQwZXgwTUJYazlIT0JHNjJtWmhJcUhST0NyUwpHZkI5U1p0ekdaUTdZbTh0S1ZWSTYzckV3VUttdU9lbUhzWCtCeFlibWZuVlZwNzhNaXNML1d0bDd5dlMybzEwCnFBQjc4WTc2aXpJOTVmbmlpYm5DN3RFK1J5dVJ0UUNjNXNPaGVZeHNjR3ZERFptYy9KK0ppODgyLzVGeEJKZmYKSVZHd1JTRGF0TGVsNFQ4bm1hM2JQNGtBKzg0TWx4M1cvd3JVWnd3a0E3WUdKd0RHbDlYNU5YcXBobmx1Y1Flego4MmdnUFRtbGZoMmo2NFVRbE1BWU8xRHA1MWFXZm00M0Y5UUROaHJza3l0ZnJ4WS91S25ZNW4rUS9RSzNGS3g5CmhLZDR2MTRteWQzRWIwNDAyVkM3SUg3b0JOMTlraXZQZGVwNHlsNVJRN0dRZ3dxaEZ2K3lkMVZDNDZ2SUdoUjYKbGRRNDhaWmI1UWtjZllqZ0FvS2N3RTZsU1B3cmR4TXh1aDRCT0Q4djYyYzQ2Ri8xcytRalFId3FCN0gzdVJoeQpQczBpRG1EN1ZEek10MkRuSW43QytnQmJTVjFSWXdXdlRwY1BZdzRCT09sV2tqczhKdFBvR1dQeVRCbFVYSlVRClM5a3AwNC9wTXYvZFYreVFsRUVibzhncyt3SURBUUFCbzBJd1FEQU9CZ05WSFE4QkFmOEVCQU1DQWdRd0R3WUQKVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVVlYXlqcENjUWxYbENkb2JFOWtUdWJFcm1aSjB3RFFZSgpLb1pJaHZjTkFRRUxCUUFEZ2dHQkFMdExUV1pNcEZZMEgwRkU3aUJpa1RTODVFZ2JYN3d2TWEzanJXa0tIUDNvCmdkVUgxdnQyL0IzL3NrajJ4VGZFVnlvbXU5WVZXc0lPSndNZm9ZZC9HakJ3NUJRM0hwbjlGMmE5azYydkxYMWMKdjlOYnFFc3RXYmhwMUVYcHBKckYwL01yODcvK09aOVhCQURsbEExdW5KWEJWNUgwR1gxelNieDNoQ0VNa1EzeQpVQndWYTY5Rkc5NW9hWTB3cGFVWHRYV3BwKzNGTUwwZGJjWGNRN05lcEFXU0ZNQVJyQStwdFFPZGlVS2tYeFhWCk9VQ1ExU2pDWGZBUHdpWHZvdldodUZTZmxucEllSVBBb1BtUVZrUENBaHd3cWhlVHdtZWp1bTlmc3YwU1BmTHkKbTFwNmhsK1ltSzVjNEh1cDR0Mm5PWWpqSkU1YXF1Yk9ZbElGWHMvTTVMU1FTZVhZdGdDU2p3THI5am04M1hNMgo4NVBmMU9iYVVTbFNDL2xXb1hRcEpZVkpkYkxZeUlsVXA1dGh0Q3haWTRXWXpMdEVBNUE5UEFHanZCZ3d6eVkwClYzb0hleDkvdkJkV2tCdDAyUEVPblUxd1ZCMS9oakpaTXJ0REJ6V2VVVW9vSmNHajhYQTFzdndFSDZ3M0l2RkMKWTFZTGEwM1VLU2xxUjU2Y3hKdTd4Zz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    server: https://34.67.74.184
+  name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVMRENDQXBTZ0F3SUJBZ0lRTUk2ZzU1MXlYZk5WVE1QZWpSeW44VEFOQmdrcWhraUc5dzBCQVFzRkFEQXYKTVMwd0t3WURWUVFERXlSbE5XWXdNbUl3WkMweVlURm1MVFF5TkdNdE9UTmhaUzB3TUdabFlUQXdObU00WkRBdwpJQmNOTWpNeE1ERXdNREExTURNMldoZ1BNakExTXpFd01ESXdNVFV3TXpaYU1DOHhMVEFyQmdOVkJBTVRKR1UxClpqQXlZakJrTFRKaE1XWXROREkwWXkwNU0yRmxMVEF3Wm1WaE1EQTJZemhrTURDQ0FhSXdEUVlKS29aSWh2Y04KQVFFQkJRQURnZ0dQQURDQ0FZb0NnZ0dCQU1hMnRpRmE1aWJLMmpjaWFhV0R5c2tMdEZ6M1VMQ0tjY0VlcSttVQpST1ltMjZ0dkpCamVvNlhJK0VDbWoxYUNGUG1HL3d6aklTcS9hQkJUZU1vOUZ5a05zdjRtT05vNVQvOTZhU2xUCk8zTWptZWQrUk95YzY5TURSaUlMWFNsbGg2dHVpd0ZVbTdjVEdZZG1US1hmanluQlV2Sy9oNGZvcGZ5d1ZBa0UKOWtvK1hrWGtYVEZhUHRuQjN5aGdqa3Fqdnh1QzNLVlh5citjRExhMnVSS0tVZDIvRFZteUl5OGp0Zk9WRXhtUwpGWFBUcHoya1ZXdDV6MFZyZ0pua2xQajUzVzVtc1R4ODd5cFZCZDR5MVZ2eUdEQXFtQWtDSHNGMXZrVnEybmRjCkN5MjhIRFA5dFZ0YllmMWIxMndzTDlXeVVublQ5Vy9QMGR4bHFJZW9wYzUyZjMzS1MvNHAwWVovUHBTMFFQQjIKNlhiNTdWNXUybEM1Y0swRklyY2NZN1oydnUzeWNLWW13S0RwYXVSZHhWSWdJVDN6Ym5YVXdoUTR3VXN2M3o0ZQpOc0lqWkhMTWN4MEdOSjJiRU52OE1RZDBka205WkUyL1NpOUV2OVJyS0NXdGRnYzR2R0F2dDNmL3VLU29OcktPCnZpVytMS1k5aDY0OUpKbFdyYkhydjhnY053SURBUUFCbzBJd1FEQU9CZ05WSFE4QkFmOEVCQU1DQWdRd0R3WUQKVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVVBV0tkT2w4Z0lCN1d2S0xQQTFWYzhiVVVWMUl3RFFZSgpLb1pJaHZjTkFRRUxCUUFEZ2dHQkFNWkRQTEVROG94aEE2L2dUVFRMVEM4UHBrOXlCayt1U0VEOUlTdHdDdnhyCjZPSVZZenFBdEJVTzNmK0R2ZklNQ1RjTWRYWk5KaGZvU2hUUjFyWktZcmRpVGFpUmxBUFgybDErdXBaUDJDRUkKUEt1a0xwQjhRQllpVmV0WHhYV0Nvc2xrbm5SYmoyZ05ZWlczWVBrWmRSZ1pBMi94akxsTzBOVkNiZTM2Ym5JbAp5TW1wcktNeWJtUGZ0MHhZbmE5NU1tL2JuT2pVMTI2VDFSa1VFaU1yaWd2L2F6b0dVa0Q4MDh3d2dqb0hsYTV0CkFva0dmaVRGeGpZVkV5OTJSYW1sVkRnTndCandhMHlSam9XSXExSWNvTUh6Ti9Eb3k3MFUxMGt4KzJ0SEtQSTIKYVNVN3lFTHdWcnNSMmRuTDdkdHk1YXlkZW9FNkFSdTBWMk1weTVEaVd6cjNYM2NNY3lGQ0VpaTljR2g5V1BWbApsRi9CNk84RXlOU1VLWHUyMnh6OGdPYjI5T0I1bWs5VmFZdVdZTGZNTVRLWGZ3Q1dZSG1MKzFHK1VpQlVkcG5vCjk5Q3VOQ3U3VWxTNkpJTDlKVXNjb3B3K2dZZGF0aUNxQ1A1TTBOWFVENWtxYlg3OXU2K1d3NjBRY1pwTWY5cVEKQXNwUERrRjBQWlpFakp6ek9VZE5nUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    server: https://35.188.197.130
+  name: gke_sara-project-401601_us-central1_sara-gke-cluster
+contexts:
+- context:
+    cluster: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+    user: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+  name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+- context:
+    cluster: gke_sara-project-401601_us-central1_sara-gke-cluster
+    user: gke_sara-project-401601_us-central1_sara-gke-cluster
+  name: gke_sara-project-401601_us-central1_sara-gke-cluster
+current-context: gke_sara-project-401601_us-central1_sara-gke-cluster
+kind: Config
+preferences: {}
+users:
+- name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      command: gke-gcloud-auth-plugin
+      installHint: Install gke-gcloud-auth-plugin for use with kubectl by following
+        https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+      provideClusterInfo: true
+- name: gke_sara-project-401601_us-central1_sara-gke-cluster
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      command: gke-gcloud-auth-plugin
+      installHint: Install gke-gcloud-auth-plugin for use with kubectl by following
+        https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+      provideClusterInfo: true
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config view
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: DATA+OMITTED
+    server: https://34.67.74.184
+  name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+- cluster:
+    certificate-authority-data: DATA+OMITTED
+    server: https://35.188.197.130
+  name: gke_sara-project-401601_us-central1_sara-gke-cluster
+contexts:
+- context:
+    cluster: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+    user: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+  name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+- context:
+    cluster: gke_sara-project-401601_us-central1_sara-gke-cluster
+    user: gke_sara-project-401601_us-central1_sara-gke-cluster
+  name: gke_sara-project-401601_us-central1_sara-gke-cluster
+current-context: gke_sara-project-401601_us-central1_sara-gke-cluster
+kind: Config
+preferences: {}
+users:
+- name: gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args: null
+      command: gke-gcloud-auth-plugin
+      env: null
+      installHint: Install gke-gcloud-auth-plugin for use with kubectl by following
+        https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+      interactiveMode: IfAvailable
+      provideClusterInfo: true
+- name: gke_sara-project-401601_us-central1_sara-gke-cluster
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args: null
+      command: gke-gcloud-auth-plugin
+      env: null
+      installHint: Install gke-gcloud-auth-plugin for use with kubectl by following
+        https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+      interactiveMode: IfAvailable
+      provideClusterInfo: true
+cloudops@rahul-intel-nuc:~$ kubectl config get-clusters
+NAME
+gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+gke_sara-project-401601_us-central1_sara-gke-cluster
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config get-contexts
+CURRENT   NAME                                                             CLUSTER                                                          AUTHINFO                                                         NAMESPACE
+          gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   
+*         gke_sara-project-401601_us-central1_sara-gke-cluster             gke_sara-project-401601_us-central1_sara-gke-cluster             gke_sara-project-401601_us-central1_sara-gke-cluster             
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config current-context
+gke_sara-project-401601_us-central1_sara-gke-cluster
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config get-users
+NAME
+gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+gke_sara-project-401601_us-central1_sara-gke-cluster
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl cluster-info
+Kubernetes control plane is running at https://35.188.197.130
+GLBCDefaultBackend is running at https://35.188.197.130/api/v1/namespaces/kube-system/services/default-http-backend:http/proxy
+KubeDNS is running at https://35.188.197.130/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Metrics-server is running at https://35.188.197.130/api/v1/namespaces/kube-system/services/https:metrics-server:/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config get-contexts
+CURRENT   NAME                                                             CLUSTER                                                          AUTHINFO                                                         NAMESPACE
+          gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a   
+*         gke_sara-project-401601_us-central1_sara-gke-cluster             gke_sara-project-401601_us-central1_sara-gke-cluster             gke_sara-project-401601_us-central1_sara-gke-cluster             
+cloudops@rahul-intel-nuc:~$ kubectl config current-context
+gke_sara-project-401601_us-central1_sara-gke-cluster
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config use-context gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+Switched to context "gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a".
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl config current-context
+gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a
+cloudops@rahul-intel-nuc:~$ 
+cloudops@rahul-intel-nuc:~$ kubectl cluster-info
+Kubernetes control plane is running at https://34.67.74.184
+GLBCDefaultBackend is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/default-http-backend:http/proxy
+KubeDNS is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Metrics-server is running at https://34.67.74.184/api/v1/namespaces/kube-system/services/https:metrics-server:/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+cloudops@rahul-intel-nuc:~$ kubectl cluster-info dump > /tmp/gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a.info
+cloudops@rahul-intel-nuc:~$ view /tmp/gke_sara-project-401601_us-central1-a_sara-zonal-cluster-usc1a.info
+cloudops@rahul-intel-nuc:~$ 
+
